@@ -86,3 +86,4 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 WSGI_APPLICATION = 'wsgi.application'
+X_FRAME_OPTIONS = 'DENY'
