@@ -18,6 +18,7 @@ DATABASES = {
 DEBUG = False
 INSTALLED_APPS = (
     'api',
+    'debug_toolbar',
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.auth',
