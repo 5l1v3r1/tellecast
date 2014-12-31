@@ -1,3 +1,5 @@
 media/*
+!media/.gitkeep
 settings.py
 static/*
+!static/.gitkeep
