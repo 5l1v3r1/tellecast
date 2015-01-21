@@ -1,11 +1,23 @@
 # -*- coding: utf-8 -*-
 
+from django import forms
 from django.apps import apps
 from django.contrib import admin
+from django.contrib.auth.forms import (
+    ReadOnlyPasswordHashField, ReadOnlyPasswordHashWidget,
+)
+from django.utils.translation import ugettext_lazy
+
 from models import User
 
 
 class UserAdmin(admin.ModelAdmin):
+    exclude = (
+        'password',
+        'inserted_at',
+        'updated_at',
+        'signed_in_at',
+    )
     list_display = (
         'email',
         'inserted_at',
