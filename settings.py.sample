@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.staticfiles',
+    'social.apps.django_app.default',
 )
 LOGGING = {
     'disable_existing_loggers': False,
@@ -79,6 +80,25 @@ ROOT_URLCONF = 'urls'
 SECRET_KEY = '...'
 SERVER_EMAIL = '...'
 SITE_ID = 1
+SOCIAL_AUTH_AUTHENTICATION_BACKENDS = (
+    'social.backends.facebook.FacebookOAuth2',
+    'social.backends.google.GoogleOAuth2',
+    'social.backends.instagram.InstagramOAuth2',
+    'social.backends.linkedin.LinkedinOAuth2',
+    'social.backends.twitter.TwitterOAuth',
+)
+SOCIAL_AUTH_FACEBOOK_KEY = '...'
+SOCIAL_AUTH_FACEBOOK_SECRET = '...'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '...'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '...'
+SOCIAL_AUTH_INSTAGRAM_KEY = '...'
+SOCIAL_AUTH_INSTAGRAM_SECRET = '...'
+SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = '...'
+SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = '...'
+SOCIAL_AUTH_TWITTER_KEY = '...'
+SOCIAL_AUTH_TWITTER_SECRET = '...'
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+SOCIAL_AUTH_USER_MODEL = 'api.User'
 STATIC_ROOT = join(dirname(__file__), 'static')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = ()
@@ -99,6 +119,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
     'django.core.context_processors.static',
     'django.core.context_processors.tz',
+    'social.apps.django_app.context_processors.backends',
 )
 TEMPLATE_DEBUG = DEBUG
 TEMPLATE_DIRS = ()
