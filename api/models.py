@@ -58,6 +58,23 @@ class UserManager(UserManager):
         )
 
 
+class Backend(object):
+
+    def authenticate(self, username=None, password=None):
+        try:
+            user = User.objects.get(email=username)
+            if user.check_password(password):
+                return user
+        except User.DoesNotExist:
+            pass
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            pass
+
+
 class User(models.Model):
     email = models.EmailField(
         ugettext_lazy('Email'), db_index=True, max_length=255, unique=True
@@ -163,23 +180,6 @@ class User(models.Model):
 
     def is_authenticated(self):
         return True
-
-
-class Backend(object):
-
-    def authenticate(self, username=None, password=None):
-        try:
-            user = User.objects.get(email=username)
-            if user.check_password(password):
-                return user
-        except User.DoesNotExist:
-            pass
-
-    def get_user(self, user_id):
-        try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            pass
 
 
 def update_signed_in_at(sender, user, **kwargs):
