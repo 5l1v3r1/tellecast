@@ -2,14 +2,19 @@
 
 from django.conf import settings
 from django.conf.urls import include, patterns, url
-from django.contrib import admin
+from django.contrib import admin, admindocs
+from django.contrib.auth.models import Group
+from django.contrib.sites.models import Site
 
 admin.autodiscover()
 
+admin.site.unregister(Group)
+admin.site.unregister(Site)
+
 urlpatterns = patterns(
     '',
-    url(r'^admin/', include('django.contrib.admin.site.urls')),
-    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/doc/', include(admindocs.urls)),
 )
 
 if settings.DEBUG:
@@ -18,4 +23,4 @@ if settings.DEBUG:
         url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
             'document_root': settings.MEDIA_ROOT,
         }),
-   )
+    )
