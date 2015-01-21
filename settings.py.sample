@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.staticfiles',
+    'rest_framework',
     'social.apps.django_app.default',
 )
 LOGGING = {
@@ -76,6 +77,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.common.BrokenLinkEmailsMiddleware',
 )
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+    ],
+    'PAGINATE_BY': 50,
+}
 ROOT_URLCONF = 'urls'
 SECRET_KEY = '...'
 SERVER_EMAIL = '...'
