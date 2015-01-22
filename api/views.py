@@ -729,6 +729,14 @@ def t_card(request, id):
     serializer: api.serializers.TCard
     '''
     return Response(
-        data=serializers.TCard(get_object_or_404(models.User, id=id)).data,
+        data=serializers.TCard(
+            get_object_or_404(
+                models.User,
+                id=id,
+                is_active=True,
+                is_staff=False,
+                is_superuser=False,
+            )
+        ).data,
         status=HTTP_200_OK,
     )
