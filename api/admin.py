@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from django.apps import apps
-from django.contrib import admin
+from django.contrib.admin import ModelAdmin, site
 
-from models import User
+from api import models
 
 
-class UserAdmin(admin.ModelAdmin):
+class User(ModelAdmin):
     exclude = (
         'password',
         'inserted_at',
@@ -26,6 +26,6 @@ class UserAdmin(admin.ModelAdmin):
     ordering = ('-inserted_at',)
     search_fields = ('email', 'first_name', 'last_name',)
 
-admin.site.register(User, UserAdmin)
+site.register(models.User, User)
 
 apps.get_app_config('api').verbose_name = 'API'

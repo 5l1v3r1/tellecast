@@ -1,11 +1,14 @@
 Django==1.7.1
 Markdown==2.5.2
 PyJWT==0.4.1
+PyYAML==3.11
 django-debug-toolbar==1.2.2
 django-filter==0.9.1
+django-rest-swagger==0.2.8
 django-suit==0.2.12
 djangorestframework==3.0.3
 docutils==0.12
+drf-extensions==0.2.6
 oauthlib==0.7.2
 psycopg2==2.5.4
 python-openid==2.2.5
@@ -14,4 +17,5 @@ requests==2.5.1
 requests-oauthlib==0.4.2
 six==1.9.0
 sqlparse==0.1.14
+ujson==1.33
 wsgiref==0.1.2

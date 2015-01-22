@@ -4,126 +4,86 @@ from django.conf import settings
 from django.contrib.auth.hashers import (
     check_password, make_password, is_password_usable,
 )
-from django.contrib.auth.models import update_last_login, UserManager
+from django.contrib.auth.models import update_last_login
 from django.contrib.auth.signals import user_logged_in
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.db import models
-from django.db.models import Max
+from django.db.models import (
+    BooleanField,
+    CharField,
+    DateTimeField,
+    EmailField,
+    ForeignKey,
+    IntegerField,
+    Max,
+    Model,
+    OneToOneField,
+    TextField,
+)
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-from django.utils import timezone
+from django.utils.timezone import now
 from django.utils.crypto import salted_hmac
 from django.utils.translation import ugettext_lazy
+from rest_framework.authtoken.models import Token
+
+from api import managers
 
 
-class UserManager(UserManager):
-
-    def _create_user(
-        self,
-        email,
-        password,
-        first_name,
-        last_name,
-        is_staff,
-        is_superuser,
-        **kwargs
-    ):
-        now = timezone.now()
-        if not email:
-            raise ValueError('Invalid Email')
-        user = self.model(
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            inserted_at=now,
-            updated_at=now,
-            signed_in_at=now,
-            is_staff=is_staff,
-            is_superuser=is_superuser,
-            is_active=True,
-            **kwargs
-        )
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(
-        self, email, password, first_name, last_name, **kwargs
-    ):
-        return self._create_user(
-            email, password, first_name, last_name, True, True, **kwargs
-        )
-
-    def create_user(
-        self, email, password, first_name, last_name, **kwargs
-    ):
-        return self._create_user(
-            email, password, first_name, last_name, False, False, **kwargs
-        )
-
-
-class User(models.Model):
-    email = models.EmailField(
+class User(Model):
+    email = EmailField(
         ugettext_lazy('Email'), db_index=True, max_length=255, unique=True,
     )
-    password = models.CharField(
+    password = CharField(
         ugettext_lazy('Password'), db_index=True, max_length=255,
     )
-    photo = models.CharField(
+    photo = CharField(
         ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
     )
-    first_name = models.CharField(
+    first_name = CharField(
         ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255,
     )
-    last_name = models.CharField(
+    last_name = CharField(
         ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
     )
-    location = models.CharField(
+    location = CharField(
         ugettext_lazy('Location'), blank=True, db_index=True, max_length=255,
     )
-    description = models.TextField(
+    description = TextField(
         ugettext_lazy('Description'), blank=True, db_index=True,
     )
-    phone = models.CharField(
+    phone = CharField(
         ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255,
     )
-    inserted_at = models.DateTimeField(
+    inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),
         auto_now_add=True,
-        default=timezone.now,
+        default=now,
         db_index=True,
     )
-    updated_at = models.DateTimeField(
+    updated_at = DateTimeField(
         ugettext_lazy('Updated At'),
         auto_now=True,
-        default=timezone.now,
+        default=now,
         db_index=True,
     )
-    signed_in_at = models.DateTimeField(
-        ugettext_lazy('Signed In At'), default=timezone.now, db_index=True,
+    signed_in_at = DateTimeField(
+        ugettext_lazy('Signed In At'), default=now, db_index=True,
     )
-    is_staff = models.BooleanField(
+    is_staff = BooleanField(
         ugettext_lazy('Is Staff?'), default=False, db_index=True,
     )
-    is_superuser = models.BooleanField(
+    is_superuser = BooleanField(
         ugettext_lazy('Is Superuser?'), default=False, db_index=True,
     )
-    is_active = models.BooleanField(
+    is_active = BooleanField(
         ugettext_lazy('Is Active?'), default=True, db_index=True,
     )
 
-    REQUIRED_FIELDS = [
-        'password',
-        'photo',
-        'first_name',
-        'last_name',
-        'location',
-        'description',
-        'phone',
-    ]
+    REQUIRED_FIELDS = []
     USERNAME_FIELD = 'email'
 
-    objects = UserManager()
+    objects = managers.User()
 
     class Meta:
         db_table = 'api_users'
@@ -134,13 +94,13 @@ class User(models.Model):
     def __str__(self):
         return self.get_username()
 
-    def check_password(self, raw_password):
+    def check_password(self, password):
 
-        def setter(raw_password):
-            self.set_password(raw_password)
+        def setter(password):
+            self.set_password(password)
             self.save(update_fields=['password'])
 
-        return check_password(raw_password, self.password, setter)
+        return check_password(password, self.password, setter)
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         send_mail(subject, message, from_email, [self.email], **kwargs)
@@ -154,8 +114,15 @@ class User(models.Model):
             'last_name': self.last_name,
         }
 
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
+    def get_token(self):
+        try:
+            return self.auth_token
+        except ObjectDoesNotExist:
+            pass
+        return Token.objects.create(user=self)
+
+    def set_password(self, password):
+        self.password = make_password(password)
 
     def get_session_auth_hash(self):
         return salted_hmac(
@@ -173,17 +140,36 @@ class User(models.Model):
     def set_unusable_password(self):
         self.password = make_password(None)
 
-    def has_module_perms(self, app_label):
+    def has_module_perms(self, *args, **kwargs):
         if self.is_active:
             return True
 
-    def has_perm(self, perm, obj=None):
-        if self.is_active:
+    def has_perm(self, permission, object=None):
+        if self.is_staff:
             return True
+        if self.is_superuser:
+            return True
+        if not self.is_active:
+            if isinstance(object, User):
+                return object.id == self.id
+            if isinstance(object, UserStatus):
+                return object.user_id == self.id
+            if isinstance(object, UserStatusAttachment):
+                return object.user_status.user_id == self.id
+            if isinstance(object, UserURL):
+                return object.user_id == self.id
+            if isinstance(object, UserPhoto):
+                return object.user_id == self.id
+            if isinstance(object, UserSocialProfile):
+                return object.user_id == self.id
+            if isinstance(object, MasterTell):
+                return object.owned_by == self.id
+            if isinstance(object, SlaveTell):
+                return object.owned_by == self.id
 
-    def has_perms(self, perm_list, obj=None):
-        for perm in perm_list:
-            if not self.has_perm(perm, obj):
+    def has_perms(self, permissions, object=None):
+        for permission in permissions:
+            if not self.has_perm(permission, object):
                 return False
 
     def has_usable_password(self):
@@ -196,53 +182,14 @@ class User(models.Model):
         return True
 
 
-class UserPhoto(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='photos')
-    string = models.CharField(
-        ugettext_lazy('String'), db_index=True, max_length=255,
-    )
-    position = models.BigIntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-        db_table = 'api_users_photos'
-        ordering = ('position', )
-        verbose_name = 'user photo'
-        verbose_name_plural = 'user photos'
-
-
-class UserSocialProfile(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='social_profiles',
-    )
-    netloc = models.CharField(
-        ugettext_lazy('Network Location'), db_index=True, max_length=255,
-    )
-    url = models.CharField(
-        ugettext_lazy('URL'), db_index=True, max_length=255,
-    )
-
-    class Meta:
-        db_table = 'api_users_social_profiles'
-        get_latest_by = 'netloc'
-        ordering = ('netloc', )
-        verbose_name = 'user social profile'
-        verbose_name_plural = 'user social profiles'
-
-
-class UserStatus(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, related_name='status',
-    )
-    string = models.CharField(
-        ugettext_lazy('String'), db_index=True, max_length=255,
-    )
-    title = models.CharField(
-        ugettext_lazy('Title'), db_index=True, max_length=255,
-    )
-    url = models.CharField(
+class UserStatus(Model):
+    user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
+    url = CharField(
         ugettext_lazy('URL'), blank=True, db_index=True, max_length=255,
     )
-    notes = models.TextField(ugettext_lazy('Notes'), blank=True, db_index=True)
+    notes = TextField(ugettext_lazy('Notes'), blank=True, db_index=True)
 
     class Meta:
         db_table = 'api_users_statuses'
@@ -252,14 +199,12 @@ class UserStatus(models.Model):
         verbose_name_plural = 'user statuses'
 
 
-class UserStatusAttachment(models.Model):
-    status = models.ForeignKey(
+class UserStatusAttachment(Model):
+    user_status = ForeignKey(
         UserStatus, db_column='user_status_id', related_name='attachments',
     )
-    string = models.CharField(
-        ugettext_lazy('String'), db_index=True, max_length=255,
-    )
-    position = models.BigIntegerField(ugettext_lazy('Position'), db_index=True)
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
         db_table = 'api_users_statuses_attachments'
@@ -269,12 +214,10 @@ class UserStatusAttachment(models.Model):
         verbose_name_plural = 'user status attachments'
 
 
-class UserUrl(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
-    string = models.CharField(
-        ugettext_lazy('String'), db_index=True, max_length=255,
-    )
-    position = models.BigIntegerField(ugettext_lazy('Position'), db_index=True)
+class UserURL(Model):
+    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
         db_table = 'api_users_urls'
@@ -284,23 +227,50 @@ class UserUrl(models.Model):
         verbose_name_plural = 'user urls'
 
 
-class MasterTell(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
-    owned_by = models.ForeignKey(
+class UserPhoto(Model):
+    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='photos')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+        db_table = 'api_users_photos'
+        ordering = ('position', )
+        verbose_name = 'user photo'
+        verbose_name_plural = 'user photos'
+
+
+class UserSocialProfile(Model):
+    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='social_profiles')
+    netloc = CharField(
+        ugettext_lazy('Network Location'), db_index=True, max_length=255,
+    )
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_users_social_profiles'
+        get_latest_by = 'netloc'
+        ordering = ('netloc', )
+        verbose_name = 'user social profile'
+        verbose_name_plural = 'user social profiles'
+
+
+class MasterTell(Model):
+    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
+    owned_by = ForeignKey(
         settings.AUTH_USER_MODEL, related_name='master_tells',
     )
-    contents = models.TextField(ugettext_lazy('Contents'), db_index=True)
-    position = models.BigIntegerField(ugettext_lazy('Position'), db_index=True)
-    inserted_at = models.DateTimeField(
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+    inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),
         auto_now_add=True,
-        default=timezone.now,
+        default=now,
         db_index=True,
     )
-    updated_at = models.DateTimeField(
+    updated_at = DateTimeField(
         ugettext_lazy('Updated At'),
         auto_now=True,
-        default=timezone.now,
+        default=now,
         db_index=True,
     )
 
@@ -312,36 +282,32 @@ class MasterTell(models.Model):
         verbose_name_plural = 'master tells'
 
 
-class SlaveTell(models.Model):
-    master_tell = models.ForeignKey(MasterTell, related_name='slave_tells')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
-    owned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='slave_tells',
-    )
-    photo = models.CharField(
+class SlaveTell(Model):
+    master_tell = ForeignKey(MasterTell, related_name='slave_tells')
+    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
+    owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
+    photo = CharField(
         ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
     )
-    first_name = models.CharField(
+    first_name = CharField(
         ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255,
     )
-    last_name = models.CharField(
+    last_name = CharField(
         ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
     )
-    type = models.CharField(
-        ugettext_lazy('Type'), db_index=True, max_length=255,
-    )
-    contents = models.TextField(ugettext_lazy('Contents'), db_index=True)
-    position = models.BigIntegerField(ugettext_lazy('Position'), db_index=True)
-    inserted_at = models.DateTimeField(
+    type = CharField(ugettext_lazy('Type'), db_index=True, max_length=255)
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+    inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),
         auto_now_add=True,
-        default=timezone.now,
+        default=now,
         db_index=True,
     )
-    updated_at = models.DateTimeField(
+    updated_at = DateTimeField(
         ugettext_lazy('Updated At'),
         auto_now=True,
-        default=timezone.now,
+        default=now,
         db_index=True,
     )
 
@@ -357,7 +323,7 @@ user_logged_in.disconnect(update_last_login)
 
 @receiver(user_logged_in, sender=User)
 def update_signed_in_at(user, **kwargs):
-    user.signed_in_at = timezone.now()
+    user.signed_in_at = now()
     user.save(update_fields=['signed_in_at'])
 
 
@@ -379,10 +345,10 @@ def pre_save_user_status_attachment(instance, **kwargs):
         instance.position = position + 1 if position else 1
 
 
-@receiver(pre_save, sender=UserUrl)
+@receiver(pre_save, sender=UserURL)
 def pre_save_user_url(instance, **kwargs):
     if not instance.position:
-        position = UserUrl.objects.filter(
+        position = UserURL.objects.filter(
             user=instance.user,
         ).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1

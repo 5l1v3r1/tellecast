@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from models import User
+from api import models
 
 
 class Backend(object):
 
     def authenticate(self, username=None, password=None):
         try:
-            user = User.objects.get(email=username)
+            user = models.User.objects.get(email=username)
             if user.check_password(password):
                 return user
-        except User.DoesNotExist:
+        except models.User.DoesNotExist:
             pass
 
     def get_user(self, user_id):
         try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
+            return models.User.objects.get(pk=user_id)
+        except models.User.DoesNotExist:
             pass

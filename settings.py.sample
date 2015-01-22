@@ -6,7 +6,14 @@ ADMINS = (
     ('...', '...'),
 )
 AUTH_USER_MODEL = 'api.User'
-AUTHENTICATION_BACKENDS = ('api.backends.Backend',)
+AUTHENTICATION_BACKENDS = (
+    'api.backends.Backend',
+    'social.backends.facebook.FacebookOAuth2',
+    'social.backends.google.GoogleOAuth2',
+    'social.backends.instagram.InstagramOAuth2',
+    'social.backends.linkedin.LinkedinOAuth2',
+    'social.backends.twitter.TwitterOAuth',
+)
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -41,6 +48,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_swagger',
     'social.apps.django_app.default',
 )
 LOGGING = {
@@ -78,22 +87,27 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.BrokenLinkEmailsMiddleware',
 )
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.JSONParser',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
-    ],
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    'MAX_PAGINATE_BY': 100,
     'PAGINATE_BY': 50,
+    'PAGINATE_BY_PARAM': 'per_page',
 }
 ROOT_URLCONF = 'urls'
 SECRET_KEY = '...'
 SERVER_EMAIL = '...'
 SITE_ID = 1
-SOCIAL_AUTH_AUTHENTICATION_BACKENDS = (
-    'social.backends.facebook.FacebookOAuth2',
-    'social.backends.google.GoogleOAuth2',
-    'social.backends.instagram.InstagramOAuth2',
-    'social.backends.linkedin.LinkedinOAuth2',
-    'social.backends.twitter.TwitterOAuth',
-)
 SOCIAL_AUTH_FACEBOOK_KEY = '...'
 SOCIAL_AUTH_FACEBOOK_SECRET = '...'
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '...'
@@ -102,6 +116,16 @@ SOCIAL_AUTH_INSTAGRAM_KEY = '...'
 SOCIAL_AUTH_INSTAGRAM_SECRET = '...'
 SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = '...'
 SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = '...'
+SOCIAL_AUTH_PIPELINE = (
+    'social.pipeline.social_auth.social_details',
+    'social.pipeline.social_auth.social_uid',
+    'social.pipeline.social_auth.auth_allowed',
+    'social.pipeline.social_auth.social_user',
+    'social.pipeline.user.get_username',
+    'social.pipeline.social_auth.associate_user',
+    'social.pipeline.social_auth.load_extra_data',
+    'social.pipeline.user.user_details'
+)
 SOCIAL_AUTH_TWITTER_KEY = '...'
 SOCIAL_AUTH_TWITTER_SECRET = '...'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
@@ -110,12 +134,32 @@ STATIC_ROOT = join(dirname(__file__), 'static')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    'django.contrib.staticfiles.finders.FileSystemFinder',
 )
 SUIT_CONFIG = {
     'LIST_PER_PAGE': 50
+}
+SWAGGER_SETTINGS = {
+    'api_key': '',
+    'api_path': '/',
+    'api_version': '1.0',
+    'doc_expansion': 'none',
+    'enabled_methods': ['delete', 'get', 'patch', 'post', 'put', ],
+    'exclude_namespaces': [],
+    'info': {
+        'contact': '...',
+        'description': '',
+        'license': '',
+        'licenseUrl': '',
+        'termsOfServiceUrl': '',
+        'title': 'Tellecast',
+    },
+    'is_authenticated': False,
+    'is_superuser': False,
+    'permission_denied_handler': None,
+    'token_type': 'Token',
 }
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',

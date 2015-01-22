@@ -2,36 +2,59 @@
 
 from django.conf import settings
 from django.conf.urls import include, patterns, url
-from django.contrib import admin, admindocs
+from django.contrib.admin import autodiscover, site
 from django.contrib.auth.models import Group
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic.base import RedirectView
-from rest_framework import routers, serializers, viewsets
+from rest_framework.authtoken.models import Token
+from rest_framework.routers import SimpleRouter
 from social.apps.django_app.default.models import (
     Association, Nonce, UserSocialAuth,
 )
 
-from api.views import UserViewSet
+from api import views
 
-admin.autodiscover()
+autodiscover()
 
-admin.site.unregister(Association)
-admin.site.unregister(Group)
-admin.site.unregister(Nonce)
-admin.site.unregister(Site)
-admin.site.unregister(UserSocialAuth)
+site.unregister(Association)
+site.unregister(Group)
+site.unregister(Nonce)
+site.unregister(Site)
+site.unregister(Token)
+site.unregister(UserSocialAuth)
 
-router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
+router = SimpleRouter()
+router.register(r'users', views.Users, base_name='users')
+router.register(
+    r'users/statuses', views.UsersStatuses, base_name='users-statuses',
+)
+router.register(
+    r'users/statuses/attachments',
+    views.UsersStatusesAttachments,
+    base_name='users-statuses-attachments',
+)
+router.register(r'users/urls', views.UsersURLs, base_name='users-urls')
+router.register(r'users/photos', views.UsersPhotos, base_name='users-photos')
+router.register(
+    r'users/social-profiles',
+    views.UsersSocialProfiles,
+    base_name='users-social-profiles',
+)
+router.register(r'master-tells', views.MasterTells, base_name='master-tells')
+router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
 
 urlpatterns = patterns(
     '',
-    url(r'', include('social.apps.django_app.urls', namespace='social')),
     url(r'^$', RedirectView.as_view(url=reverse_lazy('admin:index'))),
-    url(r'^', include(router.urls)),
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^admin/doc/', include(admindocs.urls)),
+    url(r'^admin/', include(site.urls)),
+    url(r'^api/authenticate/(?P<backend>[^/]+)/$', views.authenticate),
+    url(r'^api/master-tells/positions/$', views.master_tells_positions),
+    url(r'^api/register/', views.register),
+    url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
+    url(r'^api/t-card/(?P<id>\d+)/$', views.t_card),
+    url(r'^api/', include(router.urls)),
+    url(r'^swagger/', include('rest_framework_swagger.urls')),
 )
 
 if settings.DEBUG:

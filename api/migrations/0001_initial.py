@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('contents', models.TextField(verbose_name='Contents', db_index=True)),
-                ('position', models.BigIntegerField(verbose_name='Position', db_index=True)),
+                ('position', models.IntegerField(verbose_name='Position', db_index=True)),
                 ('inserted_at', models.DateTimeField(default=django.utils.timezone.now, auto_now_add=True, verbose_name='Inserted At', db_index=True)),
                 ('updated_at', models.DateTimeField(default=django.utils.timezone.now, auto_now=True, verbose_name='Updated At', db_index=True)),
                 ('created_by', models.ForeignKey(related_name='+', to=settings.AUTH_USER_MODEL)),
@@ -68,7 +68,7 @@ class Migration(migrations.Migration):
                 ('last_name', models.CharField(db_index=True, max_length=255, verbose_name='Last Name', blank=True)),
                 ('type', models.CharField(max_length=255, verbose_name='Type', db_index=True)),
                 ('contents', models.TextField(verbose_name='Contents', db_index=True)),
-                ('position', models.BigIntegerField(verbose_name='Position', db_index=True)),
+                ('position', models.IntegerField(verbose_name='Position', db_index=True)),
                 ('inserted_at', models.DateTimeField(default=django.utils.timezone.now, auto_now_add=True, verbose_name='Inserted At', db_index=True)),
                 ('updated_at', models.DateTimeField(default=django.utils.timezone.now, auto_now=True, verbose_name='Updated At', db_index=True)),
                 ('created_by', models.ForeignKey(related_name='+', to=settings.AUTH_USER_MODEL)),
@@ -89,7 +89,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string', models.CharField(max_length=255, verbose_name='String', db_index=True)),
-                ('position', models.BigIntegerField(verbose_name='Position', db_index=True)),
+                ('position', models.IntegerField(verbose_name='Position', db_index=True)),
                 ('user', models.ForeignKey(related_name='photos', to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -141,8 +141,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string', models.CharField(max_length=255, verbose_name='String', db_index=True)),
-                ('position', models.BigIntegerField(verbose_name='Position', db_index=True)),
-                ('status', models.ForeignKey(related_name='attachments', db_column=b'user_status_id', to='api.UserStatus')),
+                ('position', models.IntegerField(verbose_name='Position', db_index=True)),
+                ('user_status', models.ForeignKey(related_name='attachments', db_column=b'user_status_id', to='api.UserStatus')),
             ],
             options={
                 'ordering': ('position',),
@@ -154,11 +154,11 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='UserUrl',
+            name='UserURL',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string', models.CharField(max_length=255, verbose_name='String', db_index=True)),
-                ('position', models.BigIntegerField(verbose_name='Position', db_index=True)),
+                ('position', models.IntegerField(verbose_name='Position', db_index=True)),
                 ('user', models.ForeignKey(related_name='urls', to=settings.AUTH_USER_MODEL)),
             ],
             options={
