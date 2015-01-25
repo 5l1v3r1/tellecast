@@ -608,9 +608,7 @@ def authenticate(request, backend):
         )
     login(request, user)
     return Response(
-        data={
-            'instance': serializers.AuthenticateResponse(user).data,
-        },
+        data=serializers.AuthenticateResponse(user).data,
         status=HTTP_200_OK,
     )
 

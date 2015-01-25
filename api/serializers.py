@@ -296,33 +296,18 @@ class RegisterMasterTell(ModelSerializer):
         model = models.MasterTell
 
 
-class RegisterSocialProfileFacebook(Serializer):
-    url = CharField()
-
-
-class RegisterSocialProfileGoogle(Serializer):
-    url = CharField()
-
-
-class RegisterSocialProfileInstagram(Serializer):
-    url = CharField()
-
-
-class RegisterSocialProfileLinkedIn(Serializer):
-    access_token = CharField(help_text='OAuth 2 access token')
-    url = CharField()
-
-
-class RegisterSocialProfileTwitter(Serializer):
-    url = CharField()
-
-
 class RegisterSocialProfile(Serializer):
-    facebook = RegisterSocialProfileFacebook(required=False)
-    google = RegisterSocialProfileGoogle(required=False)
-    instagram = RegisterSocialProfileInstagram(required=False)
-    linkedin = RegisterSocialProfileLinkedIn()
-    twitter = RegisterSocialProfileTwitter(required=False)
+    access_token = CharField()
+    netloc = CharField()
+    url = CharField()
+
+    class Meta:
+        fields = (
+            'access_token',
+            'netloc',
+            'url',
+        )
+        model = models.UserSocialProfile
 
 
 class Register(Serializer):
@@ -340,7 +325,7 @@ class Register(Serializer):
         help_text='List of Master Tell instances', many=True,
     )
     social_profiles = RegisterSocialProfile(
-        help_text='List of Social Profile instances',
+        help_text='List of Social Profile instances', many=True,
     )
 
     def create(self, data):
@@ -391,19 +376,19 @@ class Register(Serializer):
                         **slave_tell
                     ).save()
         if 'social_profiles' in data:
-            for netloc in data['social_profiles']:
+            for social_profile in data['social_profiles']:
                 models.UserSocialProfile.objects.create(
                     user=user,
-                    netloc=netloc,
-                    url=data['social_profiles'][netloc]['url'],
+                    netloc=social_profile['netloc'],
+                    url=social_profile['url'],
                 ).save()
-                if netloc == 'linkedin':
+                if social_profile['netloc'] == 'linkedin.com':
                     response = get_backend(
                         settings.AUTHENTICATION_BACKENDS, 'linkedin-oauth2',
                     )(
                         strategy=DjangoStrategy(storage=DjangoStorage())
                     ).user_data(
-                        data['social_profiles'][netloc]['access_token']
+                        social_profile['access_token']
                     )
                     UserSocialAuth.objects.create(
                         user=user,
