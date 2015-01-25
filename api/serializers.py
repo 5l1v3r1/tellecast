@@ -146,31 +146,9 @@ class TCardPhoto(UserPhoto):
     pass
 
 
-class TCardSlaveTell(SlaveTell):
-    created_by = User()
-    owned_by = User()
-
-    class Meta:
-        fields = (
-            'id',
-            'created_by',
-            'owned_by',
-            'photo',
-            'first_name',
-            'last_name',
-            'type',
-            'contents',
-            'position',
-            'inserted_at',
-            'updated_at',
-        )
-        model = models.SlaveTell
-
-
 class TCardMasterTell(MasterTell):
     created_by = User()
     owned_by = User()
-    slave_tells = TCardSlaveTell(many=True)
 
     class Meta:
         fields = (
@@ -181,7 +159,6 @@ class TCardMasterTell(MasterTell):
             'position',
             'inserted_at',
             'updated_at',
-            'slave_tells',
         )
         model = models.MasterTell
 
