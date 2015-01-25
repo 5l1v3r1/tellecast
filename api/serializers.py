@@ -102,7 +102,6 @@ class SlaveTell(ModelSerializer):
             'updated_at',
         )
         model = models.SlaveTell
-        read_only_fields = ('created_by', )
 
 
 class MasterTell(ModelSerializer):
@@ -116,7 +115,6 @@ class MasterTell(ModelSerializer):
             'updated_at',
         )
         model = models.MasterTell
-        read_only_fields = ('created_by', )
 
 
 class TCardStatusAttachment(UserStatusAttachment):
@@ -147,14 +145,10 @@ class TCardPhoto(UserPhoto):
 
 
 class TCardMasterTell(MasterTell):
-    created_by = User()
-    owned_by = User()
 
     class Meta:
         fields = (
             'id',
-            'created_by',
-            'owned_by',
             'contents',
             'position',
             'inserted_at',
