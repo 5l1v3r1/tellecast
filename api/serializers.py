@@ -199,7 +199,7 @@ class AuthenticateRequest(Serializer):
     access_token = CharField(help_text='OAuth 2 access token')
 
 
-class AuthenticateResponse(TCard):
+class AuthenticateResponse(User):
     token = SerializerMethodField()
 
     class Meta:
@@ -214,11 +214,6 @@ class AuthenticateResponse(TCard):
             'phone',
             'inserted_at',
             'updated_at',
-            'status',
-            'urls',
-            'photos',
-            'master_tells',
-            'social_profiles',
             'token',
         )
         model = models.User
