@@ -25,7 +25,15 @@ site.unregister(Token)
 site.unregister(UserSocialAuth)
 
 router = SimpleRouter()
+router.register(r'master-tells', views.MasterTells, base_name='master-tells')
+router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
 router.register(r'users', views.Users, base_name='users')
+router.register(r'users/photos', views.UsersPhotos, base_name='users-photos')
+router.register(
+    r'users/social-profiles',
+    views.UsersSocialProfiles,
+    base_name='users-social-profiles',
+)
 router.register(
     r'users/statuses', views.UsersStatuses, base_name='users-statuses',
 )
@@ -35,14 +43,6 @@ router.register(
     base_name='users-statuses-attachments',
 )
 router.register(r'users/urls', views.UsersURLs, base_name='users-urls')
-router.register(r'users/photos', views.UsersPhotos, base_name='users-photos')
-router.register(
-    r'users/social-profiles',
-    views.UsersSocialProfiles,
-    base_name='users-social-profiles',
-)
-router.register(r'master-tells', views.MasterTells, base_name='master-tells')
-router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
 
 urlpatterns = patterns(
     '',

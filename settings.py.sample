@@ -145,7 +145,7 @@ SWAGGER_SETTINGS = {
     'api_key': '',
     'api_path': '/',
     'api_version': '1.0',
-    'doc_expansion': 'none',
+    'doc_expansion': 'list',
     'enabled_methods': ['delete', 'get', 'patch', 'post', 'put', ],
     'exclude_namespaces': [],
     'info': {
