@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy
 from rest_framework.serializers import (
     CharField,
     ChoiceField,
@@ -12,7 +11,6 @@ from rest_framework.serializers import (
     Serializer,
     SerializerMethodField,
     URLField,
-    ValidationError,
 )
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
@@ -696,7 +694,7 @@ class Register(Serializer):
         return user
 
     def is_valid_(self, data):
-        if not 'social_profiles' in data:
+        if 'social_profiles' not in data:
             return False
         for social_profile in data['social_profiles']:
             if social_profile['netloc'] == 'linkedin.com':
