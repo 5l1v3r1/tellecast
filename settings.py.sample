@@ -85,6 +85,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.common.BrokenLinkEmailsMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -103,6 +104,12 @@ REST_FRAMEWORK = {
     'MAX_PAGINATE_BY': 100,
     'PAGINATE_BY': 50,
     'PAGINATE_BY_PARAM': 'per_page',
+}
+ROLLBAR = {
+    'access_token': '...',
+    'branch': 'master',
+    'environment': 'development' if DEBUG else 'production',
+    'root': '...',
 }
 ROOT_URLCONF = 'urls'
 SECRET_KEY = '...'
