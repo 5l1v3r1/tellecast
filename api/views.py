@@ -50,6 +50,13 @@ class MasterTells(ModelViewSet):
             - code: 400
               message: Invalid Input
     list:
+        parameters:
+            - name: inserted_at
+              paramType: query
+              type: datetime
+            - name: updated_at
+              paramType: query
+              type: datetime
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -93,9 +100,16 @@ class MasterTells(ModelViewSet):
         )
 
     def get_queryset(self):
-        return models.MasterTell.objects.filter(
+        queryset = models.MasterTell.objects.filter(
             owned_by_id=self.request.user.id,
-        ).order_by('position').all()
+        )
+        inserted_at = self.request.QUERY_PARAMS.get('inserted_at', None)
+        if inserted_at:
+            queryset = queryset.filter(inserted_at__gte=inserted_at)
+        updated_at = self.request.QUERY_PARAMS.get('updated_at', None)
+        if updated_at:
+            queryset = queryset.filter(updated_at__gte=updated_at)
+        return queryset.order_by('position').all()
 
 
 class SlaveTells(ModelViewSet):
@@ -133,6 +147,13 @@ class SlaveTells(ModelViewSet):
             - code: 400
               message: Invalid Input
     list:
+        parameters:
+            - name: inserted_at
+              paramType: query
+              type: datetime
+            - name: updated_at
+              paramType: query
+              type: datetime
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -176,9 +197,16 @@ class SlaveTells(ModelViewSet):
         )
 
     def get_queryset(self):
-        return models.SlaveTell.objects.filter(
+        queryset = models.SlaveTell.objects.filter(
             owned_by_id=self.request.user.id,
-        ).order_by('position').all()
+        )
+        inserted_at = self.request.QUERY_PARAMS.get('inserted_at', None)
+        if inserted_at:
+            queryset = queryset.filter(inserted_at__gte=inserted_at)
+        updated_at = self.request.QUERY_PARAMS.get('updated_at', None)
+        if updated_at:
+            queryset = queryset.filter(updated_at__gte=updated_at)
+        return queryset.order_by('position').all()
 
 
 class Users(
