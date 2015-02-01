@@ -52,7 +52,7 @@ urlpatterns = patterns(
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/register/', views.register),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
-    url(r'^api/t-card/(?P<id>\d+)/$', views.t_card),
+    url(r'^api/users/(?P<id>\d+)/profile/$', views.users_profile),
     url(r'^api/', include(router.urls)),
     url(r'^swagger/', include('rest_framework_swagger.urls')),
 )

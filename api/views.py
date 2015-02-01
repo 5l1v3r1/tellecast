@@ -23,6 +23,164 @@ from social.strategies.django_strategy import DjangoStrategy
 from api import models, serializers
 
 
+class MasterTells(ModelViewSet):
+    '''
+    Master Tells
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + contents
+    </pre>
+    ---
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MasterTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.MasterTell
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    list:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.MasterTell
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MasterTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.MasterTell
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.MasterTell
+    update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MasterTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.MasterTell
+    '''
+    lookup_field = 'id'
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (JSONRenderer, )
+    serializer_class = serializers.MasterTell
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user, owned_by=self.request.user,
+        )
+
+    def get_queryset(self):
+        return models.MasterTell.objects.filter(
+            owned_by_id=self.request.user.id,
+        ).order_by('position').all()
+
+
+class SlaveTells(ModelViewSet):
+    '''
+    Slave Tells
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + type
+    + string
+
+    Choices
+    =======
+
+    + type:
+      - File
+      - String
+    </pre>
+    ---
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.SlaveTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SlaveTell
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    list:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SlaveTell
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.SlaveTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SlaveTell
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SlaveTell
+    update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.SlaveTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SlaveTell
+    '''
+    lookup_field = 'id'
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (JSONRenderer, )
+    serializer_class = serializers.SlaveTell
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user, owned_by=self.request.user,
+        )
+
+    def get_queryset(self):
+        return models.SlaveTell.objects.filter(
+            owned_by_id=self.request.user.id,
+        ).order_by('position').all()
+
+
 class Users(
     RetrieveModelMixin,
     UpdateModelMixin,
@@ -96,6 +254,164 @@ class Users(
     ).all()
     renderer_classes = (JSONRenderer, )
     serializer_class = serializers.User
+
+
+class UsersPhotos(ModelViewSet):
+    '''
+    Users Photos
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + string
+    </pre>
+    ---
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserPhoto
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserPhoto
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    list:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserPhoto
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserPhoto
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserPhoto
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserPhoto
+    update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserPhoto
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserPhoto
+    '''
+    lookup_field = 'id'
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (JSONRenderer, )
+    serializer_class = serializers.UserPhoto
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        return models.UserPhoto.objects.filter(
+            user_id=self.request.user.id,
+        ).order_by('position').all()
+
+
+class UsersSocialProfiles(ModelViewSet):
+    '''
+    Users Social Profiles
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + netloc
+    + url
+
+    Choices
+    =======
+
+    + netloc:
+      - facebook.com
+      - google.com
+      - instagram.com
+      - linkedin.com
+      - twitter.com
+    </pre>
+    ---
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserSocialProfile
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserSocialProfile
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    list:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserSocialProfile
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserSocialProfile
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserSocialProfile
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserSocialProfile
+    update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserSocialProfile
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UserSocialProfile
+    '''
+    lookup_field = 'id'
+    permission_classes = (IsAuthenticated, )
+    queryset = models.UserSocialProfile.objects.all()
+    renderer_classes = (JSONRenderer, )
+    serializer_class = serializers.UserSocialProfile
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        return models.UserSocialProfile.objects.filter(
+            user_id=self.request.user.id,
+        ).order_by('netloc').all()
 
 
 class UsersStatuses(ModelViewSet):
@@ -318,322 +634,6 @@ class UsersURLs(ModelViewSet):
         ).order_by('position').all()
 
 
-class UsersPhotos(ModelViewSet):
-    '''
-    Users Photos
-
-    <pre>
-    Mandatory Fields
-    ================
-
-    + string
-    </pre>
-    ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserPhoto
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserPhoto
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserPhoto
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    '''
-    lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
-    serializer_class = serializers.UserPhoto
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def get_queryset(self):
-        return models.UserPhoto.objects.filter(
-            user_id=self.request.user.id,
-        ).order_by('position').all()
-
-
-class UsersSocialProfiles(ModelViewSet):
-    '''
-    Users Social Profiles
-
-    <pre>
-    Mandatory Fields
-    ================
-
-    + netloc
-    + url
-
-    Choices
-    =======
-
-    + netloc:
-      - facebook.com
-      - google.com
-      - instagram.com
-      - linkedin.com
-      - twitter.com
-    </pre>
-    ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserSocialProfile
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserSocialProfile
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserSocialProfile
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    '''
-    lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    queryset = models.UserSocialProfile.objects.all()
-    renderer_classes = (JSONRenderer, )
-    serializer_class = serializers.UserSocialProfile
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def get_queryset(self):
-        return models.UserSocialProfile.objects.filter(
-            user_id=self.request.user.id,
-        ).order_by('netloc').all()
-
-
-class MasterTells(ModelViewSet):
-    '''
-    Master Tells
-
-    <pre>
-    Mandatory Fields
-    ================
-
-    + contents
-    </pre>
-    ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.MasterTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.MasterTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
-    update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.MasterTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
-    '''
-    lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
-    serializer_class = serializers.MasterTell
-
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user, owned_by=self.request.user,
-        )
-
-    def get_queryset(self):
-        return models.MasterTell.objects.filter(
-            owned_by_id=self.request.user.id,
-        ).order_by('position').all()
-
-
-class SlaveTells(ModelViewSet):
-    '''
-    Slave Tells
-
-    <pre>
-    Mandatory Fields
-    ================
-
-    + type
-    + string
-
-    Choices
-    =======
-
-    + type:
-      - File
-      - String
-    </pre>
-    ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.SlaveTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.SlaveTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.SlaveTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    '''
-    lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
-    serializer_class = serializers.SlaveTell
-
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user, owned_by=self.request.user,
-        )
-
-    def get_queryset(self):
-        return models.SlaveTell.objects.filter(
-            owned_by_id=self.request.user.id,
-        ).order_by('position').all()
-
-
 @api_view(('POST', ))
 @csrf_exempt
 @permission_classes(())
@@ -763,7 +763,7 @@ def master_tells_positions(request):
 @permission_classes(())
 def register(request):
     '''
-    Register a new user
+    Register a User
 
     <pre>
     Mandatory Fields
@@ -799,7 +799,7 @@ def register(request):
         - name: body
           pytype: api.serializers.Register
           paramType: body
-    response_serializer: api.serializers.TCard
+    response_serializer: api.serializers.UserFull
     responseMessages:
         - code: 400
           message: Invalid Input
@@ -807,8 +807,17 @@ def register(request):
     serializer = serializers.Register(data=request.DATA)
     if not serializer.is_valid():
         return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    if not serializer.is_valid_(serializer.data):
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `access_token`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
     user = serializer.save(force_insert=True, user=request.user)
-    return Response(data=serializers.TCard(user).data, status=HTTP_201_CREATED)
+    return Response(
+        data=serializers.UserFull(user).data, status=HTTP_201_CREATED,
+    )
 
 
 @api_view(('POST', ))
@@ -858,17 +867,17 @@ def slave_tells_positions(request):
 @api_view(('GET', ))
 @csrf_exempt
 @permission_classes(())
-def t_card(request, id):
+def users_profile(request, id):
     '''
-    Retrieve a T-Card
+    Retrieve the profile of a User
     ---
     responseMessages:
         - code: 400
           message: Invalid Input
-    serializer: api.serializers.TCard
+    serializer: api.serializers.UserSimple
     '''
     return Response(
-        data=serializers.TCard(
+        data=serializers.UserSimple(
             get_object_or_404(
                 models.User,
                 id=id,
