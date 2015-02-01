@@ -10,7 +10,6 @@ from rest_framework.serializers import (
     ModelSerializer,
     Serializer,
     SerializerMethodField,
-    URLField,
 )
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
@@ -37,7 +36,7 @@ class MasterTell(ModelSerializer):
 
 class SlaveTell(ModelSerializer):
     id = IntegerField(read_only=True)
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     position = IntegerField(required=False)
@@ -59,7 +58,7 @@ class SlaveTell(ModelSerializer):
 
 class User(ModelSerializer):
     id = IntegerField(read_only=True)
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     date_of_birth = DateField(required=False)
@@ -127,7 +126,7 @@ class UserStatusAttachment(ModelSerializer):
 
 class UserStatus(ModelSerializer):
     id = IntegerField(read_only=True)
-    url = URLField(required=False)
+    url = CharField(required=False)
     notes = CharField(required=False)
 
     class Meta:
@@ -156,7 +155,7 @@ class UserURL(ModelSerializer):
 
 class SlaveTellFull(ModelSerializer):
     id = IntegerField(read_only=True)
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     position = IntegerField(required=False)
@@ -235,7 +234,7 @@ class UserStatusAttachmentFull(ModelSerializer):
 
 class UserStatusFull(ModelSerializer):
     id = IntegerField(read_only=True)
-    url = URLField(required=False)
+    url = CharField(required=False)
     notes = CharField(required=False)
     attachments = UserStatusAttachmentFull(
         help_text='List of User Status Attachments', many=True, required=False,
@@ -268,7 +267,7 @@ class UserURLFull(ModelSerializer):
 
 class UserFull(ModelSerializer):
     id = IntegerField(read_only=True)
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     date_of_birth = DateField(required=False)
@@ -316,7 +315,7 @@ class UserFull(ModelSerializer):
 
 class SlaveTellSimple(ModelSerializer):
     id = IntegerField(read_only=True)
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     position = IntegerField(required=False)
@@ -383,7 +382,7 @@ class UserStatusAttachmentSimple(ModelSerializer):
 
 class UserStatusSimple(ModelSerializer):
     id = IntegerField(read_only=True)
-    url = URLField(required=False)
+    url = CharField(required=False)
     notes = CharField(required=False)
     attachments = UserStatusAttachmentSimple(
         help_text='List of User Status Attachments', many=True, required=False,
@@ -403,7 +402,7 @@ class UserStatusSimple(ModelSerializer):
 
 class UserSimple(ModelSerializer):
     id = IntegerField(read_only=True)
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     date_of_birth = DateField(required=False)
@@ -516,7 +515,7 @@ class RegisterStatusAttachment(ModelSerializer):
 
 
 class RegisterStatus(ModelSerializer):
-    url = URLField(required=False)
+    url = CharField(required=False)
     notes = CharField(required=False)
     attachments = RegisterStatusAttachment(
         help_text='List of User Status Attachments', many=True, required=False,
@@ -545,7 +544,7 @@ class RegisterURL(ModelSerializer):
 
 
 class RegisterSlaveTell(ModelSerializer):
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     position = IntegerField(required=False)
@@ -587,7 +586,7 @@ class Register(Serializer):
             ('Public', 'Public', ),
         ),
     )
-    photo = URLField(required=False)
+    photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
     date_of_birth = DateField(required=False)

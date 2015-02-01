@@ -20,7 +20,6 @@ from django.db.models import (
     Model,
     OneToOneField,
     TextField,
-    URLField,
 )
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -64,7 +63,7 @@ class SlaveTell(Model):
     master_tell = ForeignKey(MasterTell, related_name='slave_tells')
     created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
-    photo = URLField(
+    photo = CharField(
         ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
     )
     first_name = CharField(
@@ -122,7 +121,7 @@ class User(Model):
     password = CharField(
         ugettext_lazy('Password'), db_index=True, max_length=255,
     )
-    photo = URLField(
+    photo = CharField(
         ugettext_lazy('Photo'),
         blank=True,
         db_index=True,
@@ -327,7 +326,7 @@ class UserSocialProfile(Model):
         db_index=True,
         max_length=255,
     )
-    url = URLField(ugettext_lazy('URL'), db_index=True, max_length=255)
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
 
     class Meta:
         db_table = 'api_users_social_profiles'
@@ -341,7 +340,7 @@ class UserStatus(Model):
     user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
-    url = URLField(
+    url = CharField(
         ugettext_lazy('URL'),
         blank=True,
         db_index=True,
@@ -377,7 +376,7 @@ class UserStatusAttachment(Model):
 
 class UserURL(Model):
     user = ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
-    string = URLField(ugettext_lazy('String'), db_index=True, max_length=255)
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
