@@ -714,6 +714,36 @@ def authenticate(request, backend):
     )
 
 
+@api_view(('GET', ))
+@csrf_exempt
+@permission_classes((IsAuthenticated, ))
+def master_tells_ids(request):
+    '''
+    Retrieve the IDs of Master Tells
+
+    <pre>
+    Output
+    ======
+
+    [
+        0,
+        ...,
+        0
+    ]
+    </pre>
+    ---
+    '''
+    return Response(
+        data=[
+            master_tell.id
+            for master_tell in models.MasterTell.objects.filter(
+                owned_by_id=request.user.id,
+            ).order_by('position').all()
+        ],
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('POST', ))
 @csrf_exempt
 @permission_classes((IsAuthenticated, ))
@@ -817,6 +847,36 @@ def register(request):
     user = serializer.save(force_insert=True, user=request.user)
     return Response(
         data=serializers.UserFull(user).data, status=HTTP_201_CREATED,
+    )
+
+
+@api_view(('GET', ))
+@csrf_exempt
+@permission_classes((IsAuthenticated, ))
+def slave_tells_ids(request):
+    '''
+    Retrieve the IDs of Slave Tells
+
+    <pre>
+    Output
+    ======
+
+    [
+        0,
+        ...,
+        0
+    ]
+    </pre>
+    ---
+    '''
+    return Response(
+        data=[
+            slave_tell.id
+            for slave_tell in models.SlaveTell.objects.filter(
+                owned_by_id=request.user.id,
+            ).order_by('position').all()
+        ],
+        status=HTTP_200_OK,
     )
 
 
