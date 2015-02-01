@@ -2,7 +2,15 @@
 
 from django.conf import settings
 from rest_framework.serializers import (
-    CharField, EmailField, ModelSerializer, Serializer, SerializerMethodField,
+    CharField,
+    ChoiceField,
+    DateField,
+    EmailField,
+    IntegerField,
+    ModelSerializer,
+    Serializer,
+    SerializerMethodField,
+    URLField,
 )
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
@@ -13,6 +21,8 @@ from api import models
 
 
 class UserStatusAttachment(ModelSerializer):
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -24,6 +34,9 @@ class UserStatusAttachment(ModelSerializer):
 
 
 class UserStatus(ModelSerializer):
+    id = IntegerField(read_only=True)
+    url = URLField(required=False)
+    notes = CharField(required=False)
 
     class Meta:
         fields = (
@@ -37,6 +50,8 @@ class UserStatus(ModelSerializer):
 
 
 class UserURL(ModelSerializer):
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -48,6 +63,8 @@ class UserURL(ModelSerializer):
 
 
 class UserPhoto(ModelSerializer):
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -59,6 +76,7 @@ class UserPhoto(ModelSerializer):
 
 
 class UserSocialProfile(ModelSerializer):
+    id = IntegerField(read_only=True)
 
     class Meta:
         fields = (
@@ -70,14 +88,26 @@ class UserSocialProfile(ModelSerializer):
 
 
 class User(ModelSerializer):
+    id = IntegerField(read_only=True)
+    photo = URLField(required=False)
+    first_name = CharField(required=False)
+    last_name = CharField(required=False)
+    date_of_birth = DateField(required=False)
+    gender = CharField(required=False)
+    location = CharField(required=False)
+    description = CharField(required=False)
+    phone = CharField(required=False)
 
     class Meta:
         fields = (
             'id',
             'email',
+            'email_status',
             'photo',
             'first_name',
             'last_name',
+            'date_of_birth',
+            'gender',
             'location',
             'description',
             'phone',
@@ -88,6 +118,11 @@ class User(ModelSerializer):
 
 
 class SlaveTell(ModelSerializer):
+    id = IntegerField(read_only=True)
+    photo = URLField(required=False)
+    first_name = CharField(required=False)
+    last_name = CharField(required=False)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -105,6 +140,8 @@ class SlaveTell(ModelSerializer):
 
 
 class MasterTell(ModelSerializer):
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -122,7 +159,10 @@ class TCardStatusAttachment(UserStatusAttachment):
 
 
 class TCardStatus(UserStatus):
-    attachments = UserStatusAttachment(many=True)
+    id = IntegerField(read_only=True)
+    url = URLField(required=False)
+    notes = CharField(required=False)
+    attachments = UserStatusAttachment(many=True, required=False)
 
     class Meta:
         fields = (
@@ -145,6 +185,8 @@ class TCardPhoto(UserPhoto):
 
 
 class TCardMasterTell(MasterTell):
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -162,19 +204,22 @@ class TCardSocialProfile(UserSocialProfile):
 
 
 class TCard(User):
-    status = TCardStatus()
-    urls = TCardURL(many=True)
-    photos = TCardPhoto(many=True)
-    master_tells = TCardMasterTell(many=True)
-    social_profiles = TCardSocialProfile(many=True)
+    status = TCardStatus(required=False)
+    urls = TCardURL(many=True, required=False)
+    photos = TCardPhoto(many=True, required=False)
+    master_tells = TCardMasterTell(many=True, required=False)
+    social_profiles = TCardSocialProfile(many=True, required=False)
 
     class Meta:
         fields = (
             'id',
             'email',
+            'email_status',
             'photo',
             'first_name',
             'last_name',
+            'date_of_birth',
+            'gender',
             'location',
             'description',
             'phone',
@@ -200,9 +245,12 @@ class AuthenticateResponse(User):
         fields = (
             'id',
             'email',
+            'email_status',
             'photo',
             'first_name',
             'last_name',
+            'date_of_birth',
+            'gender',
             'location',
             'description',
             'phone',
@@ -217,6 +265,7 @@ class AuthenticateResponse(User):
 
 
 class RegisterStatusAttachment(ModelSerializer):
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -227,6 +276,8 @@ class RegisterStatusAttachment(ModelSerializer):
 
 
 class RegisterStatus(ModelSerializer):
+    url = URLField(required=False)
+    notes = CharField(required=False)
     attachments = RegisterStatusAttachment(many=True, required=False)
 
     class Meta:
@@ -241,6 +292,7 @@ class RegisterStatus(ModelSerializer):
 
 
 class RegisterURL(ModelSerializer):
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -251,6 +303,7 @@ class RegisterURL(ModelSerializer):
 
 
 class RegisterPhoto(ModelSerializer):
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -261,6 +314,10 @@ class RegisterPhoto(ModelSerializer):
 
 
 class RegisterSlaveTell(ModelSerializer):
+    photo = URLField(required=False)
+    first_name = CharField(required=False)
+    last_name = CharField(required=False)
+    position = IntegerField(required=False)
 
     class Meta:
         fields = (
@@ -277,6 +334,7 @@ class RegisterSlaveTell(ModelSerializer):
 
 
 class RegisterMasterTell(ModelSerializer):
+    position = IntegerField(required=False)
     slave_tells = RegisterSlaveTell(many=True)
 
     class Meta:
@@ -292,7 +350,15 @@ class RegisterMasterTell(ModelSerializer):
 
 class RegisterSocialProfile(Serializer):
     access_token = CharField()
-    netloc = CharField()
+    netloc = ChoiceField(
+        choices=(
+            ('facebook.com', 'facebook.com', ),
+            ('google.com', 'google.com', ),
+            ('instagram.com', 'instagram.com', ),
+            ('linkedin.com', 'linkedin.com', ),
+            ('twitter.com', 'twitter.com', ),
+        ),
+    )
     url = CharField()
 
     class Meta:
@@ -306,31 +372,57 @@ class RegisterSocialProfile(Serializer):
 
 class Register(Serializer):
     email = EmailField()
-    photo = CharField()
-    first_name = CharField()
-    last_name = CharField()
-    location = CharField()
-    description = CharField()
-    phone = CharField()
-    status = RegisterStatus(help_text='Status instance')
-    urls = RegisterURL(help_text='List of URL instances', many=True)
-    photos = RegisterPhoto(help_text='List of Photo instances', many=True)
+    email_status = ChoiceField(
+        choices=(
+            ('Private', 'Private', ),
+            ('Public', 'Public', ),
+        ),
+    )
+    photo = URLField(required=False)
+    first_name = CharField(required=False)
+    last_name = CharField(required=False)
+    date_of_birth = DateField(required=False)
+    gender = ChoiceField(
+        allow_null=True,
+        choices=(
+            ('Female', 'Female', ),
+            ('Male', 'Male', ),
+        ),
+        required=False,
+    )
+    location = CharField(required=False)
+    description = CharField(required=False)
+    phone = CharField(required=False)
+    status = RegisterStatus(help_text='Status instance', required=False)
+    urls = RegisterURL(
+        help_text='List of URL instances', many=True, required=False,
+    )
+    photos = RegisterPhoto(
+        help_text='List of Photo instances', many=True, required=False,
+    )
     master_tells = RegisterMasterTell(
-        help_text='List of Master Tell instances', many=True,
+        help_text='List of Master Tell instances', many=True, required=False,
     )
     social_profiles = RegisterSocialProfile(
-        help_text='List of Social Profile instances', many=True,
+        help_text='List of Social Profile instances',
+        many=True,
+        required=False,
     )
 
     def create(self, data):
         user = models.User.objects.create(
             email=data['email'],
-            photo=data['photo'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            location=data['location'],
-            description=data['description'],
-            phone=data['phone'],
+            email_status=data['email_status'],
+            photo=data['photo'] if 'photo' in data else None,
+            first_name=data['first_name'] if 'first_name' in data else None,
+            last_name=data['last_name'] if 'last_name' in data else None,
+            date_of_birth=(
+                data['date_of_birth'] if 'date_of_birth' in data else None
+            ),
+            gender=data['gender'] if 'gender' in data else None,
+            location=data['location'] if 'location' in data else None,
+            description=data['description'] if 'description' in data else None,
+            phone=data['phone'] if 'phone' in data else None,
         )
         user.save()
         if 'status' in data:

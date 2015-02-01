@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.db.models import (
     BooleanField,
     CharField,
+    DateField,
     DateTimeField,
     EmailField,
     ForeignKey,
@@ -19,6 +20,7 @@ from django.db.models import (
     Model,
     OneToOneField,
     TextField,
+    URLField,
 )
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -62,7 +64,7 @@ class SlaveTell(Model):
     master_tell = ForeignKey(MasterTell, related_name='slave_tells')
     created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
-    photo = CharField(
+    photo = URLField(
         ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
     )
     first_name = CharField(
@@ -71,7 +73,15 @@ class SlaveTell(Model):
     last_name = CharField(
         ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
     )
-    type = CharField(ugettext_lazy('Type'), db_index=True, max_length=255)
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('File', 'File', ),
+            ('String', 'String', ),
+        ),
+        db_index=True,
+        max_length=255,
+    )
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     inserted_at = DateTimeField(
@@ -99,26 +109,70 @@ class User(Model):
     email = EmailField(
         ugettext_lazy('Email'), db_index=True, max_length=255, unique=True,
     )
+    email_status = CharField(
+        ugettext_lazy('Email Status'),
+        choices=(
+            ('Private', 'Private', ),
+            ('Public', 'Public', ),
+        ),
+        db_index=True,
+        default='Private',
+        max_length=255,
+    )
     password = CharField(
         ugettext_lazy('Password'), db_index=True, max_length=255,
     )
-    photo = CharField(
-        ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
+    photo = URLField(
+        ugettext_lazy('Photo'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     first_name = CharField(
-        ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('First Name'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     last_name = CharField(
-        ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('Last Name'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
+    date_of_birth = DateField(
+        ugettext_lazy('Date of Birth'), db_index=True, null=True,
+    )
+    gender = CharField(
+        ugettext_lazy('Gender'),
+        blank=True,
+        choices=(
+            ('Female', 'Female', ),
+            ('Male', 'Male', ),
+        ),
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     location = CharField(
-        ugettext_lazy('Location'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('Location'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     description = TextField(
-        ugettext_lazy('Description'), blank=True, db_index=True,
+        ugettext_lazy('Description'), blank=True, db_index=True, null=True,
     )
     phone = CharField(
-        ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('Phone'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),
@@ -262,9 +316,18 @@ class UserPhoto(Model):
 class UserSocialProfile(Model):
     user = ForeignKey(settings.AUTH_USER_MODEL, related_name='social_profiles')
     netloc = CharField(
-        ugettext_lazy('Network Location'), db_index=True, max_length=255,
+        ugettext_lazy('Network Location'),
+        choices=(
+            ('facebook.com', 'facebook.com', ),
+            ('google.com', 'google.com', ),
+            ('instagram.com', 'instagram.com', ),
+            ('linkedin.com', 'linkedin.com', ),
+            ('twitter.com', 'twitter.com', ),
+        ),
+        db_index=True,
+        max_length=255,
     )
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+    url = URLField(ugettext_lazy('URL'), db_index=True, max_length=255)
 
     class Meta:
         db_table = 'api_users_social_profiles'
@@ -278,10 +341,16 @@ class UserStatus(Model):
     user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
-    url = CharField(
-        ugettext_lazy('URL'), blank=True, db_index=True, max_length=255,
+    url = URLField(
+        ugettext_lazy('URL'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
-    notes = TextField(ugettext_lazy('Notes'), blank=True, db_index=True)
+    notes = TextField(
+        ugettext_lazy('Notes'), blank=True, db_index=True, null=True,
+    )
 
     class Meta:
         db_table = 'api_users_statuses'
@@ -308,7 +377,7 @@ class UserStatusAttachment(Model):
 
 class UserURL(Model):
     user = ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    string = URLField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
@@ -352,7 +421,7 @@ def pre_save_user_photo(instance, **kwargs):
 def pre_save_user_status_attachment(instance, **kwargs):
     if not instance.position:
         position = UserStatusAttachment.objects.filter(
-            status=instance.status,
+            user_status=instance.user_status,
         ).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
 

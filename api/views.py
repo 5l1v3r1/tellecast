@@ -32,6 +32,25 @@ class Users(
 ):
     '''
     Users
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + email
+    + email_status
+    + password
+
+    Choices
+    =======
+
+    + email_status
+      - Private
+      - Public
+    + gender
+      - Female
+      - Male
+    </pre>
     ---
     destroy:
         responseMessages:
@@ -82,6 +101,14 @@ class Users(
 class UsersStatuses(ModelViewSet):
     '''
     Users Statuses
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + string
+    + title
+    </pre>
     ---
     create:
         omit_parameters:
@@ -148,6 +175,13 @@ class UsersStatuses(ModelViewSet):
 class UsersStatusesAttachments(ModelViewSet):
     '''
     Users Statuses Attachments
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + string
+    </pre>
     ---
     create:
         omit_parameters:
@@ -214,6 +248,13 @@ class UsersStatusesAttachments(ModelViewSet):
 class UsersURLs(ModelViewSet):
     '''
     Users URLs
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + string
+    </pre>
     ---
     create:
         omit_parameters:
@@ -280,6 +321,13 @@ class UsersURLs(ModelViewSet):
 class UsersPhotos(ModelViewSet):
     '''
     Users Photos
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + string
+    </pre>
     ---
     create:
         omit_parameters:
@@ -346,6 +394,24 @@ class UsersPhotos(ModelViewSet):
 class UsersSocialProfiles(ModelViewSet):
     '''
     Users Social Profiles
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + netloc
+    + url
+
+    Choices
+    =======
+
+    + netloc:
+      - facebook.com
+      - google.com
+      - instagram.com
+      - linkedin.com
+      - twitter.com
+    </pre>
     ---
     create:
         omit_parameters:
@@ -413,6 +479,13 @@ class UsersSocialProfiles(ModelViewSet):
 class MasterTells(ModelViewSet):
     '''
     Master Tells
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + contents
+    </pre>
     ---
     create:
         omit_parameters:
@@ -481,6 +554,21 @@ class MasterTells(ModelViewSet):
 class SlaveTells(ModelViewSet):
     '''
     Slave Tells
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + type
+    + string
+
+    Choices
+    =======
+
+    + type:
+      - File
+      - String
+    </pre>
     ---
     create:
         omit_parameters:
@@ -552,6 +640,19 @@ class SlaveTells(ModelViewSet):
 def authenticate(request, backend):
     '''
     Authenticate an existing user using an OAuth 1/OAuth 2 access token
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + access_token
+
+    Choices
+    =======
+
+    + backend:
+      - linkedin-oauth2
+    </pre>
     ---
     parameters:
         - description: >
@@ -621,7 +722,9 @@ def master_tells_positions(request):
     Bulk update positions of Master Tells
 
     <pre>
-    Input:
+    Input
+    =====
+
     [
         {
             "id": 0,
@@ -661,6 +764,36 @@ def master_tells_positions(request):
 def register(request):
     '''
     Register a new user
+
+    <pre>
+    Mandatory Fields
+    ================
+
+    + email
+    + email_status
+
+    Choices
+    =======
+
+    + email_status:
+      - Private
+      - Public
+
+    + gender:
+      - Female
+      - Male
+
+    + master_tells.slave_tells.type:
+      - File
+      - String
+
+    + social_profiles.netloc:
+      - facebook.com
+      - google.com
+      - instagram.com
+      - linkedin.com
+      - twitter.com
+    </pre>
     ---
     parameters:
         - name: body
@@ -686,7 +819,9 @@ def slave_tells_positions(request):
     Bulk update positions of Slave Tells
 
     <pre>
-    Input:
+    Input
+    =====
+
     [
         {
             "id": 0,
