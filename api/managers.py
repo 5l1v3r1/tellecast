@@ -6,14 +6,7 @@ from django.utils.timezone import now
 
 class User(UserManager):
 
-    def _create_user(
-        self,
-        email,
-        password,
-        is_staff,
-        is_superuser,
-        **kwargs
-    ):
+    def _create_user(self, email, password, is_staff, is_superuser, **kwargs):
         now_ = now()
         if not email:
             raise ValueError('Invalid Email')

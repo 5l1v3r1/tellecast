@@ -645,10 +645,13 @@ def master_tells_positions(request):
     '''
     data = []
     for item in request.DATA:
-        master_tell = models.MasterTell.objects.get(id=item['id'])
-        master_tell.position = item['position']
-        master_tell.save()
-        data.append(serializers.MasterTell(master_tell).data)
+        try:
+            master_tell = models.MasterTell.objects.get(id=item['id'])
+            master_tell.position = item['position']
+            master_tell.save()
+            data.append(serializers.MasterTell(master_tell).data)
+        except models.MasterTell.DoesNotExist:
+            pass
     return Response(data=data, status=HTTP_200_OK)
 
 
@@ -707,10 +710,13 @@ def slave_tells_positions(request):
     '''
     data = []
     for item in request.DATA:
-        slave_tell = models.SlaveTell.objects.get(id=item['id'])
-        slave_tell.position = item['position']
-        slave_tell.save()
-        data.append(serializers.SlaveTell(slave_tell).data)
+        try:
+            slave_tell = models.SlaveTell.objects.get(id=item['id'])
+            slave_tell.position = item['position']
+            slave_tell.save()
+            data.append(serializers.SlaveTell(slave_tell).data)
+        except models.SlaveTell.DoesNotExist:
+            pass
     return Response(data=data, status=HTTP_200_OK)
 
 

@@ -15,6 +15,6 @@ class Backend(object):
 
     def get_user(self, user_id):
         try:
-            return models.User.objects.get(pk=user_id)
+            return models.User.objects.get(id=user_id)
         except models.User.DoesNotExist:
             pass

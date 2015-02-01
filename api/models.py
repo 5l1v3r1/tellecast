@@ -30,6 +30,71 @@ from rest_framework.authtoken.models import Token
 from api import managers
 
 
+class MasterTell(Model):
+    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
+    owned_by = ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='master_tells',
+    )
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+    inserted_at = DateTimeField(
+        ugettext_lazy('Inserted At'),
+        auto_now_add=True,
+        default=now,
+        db_index=True,
+    )
+    updated_at = DateTimeField(
+        ugettext_lazy('Updated At'),
+        auto_now=True,
+        default=now,
+        db_index=True,
+    )
+
+    class Meta:
+        db_table = 'api_master_tells'
+        get_latest_by = 'position'
+        ordering = ('position', )
+        verbose_name = 'master tell'
+        verbose_name_plural = 'master tells'
+
+
+class SlaveTell(Model):
+    master_tell = ForeignKey(MasterTell, related_name='slave_tells')
+    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
+    owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
+    photo = CharField(
+        ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
+    )
+    first_name = CharField(
+        ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255,
+    )
+    last_name = CharField(
+        ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
+    )
+    type = CharField(ugettext_lazy('Type'), db_index=True, max_length=255)
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+    inserted_at = DateTimeField(
+        ugettext_lazy('Inserted At'),
+        auto_now_add=True,
+        default=now,
+        db_index=True,
+    )
+    updated_at = DateTimeField(
+        ugettext_lazy('Updated At'),
+        auto_now=True,
+        default=now,
+        db_index=True,
+    )
+
+    class Meta:
+        db_table = 'api_slave_tells'
+        get_latest_by = 'position'
+        ordering = ('position', )
+        verbose_name = 'slave tell'
+        verbose_name_plural = 'slave tells'
+
+
 class User(Model):
     email = EmailField(
         ugettext_lazy('Email'), db_index=True, max_length=255, unique=True,
@@ -106,7 +171,7 @@ class User(Model):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
     def natural_key(self):
-        return (self.get_username(),)
+        return (self.get_username(), )
 
     def get_full_name(self):
         return '%(first_name)s %(last_name)s' % {
@@ -182,6 +247,33 @@ class User(Model):
         return True
 
 
+class UserPhoto(Model):
+    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='photos')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+        db_table = 'api_users_photos'
+        ordering = ('position', )
+        verbose_name = 'user photo'
+        verbose_name_plural = 'user photos'
+
+
+class UserSocialProfile(Model):
+    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='social_profiles')
+    netloc = CharField(
+        ugettext_lazy('Network Location'), db_index=True, max_length=255,
+    )
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_users_social_profiles'
+        get_latest_by = 'netloc'
+        ordering = ('netloc', )
+        verbose_name = 'user social profile'
+        verbose_name_plural = 'user social profiles'
+
+
 class UserStatus(Model):
     user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
@@ -226,105 +318,25 @@ class UserURL(Model):
         verbose_name = 'user url'
         verbose_name_plural = 'user urls'
 
-
-class UserPhoto(Model):
-    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='photos')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-        db_table = 'api_users_photos'
-        ordering = ('position', )
-        verbose_name = 'user photo'
-        verbose_name_plural = 'user photos'
-
-
-class UserSocialProfile(Model):
-    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='social_profiles')
-    netloc = CharField(
-        ugettext_lazy('Network Location'), db_index=True, max_length=255,
-    )
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-
-    class Meta:
-        db_table = 'api_users_social_profiles'
-        get_latest_by = 'netloc'
-        ordering = ('netloc', )
-        verbose_name = 'user social profile'
-        verbose_name_plural = 'user social profiles'
-
-
-class MasterTell(Model):
-    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
-    owned_by = ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='master_tells',
-    )
-    contents = TextField(ugettext_lazy('Contents'), db_index=True)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-    inserted_at = DateTimeField(
-        ugettext_lazy('Inserted At'),
-        auto_now_add=True,
-        default=now,
-        db_index=True,
-    )
-    updated_at = DateTimeField(
-        ugettext_lazy('Updated At'),
-        auto_now=True,
-        default=now,
-        db_index=True,
-    )
-
-    class Meta:
-        db_table = 'api_master_tells'
-        get_latest_by = 'position'
-        ordering = ('position', )
-        verbose_name = 'master tell'
-        verbose_name_plural = 'master tells'
-
-
-class SlaveTell(Model):
-    master_tell = ForeignKey(MasterTell, related_name='slave_tells')
-    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
-    owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
-    photo = CharField(
-        ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
-    )
-    first_name = CharField(
-        ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255,
-    )
-    last_name = CharField(
-        ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
-    )
-    type = CharField(ugettext_lazy('Type'), db_index=True, max_length=255)
-    contents = TextField(ugettext_lazy('Contents'), db_index=True)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-    inserted_at = DateTimeField(
-        ugettext_lazy('Inserted At'),
-        auto_now_add=True,
-        default=now,
-        db_index=True,
-    )
-    updated_at = DateTimeField(
-        ugettext_lazy('Updated At'),
-        auto_now=True,
-        default=now,
-        db_index=True,
-    )
-
-    class Meta:
-        db_table = 'api_slave_tells'
-        get_latest_by = 'position'
-        ordering = ('position', )
-        verbose_name = 'slave tell'
-        verbose_name_plural = 'slave tells'
-
 user_logged_in.disconnect(update_last_login)
 
 
-@receiver(user_logged_in, sender=User)
-def update_signed_in_at(user, **kwargs):
-    user.signed_in_at = now()
-    user.save(update_fields=['signed_in_at'])
+@receiver(pre_save, sender=MasterTell)
+def pre_save_master_tell(instance, **kwargs):
+    if not instance.position:
+        position = MasterTell.objects.filter(
+            owned_by=instance.owned_by,
+        ).aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
+@receiver(pre_save, sender=SlaveTell)
+def pre_save_slave_tell(instance, **kwargs):
+    if not instance.position:
+        position = SlaveTell.objects.filter(
+            owned_by=instance.owned_by,
+        ).aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
 
 
 @receiver(pre_save, sender=UserPhoto)
@@ -354,19 +366,7 @@ def pre_save_user_url(instance, **kwargs):
         instance.position = position + 1 if position else 1
 
 
-@receiver(pre_save, sender=MasterTell)
-def pre_save_master_tell(instance, **kwargs):
-    if not instance.position:
-        position = MasterTell.objects.filter(
-            owned_by=instance.owned_by,
-        ).aggregate(Max('position'))['position__max']
-        instance.position = position + 1 if position else 1
-
-
-@receiver(pre_save, sender=SlaveTell)
-def pre_save_slave_tell(instance, **kwargs):
-    if not instance.position:
-        position = SlaveTell.objects.filter(
-            owned_by=instance.owned_by,
-        ).aggregate(Max('position'))['position__max']
-        instance.position = position + 1 if position else 1
+@receiver(user_logged_in, sender=User)
+def update_signed_in_at(user, **kwargs):
+    user.signed_in_at = now()
+    user.save(update_fields=['signed_in_at'])
