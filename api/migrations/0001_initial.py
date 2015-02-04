@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
             name='SlaveTell',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('photo', models.CharField(max_length=255, null=True, verbose_name='Photo', db_index=True)),
+                ('photo', models.CharField(db_index=True, max_length=255, null=True, verbose_name='Photo', blank=True)),
                 ('first_name', models.CharField(db_index=True, max_length=255, null=True, verbose_name='First Name', blank=True)),
                 ('last_name', models.CharField(db_index=True, max_length=255, null=True, verbose_name='Last Name', blank=True)),
                 ('type', models.CharField(db_index=True, max_length=255, verbose_name='Type', choices=[(b'File', b'File'), (b'String', b'String')])),

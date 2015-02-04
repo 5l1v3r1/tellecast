@@ -64,7 +64,11 @@ class SlaveTell(Model):
     created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
     photo = CharField(
-        ugettext_lazy('Photo'), db_index=True, max_length=255, null=True,
+        ugettext_lazy('Photo'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     first_name = CharField(
         ugettext_lazy('First Name'),
