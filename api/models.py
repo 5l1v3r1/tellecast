@@ -64,13 +64,21 @@ class SlaveTell(Model):
     created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
     photo = CharField(
-        ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('Photo'), db_index=True, max_length=255, null=True,
     )
     first_name = CharField(
-        ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('First Name'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     last_name = CharField(
-        ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255,
+        ugettext_lazy('Last Name'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
     )
     type = CharField(
         ugettext_lazy('Type'),
@@ -82,7 +90,9 @@ class SlaveTell(Model):
         max_length=255,
     )
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
-    description = TextField(ugettext_lazy('Description'), db_index=True)
+    description = TextField(
+        ugettext_lazy('Description'), blank=True, db_index=True, null=True,
+    )
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),
@@ -144,7 +154,7 @@ class User(Model):
         null=True,
     )
     date_of_birth = DateField(
-        ugettext_lazy('Date of Birth'), db_index=True, null=True,
+        ugettext_lazy('Date of Birth'), blank=True, db_index=True, null=True,
     )
     gender = CharField(
         ugettext_lazy('Gender'),
