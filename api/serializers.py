@@ -39,6 +39,7 @@ class SlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
+    description = CharField(required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -49,6 +50,7 @@ class SlaveTell(ModelSerializer):
             'last_name',
             'type',
             'contents',
+            'description',
             'position',
             'inserted_at',
             'updated_at',
@@ -158,6 +160,7 @@ class SlaveTellFull(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
+    description = CharField(required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -168,6 +171,7 @@ class SlaveTellFull(ModelSerializer):
             'last_name',
             'type',
             'contents',
+            'description',
             'position',
             'inserted_at',
             'updated_at',
@@ -318,6 +322,7 @@ class SlaveTellSimple(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
+    description = CharField(required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -328,6 +333,7 @@ class SlaveTellSimple(ModelSerializer):
             'last_name',
             'type',
             'contents',
+            'description',
             'position',
             'inserted_at',
             'updated_at',
@@ -547,6 +553,7 @@ class RegisterSlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
+    description = CharField(required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -556,6 +563,7 @@ class RegisterSlaveTell(ModelSerializer):
             'last_name',
             'type',
             'contents',
+            'description',
             'position',
             'inserted_at',
             'updated_at',

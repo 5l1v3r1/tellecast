@@ -82,6 +82,7 @@ class SlaveTell(Model):
         max_length=255,
     )
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    description = TextField(ugettext_lazy('Description'), db_index=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),

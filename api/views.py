@@ -121,7 +121,7 @@ class SlaveTells(ModelViewSet):
     ================
 
     + type
-    + string
+    + contents
 
     Choices
     =======
