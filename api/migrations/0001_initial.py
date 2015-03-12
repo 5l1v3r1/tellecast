@@ -27,6 +27,7 @@ class Migration(migrations.Migration):
                 ('location', models.CharField(db_index=True, max_length=255, null=True, verbose_name='Location', blank=True)),
                 ('description', models.TextField(db_index=True, null=True, verbose_name='Description', blank=True)),
                 ('phone', models.CharField(db_index=True, max_length=255, null=True, verbose_name='Phone', blank=True)),
+                ('phone_status', models.CharField(default=b'Private', max_length=255, verbose_name='Phone Status', db_index=True, choices=[(b'Private', b'Private'), (b'Public', b'Public')])),
                 ('inserted_at', models.DateTimeField(default=django.utils.timezone.now, auto_now_add=True, verbose_name='Inserted At', db_index=True)),
                 ('updated_at', models.DateTimeField(default=django.utils.timezone.now, auto_now=True, verbose_name='Updated At', db_index=True)),
                 ('signed_in_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Signed In At', db_index=True)),

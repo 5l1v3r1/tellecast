@@ -201,6 +201,16 @@ class User(Model):
         max_length=255,
         null=True,
     )
+    phone_status = CharField(
+        ugettext_lazy('Phone Status'),
+        choices=(
+            ('Private', 'Private', ),
+            ('Public', 'Public', ),
+        ),
+        db_index=True,
+        default='Private',
+        max_length=255,
+    )
     inserted_at = DateTimeField(
         ugettext_lazy('Inserted At'),
         auto_now_add=True,

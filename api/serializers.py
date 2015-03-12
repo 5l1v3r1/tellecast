@@ -82,6 +82,7 @@ class User(ModelSerializer):
             'location',
             'description',
             'phone',
+            'phone_status',
             'inserted_at',
             'updated_at',
         )
@@ -306,6 +307,7 @@ class UserFull(ModelSerializer):
             'location',
             'description',
             'phone',
+            'phone_status',
             'inserted_at',
             'updated_at',
             'master_tells',
@@ -437,6 +439,7 @@ class UserSimple(ModelSerializer):
             'location',
             'description',
             'phone',
+            'phone_status',
             'inserted_at',
             'updated_at',
             'master_tells',
@@ -466,6 +469,7 @@ class AuthenticateResponse(User):
             'location',
             'description',
             'phone',
+            'phone_status',
             'inserted_at',
             'updated_at',
             'token',
@@ -609,6 +613,12 @@ class Register(Serializer):
     location = CharField(required=False)
     description = CharField(required=False)
     phone = CharField(required=False)
+    phone_status = ChoiceField(
+        choices=(
+            ('Private', 'Private', ),
+            ('Public', 'Public', ),
+        ),
+    )
     photos = RegisterPhoto(
         help_text='List of User Photos', many=True, required=False,
     )
@@ -639,6 +649,7 @@ class Register(Serializer):
             location=data['location'] if 'location' in data else None,
             description=data['description'] if 'description' in data else None,
             phone=data['phone'] if 'phone' in data else None,
+            phone_status=data['phone_status'],
         )
         user.save()
         if 'status' in data:

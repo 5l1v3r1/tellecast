@@ -238,6 +238,7 @@ class Users(
 
     + email
     + email_status
+    + phone_status
     + password
 
     Choices
@@ -246,6 +247,11 @@ class Users(
     + email_status
       - Private
       - Public
+
+    + phone_status
+      - Private
+      - Public
+
     + gender
       - Female
       - Male
@@ -842,11 +848,16 @@ def register(request):
 
     + email
     + email_status
+    + phone_status
 
     Choices
     =======
 
     + email_status:
+      - Private
+      - Public
+
+    + phone_status:
       - Private
       - Public
 
