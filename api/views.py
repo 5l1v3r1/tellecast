@@ -127,8 +127,21 @@ class SlaveTells(ModelViewSet):
     =======
 
     + type:
-      - File
-      - String
+      - application/pdf
+      - audio/aac
+      - audio/mp4
+      - audio/mpeg
+      - audio/mpeg3
+      - audio/x-mpeg3
+      - image/bmp
+      - image/gif
+      - image/jpeg
+      - image/png
+      - text/plain
+      - video/3gpp
+      - video/mp4
+      - video/mpeg
+      - video/x-mpeg
     </pre>
     ---
     create:
@@ -842,8 +855,21 @@ def register(request):
       - Male
 
     + master_tells.slave_tells.type:
-      - File
-      - String
+      - application/pdf
+      - audio/aac
+      - audio/mp4
+      - audio/mpeg
+      - audio/mpeg3
+      - audio/x-mpeg3
+      - image/bmp
+      - image/gif
+      - image/jpeg
+      - image/png
+      - text/plain
+      - video/3gpp
+      - video/mp4
+      - video/mpeg
+      - video/x-mpeg
 
     + social_profiles.netloc:
       - facebook.com

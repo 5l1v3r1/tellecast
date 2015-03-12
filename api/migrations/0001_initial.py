@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('photo', models.CharField(db_index=True, max_length=255, null=True, verbose_name='Photo', blank=True)),
                 ('first_name', models.CharField(db_index=True, max_length=255, null=True, verbose_name='First Name', blank=True)),
                 ('last_name', models.CharField(db_index=True, max_length=255, null=True, verbose_name='Last Name', blank=True)),
-                ('type', models.CharField(db_index=True, max_length=255, verbose_name='Type', choices=[(b'File', b'File'), (b'String', b'String')])),
+                ('type', models.CharField(db_index=True, max_length=255, verbose_name='Type', choices=[(b'application/pdf', b'application/pdf'), (b'audio/aac', b'audio/aac'), (b'audio/mp4', b'audio/mp4'), (b'audio/mpeg', b'audio/mpeg'), (b'audio/mpeg3', b'audio/mpeg3'), (b'audio/x-mpeg3', b'audio/x-mpeg3'), (b'image/bmp', b'image/bmp'), (b'image/gif', b'image/gif'), (b'image/jpeg', b'image/jpeg'), (b'image/png', b'image/png'), (b'text/plain', b'text/plain'), (b'video/3gpp', b'video/3gpp'), (b'video/mp4', b'video/mp4'), (b'video/mpeg', b'video/mpeg'), (b'video/x-mpeg', b'video/x-mpeg')])),
                 ('contents', models.TextField(verbose_name='Contents', db_index=True)),
                 ('description', models.TextField(db_index=True, null=True, verbose_name='Description', blank=True)),
                 ('position', models.IntegerField(verbose_name='Position', db_index=True)),
