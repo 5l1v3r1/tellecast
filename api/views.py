@@ -128,16 +128,19 @@ class SlaveTells(ModelViewSet):
 
     + type:
       - application/pdf
+      - audio/*
       - audio/aac
       - audio/mp4
       - audio/mpeg
       - audio/mpeg3
       - audio/x-mpeg3
+      - image/*
       - image/bmp
       - image/gif
       - image/jpeg
       - image/png
       - text/plain
+      - video/*
       - video/3gpp
       - video/mp4
       - video/mpeg
@@ -867,16 +870,19 @@ def register(request):
 
     + master_tells.slave_tells.type:
       - application/pdf
+      - audio/*
       - audio/aac
       - audio/mp4
       - audio/mpeg
       - audio/mpeg3
       - audio/x-mpeg3
+      - image/*
       - image/bmp
       - image/gif
       - image/jpeg
       - image/png
       - text/plain
+      - video/*
       - video/3gpp
       - video/mp4
       - video/mpeg
