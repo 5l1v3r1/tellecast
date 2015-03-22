@@ -12,45 +12,6 @@ from ujson import dumps
 from api import models
 
 
-class MasterTell(ModelSerializer):
-    id = IntegerField(read_only=True)
-    position = IntegerField(required=False)
-
-    class Meta:
-        fields = (
-            'id',
-            'contents',
-            'position',
-            'inserted_at',
-            'updated_at',
-        )
-        model = models.MasterTell
-
-
-class SlaveTell(ModelSerializer):
-    id = IntegerField(read_only=True)
-    photo = CharField(required=False)
-    first_name = CharField(required=False)
-    last_name = CharField(required=False)
-    description = CharField(required=False)
-    position = IntegerField(required=False)
-
-    class Meta:
-        fields = (
-            'id',
-            'photo',
-            'first_name',
-            'last_name',
-            'type',
-            'contents',
-            'description',
-            'position',
-            'inserted_at',
-            'updated_at',
-        )
-        model = models.SlaveTell
-
-
 class User(ModelSerializer):
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
@@ -147,6 +108,45 @@ class UserURL(ModelSerializer):
             'position',
         )
         model = models.UserURL
+
+
+class MasterTell(ModelSerializer):
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
+
+    class Meta:
+        fields = (
+            'id',
+            'contents',
+            'position',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.MasterTell
+
+
+class SlaveTell(ModelSerializer):
+    id = IntegerField(read_only=True)
+    photo = CharField(required=False)
+    first_name = CharField(required=False)
+    last_name = CharField(required=False)
+    description = CharField(required=False)
+    position = IntegerField(required=False)
+
+    class Meta:
+        fields = (
+            'id',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents',
+            'description',
+            'position',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
 
 
 class SlaveTellFull(ModelSerializer):
@@ -468,11 +468,11 @@ class RegisterRequestSocialProfile(Serializer):
     access_token = CharField()
     netloc = ChoiceField(
         choices=(
-            ('facebook.com', 'facebook.com', ),
-            ('google.com', 'google.com', ),
-            ('instagram.com', 'instagram.com', ),
-            ('linkedin.com', 'linkedin.com', ),
-            ('twitter.com', 'twitter.com', ),
+            ('facebook.com', 'facebook.com',),
+            ('google.com', 'google.com',),
+            ('instagram.com', 'instagram.com',),
+            ('linkedin.com', 'linkedin.com',),
+            ('twitter.com', 'twitter.com',),
         ),
     )
     url = CharField()
@@ -500,7 +500,9 @@ class RegisterRequestStatusAttachment(ModelSerializer):
 class RegisterRequestStatus(ModelSerializer):
     url = CharField(required=False)
     notes = CharField(required=False)
-    attachments = RegisterRequestStatusAttachment(help_text='List of User Status Attachments', many=True, required=False)
+    attachments = RegisterRequestStatusAttachment(
+        help_text='List of User Status Attachments', many=True, required=False,
+    )
 
     class Meta:
         fields = (
@@ -565,8 +567,8 @@ class RegisterRequest(Serializer):
     email = EmailField()
     email_status = ChoiceField(
         choices=(
-            ('Private', 'Private', ),
-            ('Public', 'Public', ),
+            ('Private', 'Private',),
+            ('Public', 'Public',),
         ),
     )
     photo = CharField(required=False)
@@ -576,8 +578,8 @@ class RegisterRequest(Serializer):
     gender = ChoiceField(
         allow_null=True,
         choices=(
-            ('Female', 'Female', ),
-            ('Male', 'Male', ),
+            ('Female', 'Female',),
+            ('Male', 'Male',),
         ),
         required=False,
     )
@@ -586,8 +588,8 @@ class RegisterRequest(Serializer):
     phone = CharField(required=False)
     phone_status = ChoiceField(
         choices=(
-            ('Private', 'Private', ),
-            ('Public', 'Public', ),
+            ('Private', 'Private',),
+            ('Public', 'Public',),
         ),
     )
     photos = RegisterRequestPhoto(help_text='List of User Photos', many=True, required=False)

@@ -23,12 +23,12 @@ site.unregister(Site)
 site.unregister(Token)
 
 router = SimpleRouter()
-router.register(r'users', views.Users, base_name='users')
 router.register(r'users/photos', views.UsersPhotos, base_name='users-photos')
 router.register(r'users/social-profiles', views.UsersSocialProfiles, base_name='users-social-profiles')
-router.register(r'users/statuses', views.UsersStatuses, base_name='users-statuses')
 router.register(r'users/statuses/attachments', views.UsersStatusesAttachments, base_name='users-statuses-attachments')
+router.register(r'users/statuses', views.UsersStatuses, base_name='users-statuses')
 router.register(r'users/urls', views.UsersURLs, base_name='users-urls')
+router.register(r'users', views.Users, base_name='users')
 router.register(r'master-tells', views.MasterTells, base_name='master-tells')
 router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
 
@@ -37,7 +37,6 @@ urlpatterns = patterns(
     url(r'^$', RedirectView.as_view(url=reverse_lazy('admin:index'))),
     url(r'^admin/', include(site.urls)),
     url(r'^swagger/', include(urls)),
-    url(r'^api/', include(router.urls)),
     url(r'^api/register/', views.register),
     url(r'^api/authenticate/(?P<backend>[^/]+)/$', views.authenticate),
     url(r'^api/users/(?P<id>\d+)/profile/$', views.users_profile),
@@ -45,6 +44,7 @@ urlpatterns = patterns(
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
+    url(r'^api/', include(router.urls)),
 )
 
 if settings.DEBUG:

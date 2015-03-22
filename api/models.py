@@ -19,8 +19,8 @@ class User(Model):
     email_status = CharField(
         ugettext_lazy('Email Status'),
         choices=(
-            ('Private', 'Private', ),
-            ('Public', 'Public', ),
+            ('Private', 'Private',),
+            ('Public', 'Public',),
         ),
         db_index=True,
         default='Private',
@@ -34,8 +34,8 @@ class User(Model):
         ugettext_lazy('Gender'),
         blank=True,
         choices=(
-            ('Female', 'Female', ),
-            ('Male', 'Male', ),
+            ('Female', 'Female',),
+            ('Male', 'Male',),
         ),
         db_index=True,
         max_length=255,
@@ -47,8 +47,8 @@ class User(Model):
     phone_status = CharField(
         ugettext_lazy('Phone Status'),
         choices=(
-            ('Private', 'Private', ),
-            ('Public', 'Public', ),
+            ('Private', 'Private',),
+            ('Public', 'Public',),
         ),
         db_index=True,
         default='Private',
@@ -131,11 +131,11 @@ class UserSocialProfile(Model):
     netloc = CharField(
         ugettext_lazy('Network Location'),
         choices=(
-            ('facebook.com', 'facebook.com', ),
-            ('google.com', 'google.com', ),
-            ('instagram.com', 'instagram.com', ),
-            ('linkedin.com', 'linkedin.com', ),
-            ('twitter.com', 'twitter.com', ),
+            ('facebook.com', 'facebook.com',),
+            ('google.com', 'google.com',),
+            ('instagram.com', 'instagram.com',),
+            ('linkedin.com', 'linkedin.com',),
+            ('twitter.com', 'twitter.com',),
         ),
         db_index=True,
         max_length=255,
