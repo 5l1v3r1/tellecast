@@ -706,16 +706,21 @@ class RegisterRequest(Serializer):
                     user=user, netloc=social_profile['netloc'], url=social_profile['url'],
                 )
                 if social_profile['netloc'] == 'linkedin.com':
-                    response = get_backend(
-                        settings.AUTHENTICATION_BACKENDS, 'linkedin-oauth2',
-                    )(
-                        strategy=DjangoStrategy(storage=DjangoStorage())
-                    ).user_data(
-                        social_profile['access_token']
-                    )
-                    UserSocialAuth.objects.create(
-                        user=user, provider='linkedin-oauth2', uid=response['id'], extra_data=dumps(response),
-                    ).save()
+                    response = None
+                    try:
+                        response = get_backend(
+                            settings.AUTHENTICATION_BACKENDS, 'linkedin-oauth2',
+                        )(
+                            strategy=DjangoStrategy(storage=DjangoStorage())
+                        ).user_data(
+                            social_profile['access_token']
+                        )
+                    except Exception:
+                        pass
+                    if response and 'id' in response:
+                        UserSocialAuth.objects.create(
+                            user=user, provider='linkedin-oauth2', uid=response['id'], extra_data=dumps(response),
+                        ).save()
         return user
 
     def is_valid_(self, data):
@@ -725,14 +730,21 @@ class RegisterRequest(Serializer):
             return False
         for social_profile in data['social_profiles']:
             if social_profile['netloc'] == 'linkedin.com':
-                response = get_backend(
-                    settings.AUTHENTICATION_BACKENDS, 'linkedin-oauth2',
-                )(
-                    strategy=DjangoStrategy(storage=DjangoStorage())
-                ).user_data(
-                    social_profile['access_token']
-                )
-                if not UserSocialAuth.objects.filter(provider='linkedin-oauth2', uid=response['id']).count():
+                response = None
+                try:
+                    response = get_backend(
+                        settings.AUTHENTICATION_BACKENDS, 'linkedin-oauth2',
+                    )(
+                        strategy=DjangoStrategy(storage=DjangoStorage())
+                    ).user_data(
+                        social_profile['access_token']
+                    )
+                except Exception:
+                    pass
+                uid = response['id'] if response and 'id' in response else ''
+                if not uid:
+                    return False
+                if not UserSocialAuth.objects.filter(provider='linkedin-oauth2', uid=uid).count():
                     return True
         return False
 
