@@ -5,9 +5,9 @@ from os.path import dirname, join
 ADMINS = (
     ('...', '...'),
 )
-AUTH_USER_MODEL = 'api.User'
+AUTH_USER_MODEL = 'auth.User'
 AUTHENTICATION_BACKENDS = (
-    'api.backends.Backend',
+    'django.contrib.auth.backends.ModelBackend',
     'social.backends.facebook.FacebookOAuth2',
     'social.backends.google.GoogleOAuth2',
     'social.backends.instagram.InstagramOAuth2',
@@ -24,15 +24,9 @@ DATABASES = {
         'USER': '...',
     }
 }
-DEBUG = False
+DEBUG = True
 DEFAULT_FROM_EMAIL = '...'
-EMAIL_HOST = '...'
-EMAIL_HOST_PASSWORD = '...'
-EMAIL_HOST_USER = '...'
-EMAIL_PORT = '...'
-EMAIL_SUBJECT_PREFIX = '...'
-EMAIL_USE_SSL = '...'
-EMAIL_USE_TLS = '...'
+EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1099511627776
 INSTALLED_APPS = (
     'api',
@@ -43,6 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs.urls',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.gis',
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
@@ -62,34 +57,38 @@ LOGGING = {
     'handlers': {
         'mail_admins': {
             'class': 'django.utils.log.AdminEmailHandler',
-            'filters': ['require_debug_false'],
+            'filters': [
+                'require_debug_false',
+            ],
             'level': 'ERROR',
         }
     },
     'loggers': {
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': [
+                'mail_admins',
+            ],
             'level': 'ERROR',
             'propagate': True,
         },
     },
     'version': 1,
 }
+MAILGUN_ACCESS_KEY = '...'
+MAILGUN_SERVER_NAME = '...'
 MANAGERS = ADMINS
 MEDIA_ROOT = join(dirname(__file__), 'media')
 MEDIA_URL = '/media/'
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.common.BrokenLinkEmailsMiddleware',
     'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
+        'api.authentication.Authentication',
     ),
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.FormParser',
@@ -121,15 +120,67 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '...'
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '...'
 SOCIAL_AUTH_INSTAGRAM_KEY = '...'
 SOCIAL_AUTH_INSTAGRAM_SECRET = '...'
+SOCIAL_AUTH_LINKEDIN_EXTRA_DATA = [
+    ('apiStandardProfileRequest', 'api_standard_profile_request',),
+    ('currentShare', 'current_share',),
+    ('firstName', 'first_name',),
+    ('formattedName', 'formatted_name',),
+    ('formattedPhoneticName', 'formatted_phonetic_name',),
+    ('headline', 'headline',),
+    ('id', 'id',),
+    ('industry', 'industry',),
+    ('lastName', 'last_name',),
+    ('location', 'location',),
+    ('maidenName', 'maiden_name',),
+    ('numConnections', 'num_connections',),
+    ('numConnectionsCapped', 'num_connections_capped',),
+    ('phoneticFirstName', 'phonetic_first_name',),
+    ('phoneticLastName', 'phonetic_last_name',),
+    ('pictureUrl', 'picture_url',),
+    ('pictureUrls::(original)', 'picture_urls::(original)',),
+    ('positions', 'positions',),
+    ('publicProfileUrl', 'public_profile_url',),
+    ('siteStandardProfileRequest', 'site_standard_profile_request',),
+    ('specialties', 'specialties',),
+    ('summary', 'summary',),
+]
+SOCIAL_AUTH_LINKEDIN_FIELD_SELECTORS = [
+    'api-standard-profile-request',
+    'current-share',
+    'first-name',
+    'formatted-name',
+    'formatted-phonetic-name',
+    'headline',
+    'id',
+    'industry',
+    'last-name',
+    'location',
+    'maiden-name',
+    'num-connections',
+    'num-connections-capped',
+    'phonetic-first-name',
+    'phonetic-last-name',
+    'picture-url',
+    'picture-urls::(original)',
+    'positions',
+    'public-profile-url',
+    'site-standard-profile-request',
+    'specialties',
+    'summary',
+]
 SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = '...'
 SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = '...'
+SOCIAL_AUTH_LINKEDIN_SCOPE = [
+    'r_basicprofile',
+    'r_emailaddress',
+]
 SOCIAL_AUTH_PIPELINE = (
     'social.pipeline.social_auth.social_details',
     'social.pipeline.social_auth.social_uid',
     'social.pipeline.social_auth.auth_allowed',
     'social.pipeline.social_auth.social_user',
-    'social.pipeline.user.get_username',
-    'social.pipeline.social_auth.associate_by_email',
+    'social.pipeline.partial.save_status_to_session',
+    'api.pipeline.create_user',
     'social.pipeline.social_auth.associate_user',
     'social.pipeline.social_auth.load_extra_data',
     'social.pipeline.user.user_details',
@@ -154,7 +205,13 @@ SWAGGER_SETTINGS = {
     'api_path': '/',
     'api_version': '1.0',
     'doc_expansion': 'list',
-    'enabled_methods': ['delete', 'get', 'patch', 'post', 'put', ],
+    'enabled_methods': [
+        'delete',
+        'get',
+        'patch',
+        'post',
+        'put',
+    ],
     'exclude_namespaces': [],
     'info': {
         'contact': '...',

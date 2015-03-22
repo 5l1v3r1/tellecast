@@ -1,89 +1,238 @@
 # -*- coding: utf-8 -*-
 
 from django.conf import settings
-from django.contrib.auth.hashers import (
-    check_password, make_password, is_password_usable,
-)
-from django.contrib.auth.models import update_last_login
-from django.contrib.auth.signals import user_logged_in
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
 from django.db.models import (
-    BooleanField,
-    CharField,
-    DateField,
-    DateTimeField,
-    EmailField,
-    ForeignKey,
-    IntegerField,
-    Max,
-    Model,
-    OneToOneField,
-    TextField,
+    CharField, DateField, DateTimeField, EmailField, ForeignKey, IntegerField, Max, Model, OneToOneField, TextField,
 )
+from django.contrib.auth.models import User as Administrator
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
-from django.utils.crypto import salted_hmac
 from django.utils.translation import ugettext_lazy
-from rest_framework.authtoken.models import Token
+from itsdangerous import TimestampSigner
+from social.apps.django_app.default.models import UserSocialAuth
 
-from api import managers
+
+class User(Model):
+    email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
+    email_status = CharField(
+        ugettext_lazy('Email Status'),
+        choices=(
+            ('Private', 'Private', ),
+            ('Public', 'Public', ),
+        ),
+        db_index=True,
+        default='Private',
+        max_length=255,
+    )
+    photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
+    first_name = CharField(ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255, null=True)
+    last_name = CharField(ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255, null=True)
+    date_of_birth = DateField(ugettext_lazy('Date of Birth'), blank=True, db_index=True, null=True)
+    gender = CharField(
+        ugettext_lazy('Gender'),
+        blank=True,
+        choices=(
+            ('Female', 'Female', ),
+            ('Male', 'Male', ),
+        ),
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
+    location = CharField(ugettext_lazy('Location'), blank=True, db_index=True, max_length=255, null=True)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
+    phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
+    phone_status = CharField(
+        ugettext_lazy('Phone Status'),
+        choices=(
+            ('Private', 'Private', ),
+            ('Public', 'Public', ),
+        ),
+        db_index=True,
+        default='Private',
+        max_length=255,
+    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_users'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
+    def __str__(self):
+        return '%(first_name)s %(last_name)s (%(email)s)' % {
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+        }
+
+    def __unicode__(self):
+        return u'%(first_name)s %(last_name)s (%(email)s)' % {
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+        }
+
+    def get_token(self):
+        return TimestampSigner(settings.SECRET_KEY).sign(str(self.id))
+
+    def has_permission(self, object=None):
+        if isinstance(object, User):
+            return object.id == self.id
+        if isinstance(object, UserStatus):
+            return object.user.id == self.id
+        if isinstance(object, UserStatusAttachment):
+            return object.user_status.user.id == self.id
+        if isinstance(object, UserURL):
+            return object.user.id == self.id
+        if isinstance(object, UserPhoto):
+            return object.user.id == self.id
+        if isinstance(object, UserSocialProfile):
+            return object.user.id == self.id
+        if isinstance(object, MasterTell):
+            return object.owned_by.id == self.id
+        if isinstance(object, SlaveTell):
+            return object.owned_by.id == self.id
+
+    def is_authenticated(self):
+        return True
+
+    def is_valid(self, token):
+        try:
+            return str(self.id) == TimestampSigner(settings.SECRET_KEY).unsign(token)
+        except Exception:
+            pass
+        return False
+
+
+class UserPhoto(Model):
+    user = ForeignKey(User, related_name='photos')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+        db_table = 'api_users_photos'
+        ordering = (
+            'user',
+            'position',
+        )
+        verbose_name = 'User Photo'
+        verbose_name_plural = 'User Photos'
+
+
+class UserSocialProfile(Model):
+    user = ForeignKey(User, related_name='social_profiles')
+    netloc = CharField(
+        ugettext_lazy('Network Location'),
+        choices=(
+            ('facebook.com', 'facebook.com', ),
+            ('google.com', 'google.com', ),
+            ('instagram.com', 'instagram.com', ),
+            ('linkedin.com', 'linkedin.com', ),
+            ('twitter.com', 'twitter.com', ),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_users_social_profiles'
+        ordering = (
+            'user',
+            'netloc',
+        )
+        unique_together = (
+            'user',
+            'netloc',
+        )
+        verbose_name = 'User Social Profile'
+        verbose_name_plural = 'User Social Profiles'
+
+
+class UserStatus(Model):
+    user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
+    url = CharField(ugettext_lazy('URL'), blank=True, db_index=True, max_length=255, null=True)
+    notes = TextField(ugettext_lazy('Notes'), blank=True, db_index=True, null=True)
+
+    class Meta:
+        db_table = 'api_users_statuses'
+        ordering = (
+            'user',
+            'string',
+        )
+        verbose_name = 'User Status'
+        verbose_name_plural = 'User Statuses'
+
+    def __str__(self):
+        return self.string
+
+    def __unicode__(self):
+        return self.string
+
+
+class UserStatusAttachment(Model):
+    user_status = ForeignKey(UserStatus, db_column='user_status_id', related_name='attachments')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+        db_table = 'api_users_statuses_attachments'
+        ordering = (
+            'user_status',
+            'position',
+        )
+        verbose_name = 'User Status Attachment'
+        verbose_name_plural = 'User Status Attachments'
+
+
+class UserURL(Model):
+    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+        db_table = 'api_users_urls'
+        ordering = (
+            'user',
+            'position',
+        )
+        verbose_name = 'User URL'
+        verbose_name_plural = 'User URLs'
 
 
 class MasterTell(Model):
-    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
-    owned_by = ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='master_tells',
-    )
+    created_by = ForeignKey(User, related_name='+')
+    owned_by = ForeignKey(User, related_name='master_tells')
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
-    inserted_at = DateTimeField(
-        ugettext_lazy('Inserted At'),
-        auto_now_add=True,
-        default=now,
-        db_index=True,
-    )
-    updated_at = DateTimeField(
-        ugettext_lazy('Updated At'),
-        auto_now=True,
-        default=now,
-        db_index=True,
-    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
 
     class Meta:
         db_table = 'api_master_tells'
-        get_latest_by = 'position'
-        ordering = ('position', )
-        verbose_name = 'master tell'
-        verbose_name_plural = 'master tells'
+        ordering = (
+            'owned_by',
+            'position',
+        )
+        verbose_name = 'Master Tell'
+        verbose_name_plural = 'Master Tells'
 
 
 class SlaveTell(Model):
     master_tell = ForeignKey(MasterTell, related_name='slave_tells')
     created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
-    photo = CharField(
-        ugettext_lazy('Photo'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    first_name = CharField(
-        ugettext_lazy('First Name'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    last_name = CharField(
-        ugettext_lazy('Last Name'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
+    photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
+    first_name = CharField(ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255, null=True)
+    last_name = CharField(ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255, null=True)
     type = CharField(
         ugettext_lazy('Type'),
         choices=(
@@ -110,355 +259,31 @@ class SlaveTell(Model):
         max_length=255,
     )
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
-    description = TextField(
-        ugettext_lazy('Description'), blank=True, db_index=True, null=True,
-    )
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
-    inserted_at = DateTimeField(
-        ugettext_lazy('Inserted At'),
-        auto_now_add=True,
-        default=now,
-        db_index=True,
-    )
-    updated_at = DateTimeField(
-        ugettext_lazy('Updated At'),
-        auto_now=True,
-        default=now,
-        db_index=True,
-    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
 
     class Meta:
         db_table = 'api_slave_tells'
-        get_latest_by = 'position'
-        ordering = ('position', )
-        verbose_name = 'slave tell'
-        verbose_name_plural = 'slave tells'
-
-
-class User(Model):
-    email = EmailField(
-        ugettext_lazy('Email'), db_index=True, max_length=255, unique=True,
-    )
-    email_status = CharField(
-        ugettext_lazy('Email Status'),
-        choices=(
-            ('Private', 'Private', ),
-            ('Public', 'Public', ),
-        ),
-        db_index=True,
-        default='Private',
-        max_length=255,
-    )
-    password = CharField(
-        ugettext_lazy('Password'), db_index=True, max_length=255,
-    )
-    photo = CharField(
-        ugettext_lazy('Photo'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    first_name = CharField(
-        ugettext_lazy('First Name'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    last_name = CharField(
-        ugettext_lazy('Last Name'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    date_of_birth = DateField(
-        ugettext_lazy('Date of Birth'), blank=True, db_index=True, null=True,
-    )
-    gender = CharField(
-        ugettext_lazy('Gender'),
-        blank=True,
-        choices=(
-            ('Female', 'Female', ),
-            ('Male', 'Male', ),
-        ),
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    location = CharField(
-        ugettext_lazy('Location'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    description = TextField(
-        ugettext_lazy('Description'), blank=True, db_index=True, null=True,
-    )
-    phone = CharField(
-        ugettext_lazy('Phone'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    phone_status = CharField(
-        ugettext_lazy('Phone Status'),
-        choices=(
-            ('Private', 'Private', ),
-            ('Public', 'Public', ),
-        ),
-        db_index=True,
-        default='Private',
-        max_length=255,
-    )
-    inserted_at = DateTimeField(
-        ugettext_lazy('Inserted At'),
-        auto_now_add=True,
-        default=now,
-        db_index=True,
-    )
-    updated_at = DateTimeField(
-        ugettext_lazy('Updated At'),
-        auto_now=True,
-        default=now,
-        db_index=True,
-    )
-    signed_in_at = DateTimeField(
-        ugettext_lazy('Signed In At'), default=now, db_index=True,
-    )
-    is_staff = BooleanField(
-        ugettext_lazy('Is Staff?'), default=False, db_index=True,
-    )
-    is_superuser = BooleanField(
-        ugettext_lazy('Is Superuser?'), default=False, db_index=True,
-    )
-    is_active = BooleanField(
-        ugettext_lazy('Is Active?'), default=True, db_index=True,
-    )
-
-    REQUIRED_FIELDS = []
-    USERNAME_FIELD = 'email'
-
-    objects = managers.User()
-
-    class Meta:
-        db_table = 'api_users'
-        ordering = ('-inserted_at', )
-        verbose_name = 'user'
-        verbose_name_plural = 'users'
-
-    def __str__(self):
-        return self.get_username()
-
-    def check_password(self, password):
-
-        def setter(password):
-            self.set_password(password)
-            self.save(update_fields=['password'])
-
-        return check_password(password, self.password, setter)
-
-    def email_user(self, subject, message, from_email=None, **kwargs):
-        send_mail(subject, message, from_email, [self.email], **kwargs)
-
-    def natural_key(self):
-        return (self.get_username(), )
-
-    def get_full_name(self):
-        return '%(first_name)s %(last_name)s' % {
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-        }
-
-    def get_token(self):
-        try:
-            return self.auth_token
-        except ObjectDoesNotExist:
-            pass
-        return Token.objects.create(user=self)
-
-    def set_password(self, password):
-        self.password = make_password(password)
-
-    def get_session_auth_hash(self):
-        return salted_hmac(
-            'django.contrib.auth.models.AbstractBaseUser.'
-            'get_session_auth_hash',
-            self.password
-        ).hexdigest()
-
-    def get_short_name(self):
-        return self.first_name
-
-    def get_username(self):
-        return getattr(self, self.USERNAME_FIELD)
-
-    def set_unusable_password(self):
-        self.password = make_password(None)
-
-    def has_module_perms(self, *args, **kwargs):
-        if self.is_active:
-            return True
-
-    def has_perm(self, permission, object=None):
-        if self.is_staff:
-            return True
-        if self.is_superuser:
-            return True
-        if not self.is_active:
-            if isinstance(object, User):
-                return object.id == self.id
-            if isinstance(object, UserStatus):
-                return object.user_id == self.id
-            if isinstance(object, UserStatusAttachment):
-                return object.user_status.user_id == self.id
-            if isinstance(object, UserURL):
-                return object.user_id == self.id
-            if isinstance(object, UserPhoto):
-                return object.user_id == self.id
-            if isinstance(object, UserSocialProfile):
-                return object.user_id == self.id
-            if isinstance(object, MasterTell):
-                return object.owned_by == self.id
-            if isinstance(object, SlaveTell):
-                return object.owned_by == self.id
-
-    def has_perms(self, permissions, object=None):
-        for permission in permissions:
-            if not self.has_perm(permission, object):
-                return False
-
-    def has_usable_password(self):
-        return is_password_usable(self.password)
-
-    def is_anonymous(self):
-        return False
-
-    def is_authenticated(self):
-        return True
-
-
-class UserPhoto(Model):
-    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='photos')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-        db_table = 'api_users_photos'
-        ordering = ('position', )
-        verbose_name = 'user photo'
-        verbose_name_plural = 'user photos'
-
-
-class UserSocialProfile(Model):
-    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='social_profiles')
-    netloc = CharField(
-        ugettext_lazy('Network Location'),
-        choices=(
-            ('facebook.com', 'facebook.com', ),
-            ('google.com', 'google.com', ),
-            ('instagram.com', 'instagram.com', ),
-            ('linkedin.com', 'linkedin.com', ),
-            ('twitter.com', 'twitter.com', ),
-        ),
-        db_index=True,
-        max_length=255,
-    )
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-
-    class Meta:
-        db_table = 'api_users_social_profiles'
-        get_latest_by = 'netloc'
-        ordering = ('netloc', )
-        verbose_name = 'user social profile'
-        verbose_name_plural = 'user social profiles'
-
-
-class UserStatus(Model):
-    user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
-    url = CharField(
-        ugettext_lazy('URL'),
-        blank=True,
-        db_index=True,
-        max_length=255,
-        null=True,
-    )
-    notes = TextField(
-        ugettext_lazy('Notes'), blank=True, db_index=True, null=True,
-    )
-
-    class Meta:
-        db_table = 'api_users_statuses'
-        get_latest_by = 'id'
-        ordering = ('id', )
-        verbose_name = 'user status'
-        verbose_name_plural = 'user statuses'
-
-
-class UserStatusAttachment(Model):
-    user_status = ForeignKey(
-        UserStatus, db_column='user_status_id', related_name='attachments',
-    )
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-        db_table = 'api_users_statuses_attachments'
-        get_latest_by = 'position'
-        ordering = ('position', )
-        verbose_name = 'user status attachment'
-        verbose_name_plural = 'user status attachments'
-
-
-class UserURL(Model):
-    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-        db_table = 'api_users_urls'
-        get_latest_by = 'position'
-        ordering = ('position', )
-        verbose_name = 'user url'
-        verbose_name_plural = 'user urls'
-
-user_logged_in.disconnect(update_last_login)
-
-
-@receiver(pre_save, sender=MasterTell)
-def pre_save_master_tell(instance, **kwargs):
-    if not instance.position:
-        position = MasterTell.objects.filter(
-            owned_by=instance.owned_by,
-        ).aggregate(Max('position'))['position__max']
-        instance.position = position + 1 if position else 1
-
-
-@receiver(pre_save, sender=SlaveTell)
-def pre_save_slave_tell(instance, **kwargs):
-    if not instance.position:
-        position = SlaveTell.objects.filter(
-            owned_by=instance.owned_by,
-        ).aggregate(Max('position'))['position__max']
-        instance.position = position + 1 if position else 1
+        ordering = (
+            'owned_by',
+            'master_tell',
+            'position',
+        )
+        verbose_name = 'Slave Tell'
+        verbose_name_plural = 'Slave Tells'
 
 
 @receiver(pre_save, sender=UserPhoto)
-def pre_save_user_photo(instance, **kwargs):
+def user_photo_pre_save(instance, **kwargs):
     if not instance.position:
-        position = UserPhoto.objects.filter(
-            user=instance.user,
-        ).aggregate(Max('position'))['position__max']
+        position = UserPhoto.objects.filter(user=instance.user).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
 
 
 @receiver(pre_save, sender=UserStatusAttachment)
-def pre_save_user_status_attachment(instance, **kwargs):
+def user_status_attachment_pre_save(instance, **kwargs):
     if not instance.position:
         position = UserStatusAttachment.objects.filter(
             user_status=instance.user_status,
@@ -467,15 +292,71 @@ def pre_save_user_status_attachment(instance, **kwargs):
 
 
 @receiver(pre_save, sender=UserURL)
-def pre_save_user_url(instance, **kwargs):
+def user_url_pre_save(instance, **kwargs):
     if not instance.position:
-        position = UserURL.objects.filter(
-            user=instance.user,
-        ).aggregate(Max('position'))['position__max']
+        position = UserURL.objects.filter(user=instance.user).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
 
 
-@receiver(user_logged_in, sender=User)
-def update_signed_in_at(user, **kwargs):
-    user.signed_in_at = now()
-    user.save(update_fields=['signed_in_at'])
+@receiver(pre_save, sender=MasterTell)
+def master_tell_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = MasterTell.objects.filter(owned_by=instance.owned_by).aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
+@receiver(pre_save, sender=SlaveTell)
+def slave_tell_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = SlaveTell.objects.filter(owned_by=instance.owned_by).aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
+def __str__(self):
+    return '%(first_name)s %(last_name)s (%(email)s)' % {
+        'email': self.email,
+        'first_name': self.first_name,
+        'last_name': self.last_name,
+    }
+
+Administrator.__str__ = __str__
+
+
+def __unicode__(self):
+    return u'%(first_name)s %(last_name)s (%(email)s)' % {
+        'email': self.email,
+        'first_name': self.first_name,
+        'last_name': self.last_name,
+    }
+
+Administrator.__unicode__ = __unicode__
+
+Administrator._meta.get_field('is_active').verbose_name = ugettext_lazy('Active?')
+Administrator._meta.get_field('is_staff').verbose_name = ugettext_lazy('Staff?')
+Administrator._meta.get_field('is_superuser').verbose_name = ugettext_lazy('Superuser?')
+Administrator._meta.get_field('last_login').verbose_name = ugettext_lazy('Last Signed In At')
+Administrator._meta.verbose_name = ugettext_lazy('administrator')
+Administrator._meta.verbose_name_plural = ugettext_lazy('administrators')
+
+
+def __str__(self):
+    return '%(provider)s - %(uid)s' % {
+        'provider': self.provider,
+        'uid': self.uid,
+    }
+
+UserSocialAuth.__str__ = __str__
+
+
+def __unicode__(self):
+    return u'%(provider)s - %(uid)s' % {
+        'provider': self.provider,
+        'uid': self.uid,
+    }
+
+UserSocialAuth.__unicode__ = __unicode__
+
+UserSocialAuth._meta.get_field('extra_data').verbose_name = ugettext_lazy('Extra Data')
+UserSocialAuth._meta.get_field('uid').verbose_name = ugettext_lazy('UID')
+UserSocialAuth._meta.verbose_name = ugettext_lazy('user')
+UserSocialAuth._meta.verbose_name_plural = ugettext_lazy('users')

@@ -9,6 +9,7 @@ django-suit==0.2.12
 djangorestframework==3.0.3
 docutils==0.12
 drf-extensions==0.2.6
+itsdangerous==0.24
 oauthlib==0.7.2
 psycopg2==2.5.4
 python-openid==2.2.5

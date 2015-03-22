@@ -2,14 +2,7 @@
 
 from django.conf import settings
 from rest_framework.serializers import (
-    CharField,
-    ChoiceField,
-    DateField,
-    EmailField,
-    IntegerField,
-    ModelSerializer,
-    Serializer,
-    SerializerMethodField,
+    CharField, ChoiceField, DateField, EmailField, IntegerField, ModelSerializer, Serializer, SerializerMethodField,
 )
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
@@ -183,9 +176,7 @@ class SlaveTellFull(ModelSerializer):
 class MasterTellFull(ModelSerializer):
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
-    slave_tells = SlaveTellFull(
-        help_text='List of Slave Tells', many=True, required=False,
-    )
+    slave_tells = SlaveTellFull(help_text='List of Slave Tells', many=True, required=False)
 
     class Meta:
         fields = (
@@ -241,9 +232,7 @@ class UserStatusFull(ModelSerializer):
     id = IntegerField(read_only=True)
     url = CharField(required=False)
     notes = CharField(required=False)
-    attachments = UserStatusAttachmentFull(
-        help_text='List of User Status Attachments', many=True, required=False,
-    )
+    attachments = UserStatusAttachmentFull(help_text='List of User Status Attachments', many=True, required=False)
 
     class Meta:
         fields = (
@@ -280,19 +269,11 @@ class UserFull(ModelSerializer):
     location = CharField(required=False)
     description = CharField(required=False)
     phone = CharField(required=False)
-    master_tells = MasterTellFull(
-        help_text='List of Master Tells', many=True, required=False,
-    )
-    photos = UserPhotoFull(
-        help_text='List of User Photos', many=True, required=False,
-    )
-    social_profiles = UserSocialProfileFull(
-        help_text='List of User Social Profiles', many=True, required=False,
-    )
+    master_tells = MasterTellFull(help_text='List of Master Tells', many=True, required=False)
+    photos = UserPhotoFull(help_text='List of User Photos', many=True, required=False)
+    social_profiles = UserSocialProfileFull(help_text='List of User Social Profiles', many=True, required=False)
     status = UserStatusFull(help_text='User Status', required=False)
-    urls = UserURLFull(
-        help_text='List of User URLs', many=True, required=False,
-    )
+    urls = UserURLFull(help_text='List of User URLs', many=True, required=False)
 
     class Meta:
         fields = (
@@ -346,9 +327,7 @@ class SlaveTellSimple(ModelSerializer):
 class MasterTellSimple(ModelSerializer):
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
-    slave_tells = SlaveTellSimple(
-        help_text='List of Slave Tells', many=True, required=False,
-    )
+    slave_tells = SlaveTellSimple(help_text='List of Slave Tells', many=True, required=False)
 
     class Meta:
         fields = (
@@ -392,9 +371,7 @@ class UserStatusSimple(ModelSerializer):
     id = IntegerField(read_only=True)
     url = CharField(required=False)
     notes = CharField(required=False)
-    attachments = UserStatusAttachmentSimple(
-        help_text='List of User Status Attachments', many=True, required=False,
-    )
+    attachments = UserStatusAttachmentSimple(help_text='List of User Status Attachments', many=True, required=False)
 
     class Meta:
         fields = (
@@ -418,12 +395,8 @@ class UserSimple(ModelSerializer):
     location = CharField(required=False)
     description = CharField(required=False)
     phone = CharField(required=False)
-    master_tells = MasterTellSimple(
-        help_text='List of Master Tells', many=True, required=False,
-    )
-    photos = UserPhotoSimple(
-        help_text='List of User Photos', many=True, required=False,
-    )
+    master_tells = MasterTellSimple(help_text='List of Master Tells', many=True, required=False)
+    photos = UserPhotoSimple(help_text='List of User Photos', many=True, required=False)
     status = UserStatusSimple(help_text='User Status', required=False)
 
     class Meta:
@@ -527,9 +500,7 @@ class RegisterStatusAttachment(ModelSerializer):
 class RegisterStatus(ModelSerializer):
     url = CharField(required=False)
     notes = CharField(required=False)
-    attachments = RegisterStatusAttachment(
-        help_text='List of User Status Attachments', many=True, required=False,
-    )
+    attachments = RegisterStatusAttachment(help_text='List of User Status Attachments', many=True, required=False)
 
     class Meta:
         fields = (
@@ -619,21 +590,11 @@ class Register(Serializer):
             ('Public', 'Public', ),
         ),
     )
-    photos = RegisterPhoto(
-        help_text='List of User Photos', many=True, required=False,
-    )
-    social_profiles = RegisterSocialProfile(
-        help_text='List of User Social Profiles',
-        many=True,
-        required=False,
-    )
+    photos = RegisterPhoto(help_text='List of User Photos', many=True, required=False)
+    social_profiles = RegisterSocialProfile(help_text='List of User Social Profiles', many=True, required=False)
     status = RegisterStatus(help_text='User Status', required=False)
-    urls = RegisterURL(
-        help_text='List of User URLs', many=True, required=False,
-    )
-    master_tells = RegisterMasterTell(
-        help_text='List of Master Tells', many=True, required=False,
-    )
+    urls = RegisterURL(help_text='List of User URLs', many=True, required=False)
+    master_tells = RegisterMasterTell(help_text='List of Master Tells', many=True, required=False)
 
     def create(self, data):
         user = models.User.objects.create(
@@ -642,9 +603,7 @@ class Register(Serializer):
             photo=data['photo'] if 'photo' in data else None,
             first_name=data['first_name'] if 'first_name' in data else None,
             last_name=data['last_name'] if 'last_name' in data else None,
-            date_of_birth=(
-                data['date_of_birth'] if 'date_of_birth' in data else None
-            ),
+            date_of_birth=data['date_of_birth'] if 'date_of_birth' in data else None,
             gender=data['gender'] if 'gender' in data else None,
             location=data['location'] if 'location' in data else None,
             description=data['description'] if 'description' in data else None,
@@ -657,14 +616,9 @@ class Register(Serializer):
             if 'attachments' in data['status']:
                 attachments = data['status']['attachments']
                 del data['status']['attachments']
-            user_status = models.UserStatus.objects.create(
-                user=user, **data['status']
-            )
-            user_status.save()
+            user_status = models.UserStatus.objects.create(user=user, **data['status'])
             for attachment in attachments:
-                models.UserStatusAttachment.objects.create(
-                    user_status=user_status, **attachment
-                ).save()
+                models.UserStatusAttachment.objects.create(user_status=user_status, **attachment)
         if 'urls' in data:
             for url in data['urls']:
                 models.UserURL.objects.create(user=user, **url).save()
@@ -677,24 +631,16 @@ class Register(Serializer):
                 if 'slave_tells' in master_tell:
                     slave_tells = master_tell['slave_tells']
                     del master_tell['slave_tells']
-                master_tell = models.MasterTell.objects.create(
-                    created_by=user, owned_by=user, **master_tell
-                )
-                master_tell.save()
+                master_tell = models.MasterTell.objects.create(created_by=user, owned_by=user, **master_tell)
                 for slave_tell in slave_tells:
                     models.SlaveTell.objects.create(
-                        master_tell=master_tell,
-                        created_by=user,
-                        owned_by=user,
-                        **slave_tell
-                    ).save()
+                        master_tell=master_tell, created_by=user, owned_by=user, **slave_tell
+                    )
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
                 models.UserSocialProfile.objects.create(
-                    user=user,
-                    netloc=social_profile['netloc'],
-                    url=social_profile['url'],
-                ).save()
+                    user=user, netloc=social_profile['netloc'], url=social_profile['url'],
+                )
                 if social_profile['netloc'] == 'linkedin.com':
                     response = get_backend(
                         settings.AUTHENTICATION_BACKENDS, 'linkedin-oauth2',
@@ -704,10 +650,7 @@ class Register(Serializer):
                         social_profile['access_token']
                     )
                     UserSocialAuth.objects.create(
-                        user=user,
-                        provider='linkedin-oauth2',
-                        uid=response['id'],
-                        extra_data=dumps(response),
+                        user=user, provider='linkedin-oauth2', uid=response['id'], extra_data=dumps(response),
                     ).save()
         return user
 
@@ -723,9 +666,6 @@ class Register(Serializer):
                 ).user_data(
                     social_profile['access_token']
                 )
-                if UserSocialAuth.objects.filter(
-                    provider='linkedin-oauth2',
-                    uid=response['id'],
-                ).count():
+                if UserSocialAuth.objects.filter(provider='linkedin-oauth2', uid=response['id']).count():
                     return False
         return True
