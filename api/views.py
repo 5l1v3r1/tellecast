@@ -18,65 +18,99 @@ from social.strategies.django_strategy import DjangoStrategy
 from api import models, serializers
 
 
-@api_view(('POST', ))
+@api_view(('POST',))
 @permission_classes(())
 def register(request):
     '''
-    Register a user
+    Register a User
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + email
+        - Type: string
+        - Status: mandatory
+
     + email_status
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Private
+            - Public
+
+    + photo
+        - Type: string
+        - Status: optional
+
+    + first_name
+        - Type: string
+        - Status: optional
+
+    + last_name
+        - Type: string
+        - Status: optional
+
+    + date_of_birth
+        - Type: date
+        - Status: optional
+
+    + gender
+        - Type: string
+        - Status: optional
+        - Choices:
+            - Female
+            - Male
+
+    + location
+        - Type: string
+        - Status: optional
+
+    + description
+        - Type: string
+        - Status: optional
+
+    + phone
+        - Type: string
+        - Status: optional
+
     + phone_status
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Private
+            - Public
 
-    Choices
-    =======
+    + photos (see /api/users/photos/ for more details)
+        - Type: list (a list of photo objects)
+        - Status: optional
 
-    + email_status:
-      - Private
-      - Public
+    + social_profiles (see /api/users/social-profiles/ for more details)
+        - Type: list (a list of social profile objects)
+        - Status: mandatory (at least "linkedin.com" is mandatory)
 
-    + phone_status:
-      - Private
-      - Public
+    + status (see /api/users/status/ for more details)
+        - Type: dictionary (one status object)
+        - Status: optional
 
-    + gender:
-      - Female
-      - Male
+    + urls (see /api/users/urls/ for more details)
+        - Type: list (a list of url objects)
+        - Status: optional
 
-    + master_tells.slave_tells.type:
-      - application/pdf
-      - audio/*
-      - audio/aac
-      - audio/mp4
-      - audio/mpeg
-      - audio/mpeg3
-      - audio/x-mpeg3
-      - image/*
-      - image/bmp
-      - image/gif
-      - image/jpeg
-      - image/png
-      - text/plain
-      - video/*
-      - video/3gpp
-      - video/mp4
-      - video/mpeg
-      - video/x-mpeg
+    + master tells (see /api/users/master-tells/ for more details)
+        - Type: list (a list of master tell objects; with a list of slave tell objects)
+        - Status: optional
 
-    + social_profiles.netloc:
-      - facebook.com
-      - google.com
-      - instagram.com
-      - linkedin.com
-      - twitter.com
+    + slave tells (see /api/users/slave-tells/ for more details)
+        - Type: list (a list of slave tell objects; as "slave_tells" under "master_tells" [above])
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    omit_parameters:
-        - form
     parameters:
         - name: body
           pytype: api.serializers.RegisterRequest
@@ -100,23 +134,30 @@ def register(request):
     return Response(data=serializers.RegisterResponse(user).data, status=HTTP_201_CREATED)
 
 
-@api_view(('POST', ))
+@api_view(('POST',))
 @permission_classes(())
 def authenticate(request, backend):
     '''
-    Authenticate an existing user using an OAuth 1/OAuth 2 access token
+    Authenticate an existing User using an OAuth 1/OAuth 2 access token
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
+
+    + backend
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - linkedin-oauth2
 
     + access_token
+        - Type: string
+        - Status: mandatory
 
-    Choices
-    =======
+    Output
+    ======
 
-    + backend:
-      - linkedin-oauth2
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
     parameters:
@@ -175,50 +216,74 @@ def authenticate(request, backend):
 
 
 class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixin, UpdateModelMixin):
+
     '''
     Users
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + email
-    + email_status
-    + phone_status
-    + password
-
-    Choices
-    =======
+        - Type: string
+        - Status: mandatory
 
     + email_status
-      - Private
-      - Public
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Private
+            - Public
 
-    + phone_status
-      - Private
-      - Public
+    + photo
+        - Type: string
+        - Status: optional
+
+    + first_name
+        - Type: string
+        - Status: optional
+
+    + last_name
+        - Type: string
+        - Status: optional
+
+    + date_of_birth
+        - Type: date
+        - Status: optional
 
     + gender
-      - Female
-      - Male
+        - Type: string
+        - Status: optional
+        - Choices:
+            - Female
+            - Male
+
+    + location
+        - Type: string
+        - Status: optional
+
+    + description
+        - Type: string
+        - Status: optional
+
+    + phone
+        - Type: string
+        - Status: optional
+
+    + phone_status
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Private
+            - Public
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.User
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.User
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -235,19 +300,35 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
             - name: body
               paramType: body
               pytype: api.serializers.User
+        response_serializer: api.serializers.User
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.User
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.User
+        response_serializer: api.serializers.User
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
     queryset = models.User.objects.all()
-    renderer_classes = (JSONRenderer, )
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.User
 
 
-@api_view(('GET', ))
+@api_view(('GET',))
 @permission_classes(())
 def users_profile(request, id):
     '''
@@ -262,43 +343,29 @@ def users_profile(request, id):
 
 
 class UsersPhotos(ModelViewSet):
+
     '''
     Users Photos
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + string
+        - Type: string
+        - Status: mandatory
+
+    + position
+        - Type: integer
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserPhoto
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserPhoto
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserPhoto
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -308,6 +375,17 @@ class UsersPhotos(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.UserPhoto
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserPhoto
+        response_serializer: api.serializers.UserPhoto
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     update:
         omit_parameters:
             - form
@@ -315,14 +393,30 @@ class UsersPhotos(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.UserPhoto
+        response_serializer: api.serializers.UserPhoto
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.UserPhoto
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserPhoto
+        response_serializer: api.serializers.UserPhoto
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserPhoto
 
     def perform_create(self, serializer):
@@ -333,54 +427,35 @@ class UsersPhotos(ModelViewSet):
 
 
 class UsersSocialProfiles(ModelViewSet):
+
     '''
     Users Social Profiles
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + netloc
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - facebook.com
+            - google.com
+            - instagram.com
+            - linkedin.com
+            - twitter.com
+
     + url
+        - Type: string
+        - Status: mandatory
 
-    Choices
-    =======
+    Output
+    ======
 
-    + netloc:
-      - facebook.com
-      - google.com
-      - instagram.com
-      - linkedin.com
-      - twitter.com
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserSocialProfile
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserSocialProfile
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -390,6 +465,17 @@ class UsersSocialProfiles(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.UserSocialProfile
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserSocialProfile
+        response_serializer: api.serializers.UserSocialProfile
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     update:
         omit_parameters:
             - form
@@ -397,15 +483,30 @@ class UsersSocialProfiles(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.UserSocialProfile
+        response_serializer: api.serializers.UserSocialProfile
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.UserSocialProfile
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserSocialProfile
+        response_serializer: api.serializers.UserSocialProfile
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    queryset = models.UserSocialProfile.objects.all()
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserSocialProfile
 
     def perform_create(self, serializer):
@@ -416,44 +517,37 @@ class UsersSocialProfiles(ModelViewSet):
 
 
 class UsersStatuses(ModelViewSet):
+
     '''
     Users Statuses
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + string
+        - Type: string
+        - Status: mandatory
+
     + title
+        - Type: string
+        - Status: mandatory
+
+    + url
+        - Type: string
+        - Status: optional
+
+    + notes
+        - Type: string
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserStatus
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserStatus
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserStatus
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserStatus
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -463,6 +557,17 @@ class UsersStatuses(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.UserStatus
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserStatus
+        response_serializer: api.serializers.UserStatus
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     update:
         omit_parameters:
             - form
@@ -470,14 +575,30 @@ class UsersStatuses(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.UserStatus
+        response_serializer: api.serializers.UserStatus
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.UserStatus
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserStatus
+        response_serializer: api.serializers.UserStatus
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserStatus
 
     def perform_create(self, serializer):
@@ -488,43 +609,29 @@ class UsersStatuses(ModelViewSet):
 
 
 class UsersStatusesAttachments(ModelViewSet):
+
     '''
     Users Statuses Attachments
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + string
+        - Type: string
+        - Status: mandatory
+
+    + position
+        - Type: integer
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserStatusAttachment
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserStatusAttachment
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserStatusAttachment
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserStatusAttachment
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -534,6 +641,17 @@ class UsersStatusesAttachments(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.UserStatusAttachment
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserStatusAttachment
+        response_serializer: api.serializers.UserStatusAttachment
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     update:
         omit_parameters:
             - form
@@ -541,14 +659,30 @@ class UsersStatusesAttachments(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.UserStatusAttachment
+        response_serializer: api.serializers.UserStatusAttachment
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.UserStatusAttachment
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserStatusAttachment
+        response_serializer: api.serializers.UserStatusAttachment
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserStatusAttachment
 
     def perform_create(self, serializer):
@@ -561,43 +695,29 @@ class UsersStatusesAttachments(ModelViewSet):
 
 
 class UsersURLs(ModelViewSet):
+
     '''
     Users URLs
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + string
+        - Type: string
+        - Status: mandatory
+
+    + position
+        - Type: integer
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserURL
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserURL
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UserURL
-    partial_update:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.UserURL
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -607,6 +727,17 @@ class UsersURLs(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.UserURL
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserURL
+        response_serializer: api.serializers.UserURL
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     update:
         omit_parameters:
             - form
@@ -614,14 +745,30 @@ class UsersURLs(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.UserURL
+        response_serializer: api.serializers.UserURL
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.UserURL
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UserURL
+        response_serializer: api.serializers.UserURL
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserURL
 
     def perform_create(self, serializer):
@@ -632,31 +779,28 @@ class UsersURLs(ModelViewSet):
 
 
 class MasterTells(ModelViewSet):
+
     '''
     Master Tells
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
 
     + contents
+        - Type: string
+        - Status: mandatory
+
+    + position
+        - Type: integer
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.MasterTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
         parameters:
             - name: inserted_at
@@ -669,22 +813,22 @@ class MasterTells(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.MasterTell
-    partial_update:
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.MasterTell
+    create:
         omit_parameters:
             - form
         parameters:
             - name: body
               paramType: body
               pytype: api.serializers.MasterTell
+        response_serializer: api.serializers.MasterTell
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.MasterTell
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.MasterTell
     update:
         omit_parameters:
             - form
@@ -692,14 +836,30 @@ class MasterTells(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.MasterTell
+        response_serializer: api.serializers.MasterTell
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.MasterTell
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MasterTell
+        response_serializer: api.serializers.MasterTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.MasterTell
 
     def perform_create(self, serializer):
@@ -716,20 +876,27 @@ class MasterTells(ModelViewSet):
         return queryset.order_by('position').all()
 
 
-@api_view(('GET', ))
-@permission_classes((IsAuthenticated, ))
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
 def master_tells_ids(request):
     '''
     Retrieve the IDs of Master Tells
 
     <pre>
+    Input
+    =====
+
+    + N/A
+
     Output
     ======
 
     [
-        0,
+        1,
         ...,
-        0
+        ...,
+        ...,
+        n,
     ]
     </pre>
     ---
@@ -743,8 +910,8 @@ def master_tells_ids(request):
     )
 
 
-@api_view(('POST', ))
-@permission_classes((IsAuthenticated, ))
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
 def master_tells_positions(request):
     '''
     Bulk update positions of Master Tells
@@ -755,17 +922,26 @@ def master_tells_positions(request):
 
     [
         {
-            "id": 0,
-            "position": 0
+            "id": 1,
+            "position": 1,
         },
         ...,
+        ...,
+        ...,
         {
-            "id": 0,
-            "position": 0
+            "id": n,
+            "position": n,
         }
     ]
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
+    omit_parameters:
+        - form
     parameters:
         - name: body
           paramType: body
@@ -787,55 +963,67 @@ def master_tells_positions(request):
 
 
 class SlaveTells(ModelViewSet):
+
     '''
     Slave Tells
 
     <pre>
-    Mandatory Fields
-    ================
+    Input
+    =====
+
+    + photo
+        - Type: string
+        - Status: optional
+
+    + first_name
+        - Type: string
+        - Status: optional
+
+    + last_name
+        - Type: string
+        - Status: optional
 
     + type
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - application/pdf
+            - audio/*
+            - audio/aac
+            - audio/mp4
+            - audio/mpeg
+            - audio/mpeg3
+            - audio/x-mpeg3
+            - image/*
+            - image/bmp
+            - image/gif
+            - image/jpeg
+            - image/png
+            - text/plain
+            - video/*
+            - video/3gpp
+            - video/mp4
+            - video/mpeg
+            - video/x-mpeg
+
     + contents
+        - Type: string
+        - Status: mandatory
 
-    Choices
-    =======
+    + description
+        - Type: string
+        - Status: optional
 
-    + type:
-      - application/pdf
-      - audio/*
-      - audio/aac
-      - audio/mp4
-      - audio/mpeg
-      - audio/mpeg3
-      - audio/x-mpeg3
-      - image/*
-      - image/bmp
-      - image/gif
-      - image/jpeg
-      - image/png
-      - text/plain
-      - video/*
-      - video/3gpp
-      - video/mp4
-      - video/mpeg
-      - video/x-mpeg
+    + position
+        - Type: integer
+        - Status: optional
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.SlaveTell
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    destroy:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
     list:
         parameters:
             - name: inserted_at
@@ -848,22 +1036,22 @@ class SlaveTells(ModelViewSet):
             - code: 400
               message: Invalid Input
         serializer: api.serializers.SlaveTell
-    partial_update:
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SlaveTell
+    create:
         omit_parameters:
             - form
         parameters:
             - name: body
               paramType: body
               pytype: api.serializers.SlaveTell
+        response_serializer: api.serializers.SlaveTell
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.SlaveTell
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.SlaveTell
     update:
         omit_parameters:
             - form
@@ -871,14 +1059,30 @@ class SlaveTells(ModelViewSet):
             - name: body
               paramType: body
               pytype: api.serializers.SlaveTell
+        response_serializer: api.serializers.SlaveTell
         responseMessages:
             - code: 400
               message: Invalid Input
-        serializer: api.serializers.SlaveTell
+    partial_update:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.SlaveTell
+        response_serializer: api.serializers.SlaveTell
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
+
     lookup_field = 'id'
-    permission_classes = (IsAuthenticated, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
     serializer_class = serializers.SlaveTell
 
     def perform_create(self, serializer):
@@ -895,20 +1099,27 @@ class SlaveTells(ModelViewSet):
         return queryset.order_by('position').all()
 
 
-@api_view(('GET', ))
-@permission_classes((IsAuthenticated, ))
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
 def slave_tells_ids(request):
     '''
     Retrieve the IDs of Slave Tells
 
     <pre>
+    Input
+    =====
+
+    + N/A
+
     Output
     ======
 
     [
-        0,
+        1,
         ...,
-        0
+        ...,
+        ...,
+        n,
     ]
     </pre>
     ---
@@ -922,8 +1133,8 @@ def slave_tells_ids(request):
     )
 
 
-@api_view(('POST', ))
-@permission_classes((IsAuthenticated, ))
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
 def slave_tells_positions(request):
     '''
     Bulk update positions of Slave Tells
@@ -934,17 +1145,26 @@ def slave_tells_positions(request):
 
     [
         {
-            "id": 0,
-            "position": 0
+            "id": 1,
+            "position": 1,
         },
         ...,
+        ...,
+        ...,
         {
-            "id": 0,
-            "position": 0
+            "id": n,
+            "position": n,
         }
     ]
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
+    omit_parameters:
+        - form
     parameters:
         - name: body
           paramType: body
