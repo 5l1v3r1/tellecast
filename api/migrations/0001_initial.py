@@ -3,13 +3,11 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 import django.utils.timezone
-from django.conf import settings
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -25,8 +23,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('owned_by', 'position'),
                 'db_table': 'api_master_tells',
-                'verbose_name': 'master tell',
-                'verbose_name_plural': 'master tells',
+                'verbose_name': 'Master Tell',
+                'verbose_name_plural': 'Master Tells',
             },
             bases=(models.Model,),
         ),
@@ -47,8 +45,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('owned_by', 'master_tell', 'position'),
                 'db_table': 'api_slave_tells',
-                'verbose_name': 'slave tell',
-                'verbose_name_plural': 'slave tells',
+                'verbose_name': 'Slave Tell',
+                'verbose_name_plural': 'Slave Tells',
             },
             bases=(models.Model,),
         ),
@@ -73,8 +71,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('id',),
                 'db_table': 'api_users',
-                'verbose_name': 'user',
-                'verbose_name_plural': 'users',
+                'verbose_name': 'User',
+                'verbose_name_plural': 'Users',
             },
             bases=(models.Model,),
         ),
@@ -89,8 +87,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('user', 'position'),
                 'db_table': 'api_users_photos',
-                'verbose_name': 'user photo',
-                'verbose_name_plural': 'user photos',
+                'verbose_name': 'User Photo',
+                'verbose_name_plural': 'User Photos',
             },
             bases=(models.Model,),
         ),
@@ -105,8 +103,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('user', 'netloc'),
                 'db_table': 'api_users_social_profiles',
-                'verbose_name': 'user social profile',
-                'verbose_name_plural': 'user social profiles',
+                'verbose_name': 'User Social Profile',
+                'verbose_name_plural': 'User Social Profiles',
             },
             bases=(models.Model,),
         ),
@@ -118,13 +116,13 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=255, verbose_name='Title', db_index=True)),
                 ('url', models.CharField(db_index=True, max_length=255, null=True, verbose_name='URL', blank=True)),
                 ('notes', models.TextField(db_index=True, null=True, verbose_name='Notes', blank=True)),
-                ('user', models.OneToOneField(related_name='status', to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(related_name='status', to='api.User')),
             ],
             options={
                 'ordering': ('user', 'string'),
                 'db_table': 'api_users_statuses',
-                'verbose_name': 'user status',
-                'verbose_name_plural': 'user statuses',
+                'verbose_name': 'User Status',
+                'verbose_name_plural': 'User Statuses',
             },
             bases=(models.Model,),
         ),
@@ -139,8 +137,8 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('user_status', 'position'),
                 'db_table': 'api_users_statuses_attachments',
-                'verbose_name': 'user status attachment',
-                'verbose_name_plural': 'user status attachments',
+                'verbose_name': 'User Status Attachment',
+                'verbose_name_plural': 'User Status Attachments',
             },
             bases=(models.Model,),
         ),
@@ -150,13 +148,13 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string', models.CharField(max_length=255, verbose_name='String', db_index=True)),
                 ('position', models.IntegerField(verbose_name='Position', db_index=True)),
-                ('user', models.ForeignKey(related_name='urls', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(related_name='urls', to='api.User')),
             ],
             options={
                 'ordering': ('user', 'position'),
                 'db_table': 'api_users_urls',
-                'verbose_name': 'user url',
-                'verbose_name_plural': 'user urls',
+                'verbose_name': 'User URL',
+                'verbose_name_plural': 'User URLs',
             },
             bases=(models.Model,),
         ),
@@ -167,7 +165,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='slavetell',
             name='created_by',
-            field=models.ForeignKey(related_name='+', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='+', to='api.User'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -179,7 +177,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='slavetell',
             name='owned_by',
-            field=models.ForeignKey(related_name='slave_tells', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='slave_tells', to='api.User'),
             preserve_default=True,
         ),
         migrations.AddField(

@@ -275,7 +275,7 @@ class MasterTell(ModelAdmin):
         'created_by',
         'owned_by',
         'position',
-        'slave_tells',
+        'slave_tells_',
         'inserted_at',
         'updated_at',
     )
@@ -287,7 +287,6 @@ class MasterTell(ModelAdmin):
         'created_by',
         'owned_by',
         'position',
-        'slave_tells',
         'inserted_at',
         'updated_at',
     )
@@ -319,7 +318,12 @@ class SlaveTell(ModelAdmin):
         'master_tell',
         'created_by',
         'owned_by',
+        'photo',
+        'first_name',
+        'last_name',
+        'type',
         'contents',
+        'description',
         'position',
     )
     list_display = (

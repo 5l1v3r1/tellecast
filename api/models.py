@@ -156,7 +156,7 @@ class UserSocialProfile(Model):
 
 
 class UserStatus(Model):
-    user = OneToOneField(settings.AUTH_USER_MODEL, related_name='status')
+    user = OneToOneField(User, related_name='status')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
     url = CharField(ugettext_lazy('URL'), blank=True, db_index=True, max_length=255, null=True)
@@ -194,7 +194,7 @@ class UserStatusAttachment(Model):
 
 
 class UserURL(Model):
-    user = ForeignKey(settings.AUTH_USER_MODEL, related_name='urls')
+    user = ForeignKey(User, related_name='urls')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
@@ -225,11 +225,17 @@ class MasterTell(Model):
         verbose_name = 'Master Tell'
         verbose_name_plural = 'Master Tells'
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class SlaveTell(Model):
     master_tell = ForeignKey(MasterTell, related_name='slave_tells')
-    created_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
-    owned_by = ForeignKey(settings.AUTH_USER_MODEL, related_name='slave_tells')
+    created_by = ForeignKey(User, related_name='+')
+    owned_by = ForeignKey(User, related_name='slave_tells')
     photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
     first_name = CharField(ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255, null=True)
     last_name = CharField(ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255, null=True)
