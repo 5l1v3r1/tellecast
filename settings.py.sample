@@ -57,17 +57,17 @@ LOGGING = {
     'handlers': {
         'mail_admins': {
             'class': 'django.utils.log.AdminEmailHandler',
-            'filters': [
+            'filters': (
                 'require_debug_false',
-            ],
+            ),
             'level': 'ERROR',
         }
     },
     'loggers': {
         'django.request': {
-            'handlers': [
+            'handlers': (
                 'mail_admins',
-            ],
+            ),
             'level': 'ERROR',
             'propagate': True,
         },
@@ -120,7 +120,7 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '...'
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '...'
 SOCIAL_AUTH_INSTAGRAM_KEY = '...'
 SOCIAL_AUTH_INSTAGRAM_SECRET = '...'
-SOCIAL_AUTH_LINKEDIN_EXTRA_DATA = [
+SOCIAL_AUTH_LINKEDIN_EXTRA_DATA = (
     ('apiStandardProfileRequest', 'api_standard_profile_request',),
     ('currentShare', 'current_share',),
     ('firstName', 'first_name',),
@@ -143,8 +143,8 @@ SOCIAL_AUTH_LINKEDIN_EXTRA_DATA = [
     ('siteStandardProfileRequest', 'site_standard_profile_request',),
     ('specialties', 'specialties',),
     ('summary', 'summary',),
-]
-SOCIAL_AUTH_LINKEDIN_FIELD_SELECTORS = [
+)
+SOCIAL_AUTH_LINKEDIN_FIELD_SELECTORS = (
     'api-standard-profile-request',
     'current-share',
     'first-name',
@@ -167,13 +167,13 @@ SOCIAL_AUTH_LINKEDIN_FIELD_SELECTORS = [
     'site-standard-profile-request',
     'specialties',
     'summary',
-]
+)
 SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = '...'
 SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = '...'
-SOCIAL_AUTH_LINKEDIN_SCOPE = [
+SOCIAL_AUTH_LINKEDIN_SCOPE = (
     'r_basicprofile',
     'r_emailaddress',
-]
+)
 SOCIAL_AUTH_PIPELINE = (
     'social.pipeline.social_auth.social_details',
     'social.pipeline.social_auth.social_uid',
@@ -184,6 +184,19 @@ SOCIAL_AUTH_PIPELINE = (
     'social.pipeline.social_auth.associate_user',
     'social.pipeline.social_auth.load_extra_data',
     'social.pipeline.user.user_details',
+)
+SOCIAL_AUTH_PROTECTED_USER_FIELDS = (
+    'email',
+    'email_status',
+    'photo',
+    'first_name',
+    'last_name',
+    'date_of_birth',
+    'gender',
+    'location',
+    'description',
+    'phone',
+    'phone_status',
 )
 SOCIAL_AUTH_TWITTER_KEY = '...'
 SOCIAL_AUTH_TWITTER_SECRET = '...'
@@ -205,14 +218,14 @@ SWAGGER_SETTINGS = {
     'api_path': '/',
     'api_version': '1.0',
     'doc_expansion': 'list',
-    'enabled_methods': [
+    'enabled_methods': (
         'delete',
         'get',
         'patch',
         'post',
         'put',
-    ],
-    'exclude_namespaces': [],
+    ),
+    'exclude_namespaces': (),
     'info': {
         'contact': '...',
         'description': '',
