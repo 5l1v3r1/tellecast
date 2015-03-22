@@ -13,6 +13,7 @@ from api import models
 
 
 class User(ModelSerializer):
+
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
@@ -24,6 +25,7 @@ class User(ModelSerializer):
     phone = CharField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'email',
@@ -44,10 +46,12 @@ class User(ModelSerializer):
 
 
 class UserPhoto(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -57,9 +61,11 @@ class UserPhoto(ModelSerializer):
 
 
 class UserSocialProfile(ModelSerializer):
+
     id = IntegerField(read_only=True)
 
     class Meta:
+
         fields = (
             'id',
             'netloc',
@@ -69,10 +75,12 @@ class UserSocialProfile(ModelSerializer):
 
 
 class UserStatusAttachment(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -82,11 +90,13 @@ class UserStatusAttachment(ModelSerializer):
 
 
 class UserStatus(ModelSerializer):
+
     id = IntegerField(read_only=True)
     url = CharField(required=False)
     notes = CharField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -98,10 +108,12 @@ class UserStatus(ModelSerializer):
 
 
 class UserURL(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -111,10 +123,12 @@ class UserURL(ModelSerializer):
 
 
 class MasterTell(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'contents',
@@ -126,6 +140,7 @@ class MasterTell(ModelSerializer):
 
 
 class SlaveTell(ModelSerializer):
+
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
@@ -134,6 +149,7 @@ class SlaveTell(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'photo',
@@ -150,6 +166,7 @@ class SlaveTell(ModelSerializer):
 
 
 class SlaveTellFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
@@ -158,6 +175,7 @@ class SlaveTellFull(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'photo',
@@ -174,11 +192,13 @@ class SlaveTellFull(ModelSerializer):
 
 
 class MasterTellFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
     slave_tells = SlaveTellFull(help_text='List of Slave Tells', many=True, required=False)
 
     class Meta:
+
         fields = (
             'id',
             'contents',
@@ -191,10 +211,12 @@ class MasterTellFull(ModelSerializer):
 
 
 class UserPhotoFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -204,9 +226,11 @@ class UserPhotoFull(ModelSerializer):
 
 
 class UserSocialProfileFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
 
     class Meta:
+
         fields = (
             'id',
             'netloc',
@@ -216,10 +240,12 @@ class UserSocialProfileFull(ModelSerializer):
 
 
 class UserStatusAttachmentFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -229,12 +255,14 @@ class UserStatusAttachmentFull(ModelSerializer):
 
 
 class UserStatusFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     url = CharField(required=False)
     notes = CharField(required=False)
     attachments = UserStatusAttachmentFull(help_text='List of User Status Attachments', many=True, required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -247,10 +275,12 @@ class UserStatusFull(ModelSerializer):
 
 
 class UserURLFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -260,6 +290,7 @@ class UserURLFull(ModelSerializer):
 
 
 class UserFull(ModelSerializer):
+
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
@@ -276,6 +307,7 @@ class UserFull(ModelSerializer):
     urls = UserURLFull(help_text='List of User URLs', many=True, required=False)
 
     class Meta:
+
         fields = (
             'id',
             'email',
@@ -301,6 +333,7 @@ class UserFull(ModelSerializer):
 
 
 class SlaveTellSimple(ModelSerializer):
+
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
@@ -309,6 +342,7 @@ class SlaveTellSimple(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'photo',
@@ -325,11 +359,13 @@ class SlaveTellSimple(ModelSerializer):
 
 
 class MasterTellSimple(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
     slave_tells = SlaveTellSimple(help_text='List of Slave Tells', many=True, required=False)
 
     class Meta:
+
         fields = (
             'id',
             'contents',
@@ -342,10 +378,12 @@ class MasterTellSimple(ModelSerializer):
 
 
 class UserPhotoSimple(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -355,10 +393,12 @@ class UserPhotoSimple(ModelSerializer):
 
 
 class UserStatusAttachmentSimple(ModelSerializer):
+
     id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -368,12 +408,14 @@ class UserStatusAttachmentSimple(ModelSerializer):
 
 
 class UserStatusSimple(ModelSerializer):
+
     id = IntegerField(read_only=True)
     url = CharField(required=False)
     notes = CharField(required=False)
     attachments = UserStatusAttachmentSimple(help_text='List of User Status Attachments', many=True, required=False)
 
     class Meta:
+
         fields = (
             'id',
             'string',
@@ -386,6 +428,7 @@ class UserStatusSimple(ModelSerializer):
 
 
 class UserSimple(ModelSerializer):
+
     id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
@@ -400,6 +443,7 @@ class UserSimple(ModelSerializer):
     status = UserStatusSimple(help_text='User Status', required=False)
 
     class Meta:
+
         fields = (
             'id',
             'email',
@@ -423,13 +467,16 @@ class UserSimple(ModelSerializer):
 
 
 class AuthenticateRequest(Serializer):
+
     access_token = CharField(help_text='OAuth 2 access token')
 
 
 class AuthenticateResponse(User):
+
     token = SerializerMethodField()
 
     class Meta:
+
         fields = (
             'id',
             'email',
@@ -454,9 +501,11 @@ class AuthenticateResponse(User):
 
 
 class RegisterRequestPhoto(ModelSerializer):
+
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'string',
             'position',
@@ -465,6 +514,7 @@ class RegisterRequestPhoto(ModelSerializer):
 
 
 class RegisterRequestSocialProfile(Serializer):
+
     access_token = CharField()
     netloc = ChoiceField(
         choices=(
@@ -478,6 +528,7 @@ class RegisterRequestSocialProfile(Serializer):
     url = CharField()
 
     class Meta:
+
         fields = (
             'access_token',
             'netloc',
@@ -487,9 +538,11 @@ class RegisterRequestSocialProfile(Serializer):
 
 
 class RegisterRequestStatusAttachment(ModelSerializer):
+
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'string',
             'position',
@@ -498,6 +551,7 @@ class RegisterRequestStatusAttachment(ModelSerializer):
 
 
 class RegisterRequestStatus(ModelSerializer):
+
     url = CharField(required=False)
     notes = CharField(required=False)
     attachments = RegisterRequestStatusAttachment(
@@ -505,6 +559,7 @@ class RegisterRequestStatus(ModelSerializer):
     )
 
     class Meta:
+
         fields = (
             'string',
             'title',
@@ -516,9 +571,11 @@ class RegisterRequestStatus(ModelSerializer):
 
 
 class RegisterRequestURL(ModelSerializer):
+
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'string',
             'position',
@@ -527,6 +584,7 @@ class RegisterRequestURL(ModelSerializer):
 
 
 class RegisterRequestSlaveTell(ModelSerializer):
+
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
@@ -534,6 +592,7 @@ class RegisterRequestSlaveTell(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
+
         fields = (
             'photo',
             'first_name',
@@ -549,10 +608,12 @@ class RegisterRequestSlaveTell(ModelSerializer):
 
 
 class RegisterRequestMasterTell(ModelSerializer):
+
     position = IntegerField(required=False)
     slave_tells = RegisterRequestSlaveTell(help_text='List of Slave Tells', many=True)
 
     class Meta:
+
         fields = (
             'contents',
             'position',
@@ -564,6 +625,7 @@ class RegisterRequestMasterTell(ModelSerializer):
 
 
 class RegisterRequest(Serializer):
+
     email = EmailField()
     email_status = ChoiceField(
         choices=(
@@ -676,9 +738,11 @@ class RegisterRequest(Serializer):
 
 
 class RegisterResponse(UserFull):
+
     token = SerializerMethodField()
 
     class Meta:
+
         fields = (
             'id',
             'email',

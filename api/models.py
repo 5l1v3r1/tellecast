@@ -15,6 +15,7 @@ from social.apps.django_app.default.models import UserSocialAuth
 
 
 class User(Model):
+
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
     email_status = CharField(
         ugettext_lazy('Email Status'),
@@ -58,6 +59,7 @@ class User(Model):
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
 
     class Meta:
+
         db_table = 'api_users'
         ordering = (
             'id',
@@ -112,11 +114,13 @@ class User(Model):
 
 
 class UserPhoto(Model):
+
     user = ForeignKey(User, related_name='photos')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
+
         db_table = 'api_users_photos'
         ordering = (
             'user',
@@ -127,6 +131,7 @@ class UserPhoto(Model):
 
 
 class UserSocialProfile(Model):
+
     user = ForeignKey(User, related_name='social_profiles')
     netloc = CharField(
         ugettext_lazy('Network Location'),
@@ -143,6 +148,7 @@ class UserSocialProfile(Model):
     url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
 
     class Meta:
+
         db_table = 'api_users_social_profiles'
         ordering = (
             'user',
@@ -157,6 +163,7 @@ class UserSocialProfile(Model):
 
 
 class UserStatus(Model):
+
     user = OneToOneField(User, related_name='status')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255)
@@ -164,6 +171,7 @@ class UserStatus(Model):
     notes = TextField(ugettext_lazy('Notes'), blank=True, db_index=True, null=True)
 
     class Meta:
+
         db_table = 'api_users_statuses'
         ordering = (
             'user',
@@ -180,11 +188,13 @@ class UserStatus(Model):
 
 
 class UserStatusAttachment(Model):
+
     user_status = ForeignKey(UserStatus, db_column='user_status_id', related_name='attachments')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
+
         db_table = 'api_users_statuses_attachments'
         ordering = (
             'user_status',
@@ -195,11 +205,13 @@ class UserStatusAttachment(Model):
 
 
 class UserURL(Model):
+
     user = ForeignKey(User, related_name='urls')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
+
         db_table = 'api_users_urls'
         ordering = (
             'user',
@@ -210,6 +222,7 @@ class UserURL(Model):
 
 
 class MasterTell(Model):
+
     created_by = ForeignKey(User, related_name='+')
     owned_by = ForeignKey(User, related_name='master_tells')
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
@@ -218,6 +231,7 @@ class MasterTell(Model):
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
 
     class Meta:
+
         db_table = 'api_master_tells'
         ordering = (
             'owned_by',
@@ -234,6 +248,7 @@ class MasterTell(Model):
 
 
 class SlaveTell(Model):
+
     master_tell = ForeignKey(MasterTell, related_name='slave_tells')
     created_by = ForeignKey(User, related_name='+')
     owned_by = ForeignKey(User, related_name='slave_tells')
@@ -272,6 +287,7 @@ class SlaveTell(Model):
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
 
     class Meta:
+
         db_table = 'api_slave_tells'
         ordering = (
             'owned_by',
