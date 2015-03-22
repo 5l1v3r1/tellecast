@@ -657,6 +657,8 @@ class Register(Serializer):
     def is_valid_(self, data):
         if 'social_profiles' not in data:
             return False
+        if not data['social_profiles']:
+            return False
         for social_profile in data['social_profiles']:
             if social_profile['netloc'] == 'linkedin.com':
                 response = get_backend(
@@ -666,6 +668,6 @@ class Register(Serializer):
                 ).user_data(
                     social_profile['access_token']
                 )
-                if UserSocialAuth.objects.filter(provider='linkedin-oauth2', uid=response['id']).count():
-                    return False
-        return True
+                if not UserSocialAuth.objects.filter(provider='linkedin-oauth2', uid=response['id']).count():
+                    return True
+        return False
