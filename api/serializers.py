@@ -450,10 +450,10 @@ class AuthenticateResponse(User):
         model = models.User
 
     def get_token(self, instance):
-        return instance.get_token().key
+        return instance.get_token()
 
 
-class RegisterPhoto(ModelSerializer):
+class RegisterRequestPhoto(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
@@ -464,7 +464,7 @@ class RegisterPhoto(ModelSerializer):
         model = models.UserPhoto
 
 
-class RegisterSocialProfile(Serializer):
+class RegisterRequestSocialProfile(Serializer):
     access_token = CharField()
     netloc = ChoiceField(
         choices=(
@@ -486,7 +486,7 @@ class RegisterSocialProfile(Serializer):
         model = models.UserSocialProfile
 
 
-class RegisterStatusAttachment(ModelSerializer):
+class RegisterRequestStatusAttachment(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
@@ -497,10 +497,10 @@ class RegisterStatusAttachment(ModelSerializer):
         model = models.UserStatusAttachment
 
 
-class RegisterStatus(ModelSerializer):
+class RegisterRequestStatus(ModelSerializer):
     url = CharField(required=False)
     notes = CharField(required=False)
-    attachments = RegisterStatusAttachment(help_text='List of User Status Attachments', many=True, required=False)
+    attachments = RegisterRequestStatusAttachment(help_text='List of User Status Attachments', many=True, required=False)
 
     class Meta:
         fields = (
@@ -513,7 +513,7 @@ class RegisterStatus(ModelSerializer):
         model = models.UserStatus
 
 
-class RegisterURL(ModelSerializer):
+class RegisterRequestURL(ModelSerializer):
     position = IntegerField(required=False)
 
     class Meta:
@@ -524,7 +524,7 @@ class RegisterURL(ModelSerializer):
         model = models.UserURL
 
 
-class RegisterSlaveTell(ModelSerializer):
+class RegisterRequestSlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
@@ -546,9 +546,9 @@ class RegisterSlaveTell(ModelSerializer):
         model = models.SlaveTell
 
 
-class RegisterMasterTell(ModelSerializer):
+class RegisterRequestMasterTell(ModelSerializer):
     position = IntegerField(required=False)
-    slave_tells = RegisterSlaveTell(help_text='List of Slave Tells', many=True)
+    slave_tells = RegisterRequestSlaveTell(help_text='List of Slave Tells', many=True)
 
     class Meta:
         fields = (
@@ -561,7 +561,7 @@ class RegisterMasterTell(ModelSerializer):
         model = models.MasterTell
 
 
-class Register(Serializer):
+class RegisterRequest(Serializer):
     email = EmailField()
     email_status = ChoiceField(
         choices=(
@@ -590,11 +590,11 @@ class Register(Serializer):
             ('Public', 'Public', ),
         ),
     )
-    photos = RegisterPhoto(help_text='List of User Photos', many=True, required=False)
-    social_profiles = RegisterSocialProfile(help_text='List of User Social Profiles', many=True, required=False)
-    status = RegisterStatus(help_text='User Status', required=False)
-    urls = RegisterURL(help_text='List of User URLs', many=True, required=False)
-    master_tells = RegisterMasterTell(help_text='List of Master Tells', many=True, required=False)
+    photos = RegisterRequestPhoto(help_text='List of User Photos', many=True, required=False)
+    social_profiles = RegisterRequestSocialProfile(help_text='List of User Social Profiles', many=True, required=False)
+    status = RegisterRequestStatus(help_text='User Status', required=False)
+    urls = RegisterRequestURL(help_text='List of User URLs', many=True, required=False)
+    master_tells = RegisterRequestMasterTell(help_text='List of Master Tells', many=True, required=False)
 
     def create(self, data):
         user = models.User.objects.create(
@@ -671,3 +671,35 @@ class Register(Serializer):
                 if not UserSocialAuth.objects.filter(provider='linkedin-oauth2', uid=response['id']).count():
                     return True
         return False
+
+
+class RegisterResponse(UserFull):
+    token = SerializerMethodField()
+
+    class Meta:
+        fields = (
+            'id',
+            'email',
+            'email_status',
+            'photo',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'phone_status',
+            'inserted_at',
+            'updated_at',
+            'master_tells',
+            'photos',
+            'social_profiles',
+            'status',
+            'urls',
+            'token',
+        )
+        model = models.User
+
+    def get_token(self, instance):
+        return instance.get_token()

@@ -79,14 +79,14 @@ def register(request):
         - form
     parameters:
         - name: body
-          pytype: api.serializers.Register
+          pytype: api.serializers.RegisterRequest
           paramType: body
-    response_serializer: api.serializers.UserFull
+    response_serializer: api.serializers.RegisterResponse
     responseMessages:
         - code: 400
           message: Invalid Input
     '''
-    serializer = serializers.Register(data=request.DATA)
+    serializer = serializers.RegisterRequest(data=request.DATA)
     if not serializer.is_valid():
         return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
     if not serializer.is_valid_(serializer.data):
@@ -97,7 +97,7 @@ def register(request):
             status=HTTP_400_BAD_REQUEST,
         )
     user = serializer.save(force_insert=True, user=request.user)
-    return Response(data=serializers.UserFull(user).data, status=HTTP_201_CREATED)
+    return Response(data=serializers.RegisterResponse(user).data, status=HTTP_201_CREATED)
 
 
 @api_view(('POST', ))
@@ -163,7 +163,7 @@ def authenticate(request, backend):
         user = backend.do_auth(request.DATA['access_token'], request=request)
     except Exception:
         pass
-    if not user or not user.is_active:
+    if not user:
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `user`'),

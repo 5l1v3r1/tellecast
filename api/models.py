@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db.models import (
     CharField, DateField, DateTimeField, EmailField, ForeignKey, IntegerField, Max, Model, OneToOneField, TextField,
 )
-from django.contrib.auth.models import User as Administrator
+from django.contrib.auth.models import update_last_login, User as Administrator
+from django.contrib.auth.signals import user_logged_in
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -316,6 +317,8 @@ def slave_tell_pre_save(instance, **kwargs):
     if not instance.position:
         position = SlaveTell.objects.filter(owned_by=instance.owned_by).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
+
+user_logged_in.disconnect(update_last_login)
 
 
 def __str__(self):
