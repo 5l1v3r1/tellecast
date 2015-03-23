@@ -39,6 +39,7 @@ class Command(BaseCommand):
             self.process(slave_tell.contents, slave_tell.type, (1920, 685,))
 
     def process(self, name, type, widths):
+        name = name.split('/')[-1]
         if not name:
             return
         print '    ', name
@@ -50,7 +51,7 @@ class Command(BaseCommand):
         _, source = mkstemp()
         key.get_contents_to_filename(source)
         print '        ', 'large'
-        name_large = '%(name)s_large' % {
+        name_large = 'large_%(name)s' % {
             'name': name,
         }
         key_large = self.bucket.get_key(name_large)
@@ -72,7 +73,7 @@ class Command(BaseCommand):
             else:
                 print '            ', 'Failure'
         print '        ', 'small'
-        name_small = '%(name)s_small' % {
+        name_small = 'small_%(name)s' % {
             'name': name,
         }
         key_small = self.bucket.get_key(name_small)
