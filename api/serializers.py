@@ -394,6 +394,20 @@ class UserPhotoSimple(ModelSerializer):
         model = models.UserPhoto
 
 
+class UserSocialProfileSimple(ModelSerializer):
+
+    id = IntegerField(read_only=True)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'netloc',
+            'url',
+        )
+        model = models.UserSocialProfile
+
+
 class UserStatusAttachmentSimple(ModelSerializer):
 
     id = IntegerField(read_only=True)
@@ -429,6 +443,21 @@ class UserStatusSimple(ModelSerializer):
         model = models.UserStatus
 
 
+class UserURLSimple(ModelSerializer):
+
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'string',
+            'position',
+        )
+        model = models.UserURL
+
+
 class UserSimple(ModelSerializer):
 
     id = IntegerField(read_only=True)
@@ -442,7 +471,9 @@ class UserSimple(ModelSerializer):
     phone = CharField(required=False)
     master_tells = MasterTellSimple(help_text='List of Master Tells', many=True, required=False)
     photos = UserPhotoSimple(help_text='List of User Photos', many=True, required=False)
+    social_profiles = UserSocialProfileSimple(help_text='List of User Social Profiles', many=True, required=False)
     status = UserStatusSimple(help_text='User Status', required=False)
+    urls = UserURLSimple(help_text='List of User URLs', many=True, required=False)
 
     class Meta:
 
@@ -463,7 +494,9 @@ class UserSimple(ModelSerializer):
             'updated_at',
             'master_tells',
             'photos',
+            'social_profiles',
             'status',
+            'urls',
         )
         model = models.User
 
