@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(default=django.utils.timezone.now, auto_now=True, verbose_name='Updated At', db_index=True)),
             ],
             options={
-                'ordering': ('id',),
+                'ordering': ('-inserted_at',),
                 'db_table': 'api_users',
                 'verbose_name': 'User',
                 'verbose_name_plural': 'Users',
@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string', models.CharField(max_length=255, verbose_name='String', db_index=True)),
                 ('position', models.IntegerField(verbose_name='Position', db_index=True)),
-                ('user_status', models.ForeignKey(related_name='attachments', db_column=b'user_status_id', to='api.UserStatus')),
+                ('user_status', models.ForeignKey(related_name='attachments', to='api.UserStatus')),
             ],
             options={
                 'ordering': ('user_status', 'position'),

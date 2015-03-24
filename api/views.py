@@ -2,10 +2,13 @@
 
 from django.conf import settings
 from django.contrib.auth import login
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
@@ -322,6 +325,9 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     queryset = models.User.objects.all()
     renderer_classes = (JSONRenderer,)
@@ -415,6 +421,9 @@ class UsersPhotos(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserPhoto
@@ -505,6 +514,9 @@ class UsersSocialProfiles(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserSocialProfile
@@ -597,6 +609,9 @@ class UsersStatuses(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserStatus
@@ -681,6 +696,9 @@ class UsersStatusesAttachments(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserStatusAttachment
@@ -767,6 +785,9 @@ class UsersURLs(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UserURL
@@ -858,6 +879,9 @@ class MasterTells(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.MasterTell
@@ -1081,6 +1105,9 @@ class SlaveTells(ModelViewSet):
     '''
 
     lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 'page'
+    paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.SlaveTell
@@ -1183,3 +1210,291 @@ def slave_tells_positions(request):
         except models.SlaveTell.DoesNotExist:
             pass
     return Response(data=data, status=HTTP_200_OK)
+
+
+class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.Message
+
+    def get_queryset(self):
+        return models.Message.objects.order_by('-inserted_at').all()
+
+    def list(self, request, *args, **kwargs):
+        '''
+        SELECT messages
+
+        <pre>
+        Input
+        =====
+
+        + recent
+            Type: boolean (default = True)
+            Status: optional
+            Choices:
+                - True
+                - False
+
+        + user_status_id
+            Description: If supplied, all messages will pertain to this `user_status_id`. Only applicable if
+            `recent` = False.
+            Type: integer
+            Status: optional
+
+        + master_tell_id
+            Description: If supplied, all messages will pertain to this `master_tell_id`. Only applicable if
+            `recent` = False.
+            Type: integer
+            Status: optional
+
+        + max_id
+            Description: (similar to how it works in all major APIs; Example: twitter.com) Only applicable if
+            `recent` = False.
+            Type: integer
+            Status: optional
+
+        + limit
+            Description: Only applicable if `recent` = False.
+            Type: integer (default = 100)
+            Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        parameters:
+            - name: recent
+              paramType: query
+              required: true
+              type: boolean
+            - name: user_status_id
+              paramType: query
+              type: integer
+            - name: master_tell_id
+              paramType: query
+              type: integer
+            - name: max_id
+              paramType: query
+              type: integer
+            - name: limit
+              paramType: query
+              type: integer
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.Message
+        '''
+        messages = []
+        if request.query_params.get('recent', True):
+            message = models.Message.objects.filter(
+                Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
+                user_status_id__isnull=True,
+                master_tell_id__isnull=True,
+            ).order_by('-inserted_at').first()
+            if message:
+                messages.append(message)
+            if request.user.status:
+                message = models.Message.objects.filter(
+                    Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
+                    user_status_id=request.user.status.id,
+                    master_tell_id__isnull=True,
+                ).order_by('-inserted_at').first()
+                if message:
+                    messages.append(message)
+            for master_tell in request.user.master_tells.get_queryset().all():
+                message = models.Message.objects.filter(
+                    Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
+                    user_status_id__isnull=True,
+                    master_tell_id=master_tell.id,
+                ).order_by('-inserted_at').first()
+                if message:
+                    messages.append(message)
+        else:
+            query = models.Message.objects.filter(
+                Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
+            )
+            user_status_id = request.query_params.get('user_status_id', None)
+            if user_status_id:
+                query = query.filter(user_status_id=user_status_id)
+            else:
+                query = query.filter(user_status_id__isnull=True)
+            master_tell_id = request.query_params.get('master_tell_id', None)
+            if master_tell_id:
+                query = query.filter(master_tell_id=master_tell_id)
+            else:
+                query = query.filter(master_tell_id__isnull=True)
+            max_id = 0
+            try:
+                max_id = int(request.query_params.get('max_id', '0'))
+            except Exception:
+                pass
+            if max_id:
+                query = query.filter(id__lt=max_id)
+            limit = 100
+            try:
+                limit = int(request.query_params.get('limit', '100'))
+            except Exception:
+                pass
+            for message in query.order_by('-inserted_at').all()[:limit]:
+                messages.append(message)
+        return Response(
+            data=[serializers.Message(message).data for message in messages],
+            status=HTTP_200_OK,
+        )
+
+    def create(self, request, *args, **kwargs):
+        '''
+        INSERT a messages
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        + user_status_id
+            - Type: integer
+            - Status: optional
+
+        + master_tell_id
+            - Type: integer
+            - Status: optional
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Message
+                - Request
+                - Response - Accepted
+                - Response - Blocked
+                - Response - Deferred
+                - Response - Rejected
+
+        + contents
+            - Type: string
+            - Status: mandatory
+
+        + status
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Read
+                - Unread
+
+        + attachments
+            - Type: list
+            - Status: optional
+
+        Example:
+
+        [
+            {
+                "string": "...",
+                "position": 1,
+            },
+            ...,
+            {
+                "string": "...",
+                "position": n,
+            },
+        ]
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MessagePostRequest
+        response_serializer: api.serializers.MessagePostResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.MessagePostRequest(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer = serializers.MessagePostResponse(serializer.save(user_source=request.user))
+        headers = self.get_success_headers(serializer.data)
+        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
+
+    def partial_update(self, request, *args, **kwargs):
+        '''
+        UPDATE (partially) a message
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        + status
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Read
+                - Unread
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MessagePatchRequest
+        response_serializer: api.serializers.MessagePatchResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_object()
+        serializer = serializers.MessagePatchRequest(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer = serializers.MessagePatchResponse(serializer.save())
+        headers = self.get_success_headers(serializer.data)
+        return Response(data=serializer.data, headers=headers, status=HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        '''
+        DELETE a message
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Status: mandatory
+            - Type: integer
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        return super(Messages, self).destroy(request, *args, **kwargs)

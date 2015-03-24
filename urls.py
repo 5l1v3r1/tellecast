@@ -31,6 +31,7 @@ router.register(r'users/urls', views.UsersURLs, base_name='users-urls')
 router.register(r'users', views.Users, base_name='users')
 router.register(r'master-tells', views.MasterTells, base_name='master-tells')
 router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
+router.register(r'messages', views.Messages, base_name='messages')
 
 urlpatterns = patterns(
     '',

@@ -62,7 +62,7 @@ class User(Model):
 
         db_table = 'api_users'
         ordering = (
-            'id',
+            '-inserted_at',
         )
         verbose_name = 'User'
         verbose_name_plural = 'Users'
@@ -189,7 +189,7 @@ class UserStatus(Model):
 
 class UserStatusAttachment(Model):
 
-    user_status = ForeignKey(UserStatus, db_column='user_status_id', related_name='attachments')
+    user_status = ForeignKey(UserStatus, related_name='attachments')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
@@ -298,6 +298,71 @@ class SlaveTell(Model):
         verbose_name_plural = 'Slave Tells'
 
 
+class Message(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, related_name='+')
+    user_status = ForeignKey(UserStatus, blank=True, null=True, related_name='+')
+    master_tell = ForeignKey(MasterTell, blank=True, null=True, related_name='+')
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('Message', 'Message',),
+            ('Request', 'Request',),
+            ('Response - Accepted', 'Response - Accepted',),
+            ('Response - Blocked', 'Response - Blocked',),
+            ('Response - Deferred', 'Response - Deferred',),
+            ('Response - Rejected', 'Response - Rejected',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    status = CharField(
+        ugettext_lazy('Status'),
+        choices=(
+            ('Read', 'Read',),
+            ('Unread', 'Unread',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+
+    class Meta:
+
+        db_table = 'api_messages'
+        ordering = (
+            '-inserted_at',
+        )
+        verbose_name = 'Message'
+        verbose_name_plural = 'Messages'
+
+    def __str__(self):
+        return str(self.type)
+
+    def __unicode__(self):
+        return unicode(self.type)
+
+
+class MessageAttachment(Model):
+
+    message = ForeignKey(Message, related_name='attachments')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+
+        db_table = 'api_messages_attachments'
+        ordering = (
+            'message',
+            'position',
+        )
+        verbose_name = 'Message Attachment'
+        verbose_name_plural = 'Message Attachments'
+
+
 @receiver(pre_save, sender=UserPhoto)
 def user_photo_pre_save(instance, **kwargs):
     if not instance.position:
@@ -332,6 +397,15 @@ def master_tell_pre_save(instance, **kwargs):
 def slave_tell_pre_save(instance, **kwargs):
     if not instance.position:
         position = SlaveTell.objects.filter(owned_by=instance.owned_by).aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
+@receiver(pre_save, sender=MessageAttachment)
+def message_attachment_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = MessageAttachment.objects.filter(
+            message=instance.message,
+        ).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
 
 user_logged_in.disconnect(update_last_login)

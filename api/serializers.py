@@ -167,6 +167,49 @@ class SlaveTell(ModelSerializer):
         model = models.SlaveTell
 
 
+class MessageAttachment(ModelSerializer):
+
+    id = IntegerField(read_only=True)
+    position = IntegerField(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'string',
+            'position',
+        )
+        model = models.MessageAttachment
+
+
+class Message(ModelSerializer):
+
+    id = IntegerField(read_only=True)
+    user_source = User()
+    user_destination = User()
+    user_status = UserStatus(required=False)
+    master_tell = MasterTell(required=False)
+    type = CharField()
+    contents = CharField()
+    status = CharField()
+    attachments = MessageAttachment(help_text='List of Message Attachments', many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_source',
+            'user_destination',
+            'user_status',
+            'master_tell',
+            'type',
+            'contents',
+            'status',
+            'attachments',
+        )
+        model = models.Message
+
+
 class SlaveTellFull(ModelSerializer):
 
     id = IntegerField(read_only=True)
@@ -501,40 +544,6 @@ class UserSimple(ModelSerializer):
         model = models.User
 
 
-class AuthenticateRequest(Serializer):
-
-    access_token = CharField(help_text='OAuth 2 access token')
-
-
-class AuthenticateResponse(User):
-
-    token = SerializerMethodField()
-
-    class Meta:
-
-        fields = (
-            'id',
-            'email',
-            'email_status',
-            'photo',
-            'first_name',
-            'last_name',
-            'date_of_birth',
-            'gender',
-            'location',
-            'description',
-            'phone',
-            'phone_status',
-            'inserted_at',
-            'updated_at',
-            'token',
-        )
-        model = models.User
-
-    def get_token(self, instance):
-        return instance.get_token()
-
-
 class RegisterRequestPhoto(ModelSerializer):
 
     position = IntegerField(required=False)
@@ -709,7 +718,6 @@ class RegisterRequest(Serializer):
             phone=data['phone'] if 'phone' in data else None,
             phone_status=data['phone_status'],
         )
-        user.save()
         if 'status' in data:
             attachments = []
             if 'attachments' in data['status']:
@@ -720,10 +728,10 @@ class RegisterRequest(Serializer):
                 models.UserStatusAttachment.objects.create(user_status=user_status, **attachment)
         if 'urls' in data:
             for url in data['urls']:
-                models.UserURL.objects.create(user=user, **url).save()
+                models.UserURL.objects.create(user=user, **url)
         if 'photos' in data:
             for photo in data['photos']:
-                models.UserPhoto.objects.create(user=user, **photo).save()
+                models.UserPhoto.objects.create(user=user, **photo)
         if 'master_tells' in data:
             for master_tell in data['master_tells']:
                 slave_tells = []
@@ -755,7 +763,7 @@ class RegisterRequest(Serializer):
                     if response and 'id' in response:
                         UserSocialAuth.objects.create(
                             user=user, provider='linkedin-oauth2', uid=response['id'], extra_data=dumps(response),
-                        ).save()
+                        )
         return user
 
     def is_valid_(self, data):
@@ -816,3 +824,124 @@ class RegisterResponse(UserFull):
 
     def get_token(self, instance):
         return instance.get_token()
+
+
+class AuthenticateRequest(Serializer):
+
+    access_token = CharField(help_text='OAuth 2 access token')
+
+
+class AuthenticateResponse(User):
+
+    token = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'email',
+            'email_status',
+            'photo',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'phone_status',
+            'inserted_at',
+            'updated_at',
+            'token',
+        )
+        model = models.User
+
+    def get_token(self, instance):
+        return instance.get_token()
+
+
+class MessagePostRequest(Serializer):
+
+    user_destination_id = IntegerField()
+    user_status_id = IntegerField(required=False)
+    master_tell_id = IntegerField(required=False)
+    type = ChoiceField(
+        choices=(
+            ('Message', 'Message',),
+            ('Request', 'Request',),
+            ('Response - Accepted', 'Response - Accepted',),
+            ('Response - Blocked', 'Response - Blocked',),
+            ('Response - Deferred', 'Response - Deferred',),
+            ('Response - Rejected', 'Response - Rejected',),
+        ),
+    )
+    contents = CharField()
+    status = ChoiceField(
+        choices=(
+            ('Read', 'Read',),
+            ('Unread', 'Unread',),
+        ),
+    )
+    attachments = MessageAttachment(help_text='List of Message Attachments', many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'user_destination_id',
+            'user_status_id',
+            'master_tell_id',
+            'type',
+            'contents',
+            'status',
+            'inserted_at',
+            'updated_at',
+            'attachments',
+        )
+
+    def create(self, data):
+        message = models.Message.objects.create(
+            user_source=data['user_source'],
+            user_destination_id=data['user_destination_id'],
+            user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
+            master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
+            type=data['type'],
+            contents=data['contents'],
+            status=data['status'],
+        )
+        if 'attachments' in data:
+            for attachment in data['attachments']:
+                models.MessageAttachment.objects.create(
+                    message=message,
+                    string=attachment['string'],
+                    position=attachment['position'] if 'position' in attachment else None,
+                )
+        return message
+
+
+class MessagePostResponse(Message):
+    pass
+
+
+class MessagePatchRequest(Serializer):
+
+    status = ChoiceField(
+        choices=(
+            ('Read', 'Read',),
+            ('Unread', 'Unread',),
+        ),
+    )
+
+    class Meta:
+
+        fields = (
+            'status',
+        )
+
+    def update(self, instance, data):
+        instance.status = data['status']
+        instance.save()
+        return instance
+
+
+class MessagePatchResponse(Message):
+    pass

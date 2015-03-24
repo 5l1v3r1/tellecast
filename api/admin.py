@@ -366,6 +366,62 @@ class SlaveTell(ModelAdmin):
 
 site.register(models.SlaveTell, SlaveTell)
 
+
+class Message(ModelAdmin):
+
+    fields = (
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
+        'type',
+        'contents',
+        'status',
+    )
+    list_display = (
+        'id',
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
+        'type',
+        'status',
+        'inserted_at',
+        'updated_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
+        'type',
+        'status',
+        'inserted_at',
+        'updated_at',
+    )
+    list_select_related = (
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
+    )
+    ordering = (
+        '-inserted_at',
+    )
+    search_fields = (
+        'type',
+        'contents',
+        'status',
+        'inserted_at',
+        'updated_at',
+    )
+
+site.register(models.Message, Message)
+
 site.unregister(Administrator)
 
 delattr(AdministratorAdmin, 'form')
