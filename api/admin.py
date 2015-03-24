@@ -386,6 +386,7 @@ class Message(ModelAdmin):
         'master_tell',
         'type',
         'status',
+        'attachments_',
         'inserted_at',
         'updated_at',
     )
@@ -420,7 +421,50 @@ class Message(ModelAdmin):
         'updated_at',
     )
 
+    def attachments_(self, instance):
+        return instance.attachments.get_queryset().count()
+
+    attachments_.allow_tags = True
+    attachments_.short_description = 'Slave Tells'
+
 site.register(models.Message, Message)
+
+
+class MessageAttachment(ModelAdmin):
+
+    fields = (
+        'message',
+        'string',
+        'position',
+    )
+    list_display = (
+        'id',
+        'message',
+        'string',
+        'position',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'message',
+        'string',
+        'position',
+    )
+    list_select_related = (
+        'message',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'message',
+        'string',
+        'position',
+    )
+
+site.register(models.MessageAttachment, MessageAttachment)
 
 site.unregister(Administrator)
 
