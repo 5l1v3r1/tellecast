@@ -80,6 +80,7 @@ MANAGERS = ADMINS
 MEDIA_ROOT = join(dirname(__file__), 'media')
 MEDIA_URL = '/media/'
 MIDDLEWARE_CLASSES = (
+    'api.middleware.ExceptionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
