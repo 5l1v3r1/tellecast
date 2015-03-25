@@ -30,8 +30,9 @@ Step 3
 $ cd tellecast
 $ mkvirtualenv tellecast
 $ pip install -r requirements.txt
-$ python manage.py syncdb
-$ python manage.py migrate
+$ python manage.py syncdb --noinput
+$ python manage.py migrate --noinput
+$ python manage.py collectstatic --noinput
 ```
 
 How to run?
