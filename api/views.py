@@ -633,6 +633,10 @@ class UsersStatusesAttachments(ModelViewSet):
     Input
     =====
 
+    + user_status_id
+        - Type: integer
+        - Status: mandatory
+
     + string
         - Type: string
         - Status: mandatory
@@ -995,6 +999,10 @@ class SlaveTells(ModelViewSet):
     <pre>
     Input
     =====
+
+    + master_tell_id
+        - Type: integer
+        - Status: mandatory
 
     + photo
         - Type: string

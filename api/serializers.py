@@ -77,12 +77,14 @@ class UserSocialProfile(ModelSerializer):
 class UserStatusAttachment(ModelSerializer):
 
     id = IntegerField(read_only=True)
+    user_status_id = IntegerField()
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
+            'user_status_id',
             'string',
             'position',
         )
