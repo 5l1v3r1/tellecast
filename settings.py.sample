@@ -28,7 +28,7 @@ DATABASES = {
 }
 DEBUG = True
 DEFAULT_FROM_EMAIL = '...'
-EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1099511627776
 INSTALLED_APPS = (
     'api',
@@ -76,8 +76,6 @@ LOGGING = {
     },
     'version': 1,
 }
-MAILGUN_ACCESS_KEY = '...'
-MAILGUN_SERVER_NAME = '...'
 MANAGERS = ADMINS
 MEDIA_ROOT = join(dirname(__file__), 'media')
 MEDIA_URL = '/media/'
