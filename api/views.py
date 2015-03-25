@@ -326,7 +326,7 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     queryset = models.User.objects.all()
@@ -422,7 +422,7 @@ class UsersPhotos(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
@@ -515,7 +515,7 @@ class UsersSocialProfiles(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
@@ -610,7 +610,7 @@ class UsersStatuses(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
@@ -697,7 +697,7 @@ class UsersStatusesAttachments(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
@@ -786,7 +786,7 @@ class UsersURLs(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
@@ -880,7 +880,7 @@ class MasterTells(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
@@ -1106,7 +1106,7 @@ class SlaveTells(ModelViewSet):
 
     lookup_field = 'id'
     page_kwarg = 'page'
-    paginate_by = 'page'
+    paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
