@@ -3,6 +3,7 @@
 from django.conf import settings
 from django.contrib.auth import login
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy
 from rest_framework.decorators import api_view, permission_classes
@@ -1498,3 +1499,39 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
               message: Invalid Input
         '''
         return super(Messages, self).destroy(request, *args, **kwargs)
+
+
+def handler400(request):
+    return JsonResponse(
+        data={
+            'error': '400 Bad Request',
+        },
+        status=400,
+    )
+
+
+def handler403(request):
+    return JsonResponse(
+        data={
+            'error': '403 Forbidden',
+        },
+        status=403,
+    )
+
+
+def handler404(request):
+    return JsonResponse(
+        data={
+            'error': '404 Not Found',
+        },
+        status=404,
+    )
+
+
+def handler500(request):
+    return JsonResponse(
+        data={
+            'error': '500 Internal Server Error',
+        },
+        status=500,
+    )

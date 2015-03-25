@@ -59,3 +59,8 @@ if settings.DEBUG:
             },
         ),
     )
+
+handler400 = 'api.views.handler400'
+handler403 = 'api.views.handler403'
+handler404 = 'api.views.handler404'
+handler500 = 'api.views.handler500'
