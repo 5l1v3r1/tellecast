@@ -881,6 +881,8 @@ class MessagePostRequest(Serializer):
             ('Read', 'Read',),
             ('Unread', 'Unread',),
         ),
+        default='Unread',
+        required=False,
     )
     attachments = MessageAttachment(help_text='List of Message Attachments', many=True, required=False)
 
@@ -916,6 +918,15 @@ class MessagePostRequest(Serializer):
                     position=attachment['position'] if 'position' in attachment else None,
                 )
         return message
+
+    def validate(self, attrs):
+        if 'user_status_id' in attrs:
+            if not attrs['user_status_id']:
+                del attrs['user_status_id']
+        if 'master_tell_id' in attrs:
+            if not attrs['master_tell_id']:
+                del attrs['master_tell_id']
+        return attrs
 
 
 class MessagePostResponse(Message):
