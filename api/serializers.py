@@ -144,7 +144,7 @@ class MasterTell(ModelSerializer):
 class SlaveTell(ModelSerializer):
 
     id = IntegerField(read_only=True)
-    master_tell_id = IntegerField(read_only=True)
+    master_tell_id = IntegerField()
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
