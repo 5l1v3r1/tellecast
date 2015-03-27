@@ -127,12 +127,16 @@ class UserURL(ModelSerializer):
 class MasterTell(ModelSerializer):
 
     id = IntegerField(read_only=True)
+    created_by_id = IntegerField()
+    owned_by_id = IntegerField()
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
+            'created_by_id',
+            'owned_by_id',
             'contents',
             'position',
             'inserted_at',
@@ -145,6 +149,8 @@ class SlaveTell(ModelSerializer):
 
     id = IntegerField(read_only=True)
     master_tell_id = IntegerField()
+    created_by_id = IntegerField()
+    owned_by_id = IntegerField()
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
@@ -156,6 +162,8 @@ class SlaveTell(ModelSerializer):
         fields = (
             'id',
             'master_tell_id',
+            'created_by_id',
+            'owned_by_id',
             'photo',
             'first_name',
             'last_name',

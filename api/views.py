@@ -814,6 +814,14 @@ class MasterTells(ModelViewSet):
     Input
     =====
 
+    + created_by_id
+        - Type: integer
+        - Status: optional
+
+    + owned_by_id
+        - Type: integer
+        - Status: optional
+
     + contents
         - Type: string
         - Status: mandatory
@@ -1000,6 +1008,18 @@ class SlaveTells(ModelViewSet):
     <pre>
     Input
     =====
+
+    + master_tell_id
+        - Type: integer
+        - Status: mandatory
+
+    + created_by_id
+        - Type: integer
+        - Status: optional
+
+    + owned_by_id
+        - Type: integer
+        - Status: optional
 
     + master_tell_id
         - Type: integer
