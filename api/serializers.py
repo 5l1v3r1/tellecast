@@ -48,12 +48,14 @@ class User(ModelSerializer):
 class UserPhoto(ModelSerializer):
 
     id = IntegerField(read_only=True)
+    user_id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
+            'user_id',
             'string',
             'position',
         )
@@ -63,11 +65,13 @@ class UserPhoto(ModelSerializer):
 class UserSocialProfile(ModelSerializer):
 
     id = IntegerField(read_only=True)
+    user_id = IntegerField(read_only=True)
 
     class Meta:
 
         fields = (
             'id',
+            'user_id',
             'netloc',
             'url',
         )
@@ -94,6 +98,7 @@ class UserStatusAttachment(ModelSerializer):
 class UserStatus(ModelSerializer):
 
     id = IntegerField(read_only=True)
+    user_id = IntegerField(read_only=True)
     url = CharField(required=False)
     notes = CharField(required=False)
 
@@ -101,6 +106,7 @@ class UserStatus(ModelSerializer):
 
         fields = (
             'id',
+            'user_id',
             'string',
             'title',
             'url',
@@ -112,12 +118,14 @@ class UserStatus(ModelSerializer):
 class UserURL(ModelSerializer):
 
     id = IntegerField(read_only=True)
+    user_id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
+            'user_id',
             'string',
             'position',
         )
@@ -127,8 +135,8 @@ class UserURL(ModelSerializer):
 class MasterTell(ModelSerializer):
 
     id = IntegerField(read_only=True)
-    created_by_id = IntegerField()
-    owned_by_id = IntegerField()
+    created_by_id = IntegerField(read_only=True)
+    owned_by_id = IntegerField(read_only=True)
     position = IntegerField(required=False)
 
     class Meta:
@@ -149,8 +157,8 @@ class SlaveTell(ModelSerializer):
 
     id = IntegerField(read_only=True)
     master_tell_id = IntegerField()
-    created_by_id = IntegerField()
-    owned_by_id = IntegerField()
+    created_by_id = IntegerField(read_only=True)
+    owned_by_id = IntegerField(read_only=True)
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
