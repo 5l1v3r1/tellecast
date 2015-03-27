@@ -48,6 +48,7 @@ urlpatterns = patterns(
             'delete': 'destroy',
         }),
     ),
+    url(r'^api/users/(?P<id>[^/]+)/profile/$', views.users_profile),
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),

@@ -724,7 +724,6 @@ class UsersRequest(User):
         instance.status.attachments.get_queryset().exclude(id__in=ids).delete()
         if 'urls' in data:
             for url in data['urls']:
-                print [i.__dict__ for i in instance.urls.get_queryset().all()]
                 i = instance.urls.get_queryset().filter(
                     Q(id=url['id'] if 'id' in url else 0) | Q(string=url['string']),
                 ).first()
@@ -816,6 +815,34 @@ class UsersResponse(User):
 
     def get_token(self, instance):
         return instance.get_token()
+
+
+class UsersProfile(RegisterResponse):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'email',
+            'email_status',
+            'photo',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'phone_status',
+            'inserted_at',
+            'updated_at',
+            'photos',
+            'social_profiles',
+            'status',
+            'urls',
+            'master_tells',
+        )
+        model = models.User
 
 
 class MessagesAttachment(ModelSerializer):

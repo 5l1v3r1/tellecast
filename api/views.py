@@ -5,6 +5,7 @@ from django.contrib.auth import login
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.mixins import (
@@ -494,6 +495,20 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         '''
         self.get_object().delete()
         return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
+@api_view(('GET',))
+@permission_classes(())
+def users_profile(request, id):
+    '''
+    Retrieve the profile of a User
+    ---
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    serializer: api.serializers.UsersProfile
+    '''
+    return Response(data=serializers.UsersProfile(get_object_or_404(models.User, id=id)).data, status=HTTP_200_OK)
 
 
 class MasterTells(ModelViewSet):
