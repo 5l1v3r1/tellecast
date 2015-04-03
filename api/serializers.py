@@ -912,6 +912,8 @@ class Messages(ModelSerializer):
             'type',
             'contents',
             'status',
+            'inserted_at',
+            'updated_at',
             'attachments',
         )
         model = models.Message
@@ -952,8 +954,6 @@ class MessagesPostRequest(Serializer):
             'type',
             'contents',
             'status',
-            'inserted_at',
-            'updated_at',
             'attachments',
         )
 
