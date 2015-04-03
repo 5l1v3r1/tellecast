@@ -636,34 +636,46 @@ class UsersRequest(User):
         model = models.User
 
     def update(self, instance, data):
-        instance.email = data['email']
-        instance.email_status = data['email_status']
-        instance.photo = data['photo']
-        instance.first_name = data['first_name']
-        instance.last_name = data['last_name']
-        instance.date_of_birth = data['date_of_birth']
-        instance.gender = data['gender']
-        instance.location = data['location']
-        instance.description = data['description']
-        instance.phone = data['phone']
-        instance.phone_status = data['phone_status']
+        if 'email' in data:
+            instance.email = data['email']
+        if 'email_status' in data:
+            instance.email_status = data['email_status']
+        if 'photo' in data:
+            instance.photo = data['photo']
+        if 'first_name' in data:
+            instance.first_name = data['first_name']
+        if 'last_name' in data:
+            instance.last_name = data['last_name']
+        if 'date_of_birth' in data:
+            instance.date_of_birth = data['date_of_birth']
+        if 'gender' in data:
+            instance.gender = data['gender']
+        if 'location' in data:
+            instance.location = data['location']
+        if 'description' in data:
+            instance.description = data['description']
+        if 'phone' in data:
+            instance.phone = data['phone']
+        if 'phone_status' in data:
+            instance.phone_status = data['phone_status']
         instance.save()
         ids = []
         if 'photos' in data:
             for photo in data['photos']:
                 i = instance.photos.get_queryset().filter(
-                    Q(id=photo['id'] if 'id' in photo else 0) | Q(string=photo['string']),
+                    Q(id=photo['id'] if 'id' in photo else 0) | Q(string=photo['string'] if 'string' in photo else ''),
                 ).first()
                 if i:
                     i.user_id = instance.id
-                    i.string = photo['string']
-                    if 'position' in photo and photo['position']:
+                    if 'string' in photo:
+                        i.string = photo['string']
+                    if 'position' in photo:
                         i.position = photo['position']
                     i.save()
                 else:
                     i = models.UserPhoto.objects.create(
                         user_id=instance.id,
-                        string=photo['string'],
+                        string=photo['string'] if 'string' in photo else '',
                         position=photo['position'] if 'position' in photo else 0,
                     )
                 ids.append(i.id)
@@ -672,71 +684,88 @@ class UsersRequest(User):
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
                 i = instance.social_profiles.get_queryset().filter(
-                    Q(id=social_profile['id'] if 'id' in social_profile else 0) | Q(netloc=social_profile['netloc']),
+                    Q(id=social_profile['id'] if 'id' in social_profile else 0)
+                    |
+                    Q(netloc=social_profile['netloc'] if 'netloc' in social_profile else ''),
                 ).first()
                 if i:
                     i.user_id = instance.id
-                    i.netloc = social_profile['netloc']
-                    i.url = social_profile['url']
+                    if 'netloc' in social_profile:
+                        i.netloc = social_profile['netloc']
+                    if 'url' in social_profile:
+                        i.url = social_profile['url']
                     i.save()
                 else:
                     i = models.UserSocialProfile.objects.create(
-                        user_id=instance.id, netloc=social_profile['netloc'], url=social_profile['url'],
+                        user_id=instance.id,
+                        netloc=social_profile['netloc'] if 'netloc' in social_profile else '',
+                        url=social_profile['url'] if 'url' in social_profile else '',
                     )
                 ids.append(i.id)
         instance.social_profiles.get_queryset().exclude(id__in=ids).delete()
-        try:
-            if instance.status:
-                i = instance.status
-                i.user_id = instance.id
-                i.string = data['status']['string']
-                i.title = data['status']['title']
-                i.url = data['status']['url']
-                i.notes = data['status']['notes']
-                i.save()
-        except ObjectDoesNotExist:
-            i = models.UserStatus.objects.create(
-                user_id=instance.id,
-                string=data['status']['string'],
-                title=data['status']['title'],
-                url=data['status']['url'],
-                notes=data['status']['string'],
-            )
-        ids = []
-        if 'attachments' in data['status']:
-            for attachment in data['status']['attachments']:
-                i = instance.status.attachments.get_queryset().filter(
-                    Q(id=attachment['id'] if 'id' in attachment else 0) | Q(string=attachment['string']),
-                ).first()
-                if i:
-                    i.user_status_id = instance.status.id
-                    i.string = attachment['string']
-                    if 'position' in attachment and attachment['position']:
-                        i.position = attachment['position']
+        if 'status' in data:
+            try:
+                if instance.status:
+                    i = instance.status
+                    i.user_id = instance.id
+                    if 'string' in data['status']:
+                        i.string = data['status']['string']
+                    if 'title' in data['status']:
+                        i.title = data['status']['title']
+                    if 'url' in data['status']:
+                        i.url = data['status']['url']
+                    if 'notes' in data['status']:
+                        i.notes = data['status']['notes']
                     i.save()
-                else:
-                    i = models.UserStatusAttachment.objects.create(
-                        user_status_id=instance.status.id,
-                        string=attachment['string'],
-                        position=attachment['position'] if 'position' in attachment else 0,
-                    )
-                ids.append(i.id)
-        instance.status.attachments.get_queryset().exclude(id__in=ids).delete()
+            except ObjectDoesNotExist:
+                i = models.UserStatus.objects.create(
+                    user_id=instance.id,
+                    string=data['status']['string'],
+                    title=data['status']['title'],
+                    url=data['status']['url'],
+                    notes=data['status']['string'],
+                )
+            ids = []
+            if 'attachments' in data['status']:
+                for attachment in data['status']['attachments']:
+                    i = instance.status.attachments.get_queryset().filter(
+                        Q(id=attachment['id'] if 'id' in attachment else 0)
+                        |
+                        Q(string=attachment['string'] if 'string' in attachment else ''),
+                    ).first()
+                    if i:
+                        i.user_status_id = instance.status.id
+                        if 'string' in attachment:
+                            i.string = attachment['string']
+                        if 'position' in attachment:
+                            i.position = attachment['position']
+                        i.save()
+                    else:
+                        i = models.UserStatusAttachment.objects.create(
+                            user_status_id=instance.status.id,
+                            string=attachment['string'] if 'string' in attachment else '',
+                            position=attachment['position'] if 'position' in attachment else 0,
+                        )
+                    ids.append(i.id)
+            instance.status.attachments.get_queryset().exclude(id__in=ids).delete()
         if 'urls' in data:
             for url in data['urls']:
                 i = instance.urls.get_queryset().filter(
-                    Q(id=url['id'] if 'id' in url else 0) | Q(string=url['string']),
+                    Q(id=url['id'] if 'id' in url else 0)
+                    |
+                    Q(string=url['string'] if 'string' in url else ''),
                 ).first()
                 if i:
                     i.user_id = instance.id
-                    i.string = url['string']
-                    if 'position' in url and url['position']:
+                    if 'string' in url:
+                        i.string = url['string']
+                    if 'position' in url:
                         i.position = url['position']
                     i.save()
                 else:
                     i = models.UserURL.objects.create(
                         user_id=instance.id,
-                        string=url['string'],
+                        string=url['string'] if 'string' in url else '',
                         position=url['position'] if 'position' in url else 0,
                     )
                 ids.append(i.id)
