@@ -979,6 +979,12 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 - True
                 - False
 
+        + user_id
+            Description: If supplied, all messages will pertain to this `user_id`. Only applicable if
+            `recent` = False.
+            Type: integer
+            Status: optional
+
         + user_status_id
             Description: If supplied, all messages will pertain to this `user_status_id`. Only applicable if
             `recent` = False.
@@ -1034,9 +1040,9 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         if request.query_params.get('recent', True):
             for user in models.User.objects.exclude(id=request.user.id).order_by('id').all():
                 message = models.Message.objects.filter(
-                    Q(user_source_id=request.user.id, user_destination=user.id)
+                    Q(user_source_id=request.user.id, user_destination_id=user.id)
                     |
-                    Q(user_source_id=user.id, user_destination=request.user.id),
+                    Q(user_source_id=user.id, user_destination_id=request.user.id),
                     user_status_id__isnull=True,
                     master_tell_id__isnull=True,
                 ).order_by('-inserted_at').first()
@@ -1045,8 +1051,13 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             messages = sorted(messages, key=lambda message: message.inserted_at, reverse=True)
         else:
             query = models.Message.objects.filter(
-                Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
+                Q(user_source_id=request.user.id) | Q(user_destination_id=request.user.id),
             )
+            user_id = request.query_params.get('user_id', None)
+            if user_id:
+                query = query.filter(
+                    Q(user_source_id=user_id) | Q(user_destination_id=user_id),
+                )
             user_status_id = request.query_params.get('user_status_id', None)
             if user_status_id:
                 query = query.filter(user_status_id=user_status_id)
