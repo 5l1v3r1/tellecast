@@ -83,7 +83,7 @@ def register(request):
 
     + phone_status
         - Type: string
-        - Status: mandatory
+        - Status: optional
         - Choices:
             - Private
             - Public
@@ -283,7 +283,7 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
 
     + phone_status
         - Type: string
-        - Status: mandatory
+        - Status: optional
         - Choices:
             - Private
             - Public
