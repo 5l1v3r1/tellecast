@@ -25,6 +25,7 @@ class User(ModelSerializer):
     location = CharField(required=False)
     description = CharField(required=False)
     phone = CharField(required=False)
+    phone_status = CharField(required=False)
 
     class Meta:
 
@@ -336,6 +337,7 @@ class RegisterRequest(Serializer):
             ('Private', 'Private',),
             ('Public', 'Public',),
         ),
+        required=False,
     )
     photos = RegisterRequestUserPhoto(help_text='List of User Photos', many=True, required=False)
     social_profiles = RegisterRequestUserSocialProfile(
@@ -357,8 +359,10 @@ class RegisterRequest(Serializer):
             location=data['location'] if 'location' in data else None,
             description=data['description'] if 'description' in data else None,
             phone=data['phone'] if 'phone' in data else None,
-            phone_status=data['phone_status'],
         )
+        if 'phone_status' in data:
+            user.phone_status = data['phone_status']
+            user.save()
         if 'status' in data:
             attachments = []
             if 'attachments' in data['status']:
