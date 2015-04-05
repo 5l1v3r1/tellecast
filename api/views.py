@@ -2,7 +2,6 @@
 
 from django.conf import settings
 from django.contrib.auth import login
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -1033,32 +1032,17 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         '''
         messages = []
         if request.query_params.get('recent', True):
-            message = models.Message.objects.filter(
-                Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
-                user_status_id__isnull=True,
-                master_tell_id__isnull=True,
-            ).order_by('-inserted_at').first()
-            if message:
-                messages.append(message)
-            try:
-                if request.user.status:
-                    message = models.Message.objects.filter(
-                        Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
-                        user_status_id=request.user.status.id,
-                        master_tell_id__isnull=True,
-                    ).order_by('-inserted_at').first()
-                    if message:
-                        messages.append(message)
-            except ObjectDoesNotExist:
-                pass
-            for master_tell in request.user.master_tells.get_queryset().all():
+            for user in models.User.objects.exclude(id=request.user.id).order_by('id').all():
                 message = models.Message.objects.filter(
-                    Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
+                    Q(user_source_id=request.user.id, user_destination=user.id)
+                    |
+                    Q(user_source_id=user.id, user_destination=request.user.id),
                     user_status_id__isnull=True,
-                    master_tell_id=master_tell.id,
+                    master_tell_id__isnull=True,
                 ).order_by('-inserted_at').first()
                 if message:
                     messages.append(message)
+            messages = sorted(messages, key=lambda message: message.inserted_at, reverse=True)
         else:
             query = models.Message.objects.filter(
                 Q(user_source_id=request.user.id) | Q(user_destination=request.user.id),
