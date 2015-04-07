@@ -290,7 +290,7 @@ class SlaveTell(Model):
         db_index=True,
         max_length=255,
     )
-    is_editable = BooleanField(ugettext_lazy('Is Editable?'), db_index=True)
+    is_editable = BooleanField(ugettext_lazy('Is Editable?'), db_index=True, default=True)
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
