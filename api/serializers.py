@@ -3,7 +3,15 @@
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.serializers import (
-    CharField, ChoiceField, DateField, EmailField, IntegerField, ModelSerializer, Serializer, SerializerMethodField,
+    BooleanField,
+    CharField,
+    ChoiceField,
+    DateField,
+    EmailField,
+    IntegerField,
+    ModelSerializer,
+    Serializer,
+    SerializerMethodField,
 )
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
@@ -164,6 +172,7 @@ class SlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
+    is_editable = BooleanField(required=True)
     description = CharField(required=False)
     position = IntegerField(required=False)
 
@@ -276,6 +285,7 @@ class RegisterRequestSlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
+    is_editable = BooleanField(required=True)
     description = CharField(required=False)
     position = IntegerField(required=False)
 
