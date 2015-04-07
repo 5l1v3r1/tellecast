@@ -982,6 +982,18 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             Choices:
                 - True
                 - False
+            Notes:
+                - Python evaluates `'False'` (string) to `True` (boolean).
+                - In order to pass `recent=False`, please use `recent=` (empty value).
+            Examples:
+                - `recent=True` is evaluated as `recent=True`
+                - `recent=true` is evaluated as `recent=True`
+                - `recent=t` is evaluated as `recent=True`
+                - `recent=False` is evaluated as `recent=True`
+                - `recent=false` is evaluated as `recent=True`
+                - `recent=f` is evaluated as `recent=True`
+                - `recent=` is evaluated as `recent=False`
+                - `` is evaluated as `recent=False`
 
         + user_id
             Description: If supplied, all messages will pertain to this `user_id`. Only applicable if
