@@ -2,7 +2,17 @@
 
 from django.conf import settings
 from django.db.models import (
-    CharField, DateField, DateTimeField, EmailField, ForeignKey, IntegerField, Max, Model, OneToOneField, TextField,
+    BooleanField,
+    CharField,
+    DateField,
+    DateTimeField,
+    EmailField,
+    ForeignKey,
+    IntegerField,
+    Max,
+    Model,
+    OneToOneField,
+    TextField,
 )
 from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
@@ -280,6 +290,7 @@ class SlaveTell(Model):
         db_index=True,
         max_length=255,
     )
+    is_editable = BooleanField(ugettext_lazy('Is Editable?'), db_index=True)
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)

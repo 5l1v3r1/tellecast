@@ -769,6 +769,10 @@ class SlaveTells(ModelViewSet):
             - video/mpeg
             - video/x-mpeg
 
+    + is_editable
+        - Type: boolean
+        - Status: mandatory
+
     + contents
         - Type: string
         - Status: mandatory

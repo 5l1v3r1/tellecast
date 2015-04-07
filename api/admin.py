@@ -322,6 +322,7 @@ class SlaveTell(ModelAdmin):
         'first_name',
         'last_name',
         'type',
+        'is_editable',
         'contents',
         'description',
         'position',
@@ -332,6 +333,7 @@ class SlaveTell(ModelAdmin):
         'created_by',
         'owned_by',
         'type',
+        'is_editable',
         'position',
         'inserted_at',
         'updated_at',
@@ -345,6 +347,7 @@ class SlaveTell(ModelAdmin):
         'created_by',
         'owned_by',
         'type',
+        'is_editable',
         'position',
         'inserted_at',
         'updated_at',
@@ -359,6 +362,7 @@ class SlaveTell(ModelAdmin):
     )
     search_fields = (
         'type',
+        'is_editable',
         'position',
         'inserted_at',
         'updated_at',
