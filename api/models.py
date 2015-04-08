@@ -21,7 +21,11 @@ from django.dispatch import receiver
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy
 from itsdangerous import TimestampSigner
+from push_notifications.apns import apns_send_message
+from push_notifications.fields import HexIntegerField
+from push_notifications.gcm import gcm_send_message
 from social.apps.django_app.default.models import UserSocialAuth
+from uuidfield import UUIDField
 
 
 class User(Model):
@@ -372,6 +376,44 @@ class MessageAttachment(Model):
         )
         verbose_name = 'Message Attachment'
         verbose_name_plural = 'Message Attachments'
+
+
+class DeviceAPNS(Model):
+
+    user = ForeignKey(User, related_name='+')
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    device_id = UUIDField(db_index=True, max_length=255, name=ugettext_lazy('Device ID'))
+    registration_id = CharField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_devices_apns'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'APNS Device'
+        verbose_name_plural = 'APNS Devices'
+
+    def send_message(self, extra):
+        return apns_send_message(registration_id=self.registration_id, extra=extra)
+
+
+class DeviceGCM(Model):
+
+    user = ForeignKey(User, related_name='+')
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    device_id = HexIntegerField(ugettext_lazy('Device ID'), db_index=True, max_length=255)
+    registration_id = TextField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_devices_gcm'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'GCM Device'
+        verbose_name_plural = 'GCM Devices'
+
+    def send_message(self, data):
+        return gcm_send_message(registration_id=self.registration_id, data=data)
 
 
 @receiver(pre_save, sender=UserPhoto)

@@ -87,6 +87,10 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
+PUSH_NOTIFICATIONS_SETTINGS = {
+    'APNS_CERTIFICATE': '...',
+    'GCM_API_KEY': '...',
+}
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'api.authentication.Authentication',

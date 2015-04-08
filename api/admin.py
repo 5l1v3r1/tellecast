@@ -470,6 +470,86 @@ class MessageAttachment(ModelAdmin):
 
 site.register(models.MessageAttachment, MessageAttachment)
 
+
+class DeviceAPNS(ModelAdmin):
+
+    fields = (
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'device_id',
+        'registration_id',
+    )
+
+site.register(models.DeviceAPNS, DeviceAPNS)
+
+
+class DeviceGCM(ModelAdmin):
+
+    fields = (
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'device_id',
+        'registration_id',
+    )
+
+site.register(models.DeviceGCM, DeviceGCM)
+
 site.unregister(Administrator)
 
 delattr(AdministratorAdmin, 'form')

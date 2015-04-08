@@ -26,6 +26,8 @@ router = SimpleRouter()
 router.register(r'master-tells', views.MasterTells, base_name='master-tells')
 router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
 router.register(r'messages', views.Messages, base_name='messages')
+router.register(r'devices/apns', views.DevicesAPNS, base_name='devices-apns')
+router.register(r'devices/gcm', views.DevicesGCM, base_name='devices-gcm')
 
 urlpatterns = patterns(
     '',

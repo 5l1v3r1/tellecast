@@ -197,6 +197,87 @@ class SlaveTell(ModelSerializer):
         model = models.SlaveTell
 
 
+class MessageAttachment(ModelSerializer):
+
+    id = IntegerField(required=False)
+    position = IntegerField(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'string',
+            'position',
+        )
+        model = models.MessageAttachment
+
+
+class Message(ModelSerializer):
+
+    id = IntegerField(required=False)
+    user_source = User()
+    user_destination = User()
+    user_status = UserStatus(required=False)
+    master_tell = MasterTell(required=False)
+    type = CharField()
+    contents = CharField()
+    status = CharField()
+    attachments = MessageAttachment(help_text='List of Message Attachments', many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_source',
+            'user_destination',
+            'user_status',
+            'master_tell',
+            'type',
+            'contents',
+            'status',
+            'inserted_at',
+            'updated_at',
+            'attachments',
+        )
+        model = models.Message
+
+
+class DeviceAPNS(ModelSerializer):
+
+    id = IntegerField(required=False)
+    name = CharField()
+    device_id = CharField()
+    registration_id = CharField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceAPNS
+
+
+class DeviceGCM(ModelSerializer):
+
+    id = IntegerField(required=False)
+    name = CharField()
+    device_id = CharField()
+    registration_id = CharField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceGCM
+
+
 class RegisterRequestUserPhoto(ModelSerializer):
 
     position = IntegerField(required=False)
@@ -914,51 +995,6 @@ class UsersProfile(RegisterResponse):
         model = models.User
 
 
-class MessagesAttachment(ModelSerializer):
-
-    id = IntegerField(required=False)
-    position = IntegerField(required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'string',
-            'position',
-        )
-        model = models.MessageAttachment
-
-
-class Messages(ModelSerializer):
-
-    id = IntegerField(required=False)
-    user_source = User()
-    user_destination = User()
-    user_status = UserStatus(required=False)
-    master_tell = MasterTell(required=False)
-    type = CharField()
-    contents = CharField()
-    status = CharField()
-    attachments = MessagesAttachment(help_text='List of Message Attachments', many=True, required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'user_source',
-            'user_destination',
-            'user_status',
-            'master_tell',
-            'type',
-            'contents',
-            'status',
-            'inserted_at',
-            'updated_at',
-            'attachments',
-        )
-        model = models.Message
-
-
 class MessagesPostRequest(Serializer):
 
     user_destination_id = IntegerField()
@@ -983,7 +1019,7 @@ class MessagesPostRequest(Serializer):
         default='Unread',
         required=False,
     )
-    attachments = MessagesAttachment(help_text='List of Message Attachments', many=True, required=False)
+    attachments = MessageAttachment(help_text='List of Message Attachments', many=True, required=False)
 
     class Meta:
 
@@ -1026,7 +1062,7 @@ class MessagesPostRequest(Serializer):
         return attrs
 
 
-class MessagesPostResponse(Messages):
+class MessagesPostResponse(Message):
     pass
 
 
@@ -1051,5 +1087,5 @@ class MessagesPatchRequest(Serializer):
         return instance
 
 
-class MessagesPatchResponse(Messages):
+class MessagesPatchResponse(Message):
     pass
