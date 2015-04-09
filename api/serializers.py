@@ -2,6 +2,7 @@
 
 from django.conf import settings
 from django.db.models import Q
+from django.utils.translation import ugettext_lazy
 from rest_framework.serializers import (
     BooleanField,
     CharField,
@@ -12,6 +13,7 @@ from rest_framework.serializers import (
     ModelSerializer,
     Serializer,
     SerializerMethodField,
+    ValidationError,
 )
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
@@ -293,7 +295,7 @@ class RegisterRequestUserPhoto(ModelSerializer):
 
 class RegisterRequestUserSocialProfile(Serializer):
 
-    access_token = CharField()
+    access_token = CharField(required=False)
     netloc = ChoiceField(
         choices=(
             ('facebook.com', 'facebook.com',),
@@ -313,6 +315,12 @@ class RegisterRequestUserSocialProfile(Serializer):
             'url',
         )
         model = models.UserSocialProfile
+
+    def validate(self, data):
+        if data['netloc'] == 'linkedin.com':
+            if 'access_token' not in data or not data['access_token']:
+                raise ValidationError(ugettext_lazy('Invalid `access_token`'))
+        return data
 
 
 class RegisterRequestUserStatusAttachment(ModelSerializer):
