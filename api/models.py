@@ -318,7 +318,9 @@ class SlaveTell(Model):
 class Message(Model):
 
     user_source = ForeignKey(User, related_name='+')
+    user_source_is_hidden = BooleanField(ugettext_lazy('Is Hidden?'), db_index=True, default=False)
     user_destination = ForeignKey(User, related_name='+')
+    user_destination_is_hidden = BooleanField(ugettext_lazy('Is Hidden?'), db_index=True, default=False)
     user_status = ForeignKey(UserStatus, blank=True, null=True, related_name='+')
     master_tell = ForeignKey(MasterTell, blank=True, null=True, related_name='+')
     type = CharField(

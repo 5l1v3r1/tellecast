@@ -375,7 +375,9 @@ class Message(ModelAdmin):
 
     fields = (
         'user_source',
+        'user_source_is_hidden',
         'user_destination',
+        'user_destination_is_hidden',
         'user_status',
         'master_tell',
         'type',
@@ -385,7 +387,9 @@ class Message(ModelAdmin):
     list_display = (
         'id',
         'user_source',
+        'user_source_is_hidden',
         'user_destination',
+        'user_destination_is_hidden',
         'user_status',
         'master_tell',
         'type',
@@ -400,7 +404,9 @@ class Message(ModelAdmin):
     list_filter = (
         'id',
         'user_source',
+        'user_source_is_hidden',
         'user_destination',
+        'user_destination_is_hidden',
         'user_status',
         'master_tell',
         'type',

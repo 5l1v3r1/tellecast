@@ -218,7 +218,9 @@ class Message(ModelSerializer):
 
     id = IntegerField(required=False)
     user_source = User()
+    user_source_is_hidden = BooleanField(default=False, required=False)
     user_destination = User()
+    user_destination_is_hidden = BooleanField(default=False, required=False)
     user_status = UserStatus(required=False)
     master_tell = MasterTell(required=False)
     type = CharField()
@@ -231,7 +233,9 @@ class Message(ModelSerializer):
         fields = (
             'id',
             'user_source',
+            'user_source_is_hidden',
             'user_destination',
+            'user_destination_is_hidden',
             'user_status',
             'master_tell',
             'type',
@@ -1005,7 +1009,9 @@ class UsersProfile(RegisterResponse):
 
 class MessagesPostRequest(Serializer):
 
+    user_source_is_hidden = BooleanField(default=False, required=False)
     user_destination_id = IntegerField()
+    user_destination_is_hidden = BooleanField(default=False, required=False)
     user_status_id = IntegerField(required=False)
     master_tell_id = IntegerField(required=False)
     type = ChoiceField(
@@ -1032,7 +1038,9 @@ class MessagesPostRequest(Serializer):
     class Meta:
 
         fields = (
+            'user_source_is_hidden',
             'user_destination_id',
+            'user_destination_is_hidden',
             'user_status_id',
             'master_tell_id',
             'type',
@@ -1044,7 +1052,10 @@ class MessagesPostRequest(Serializer):
     def create(self, data):
         message = models.Message.objects.create(
             user_source=data['user_source'],
+            user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
             user_destination_id=data['user_destination_id'],
+            user_destination_is_hidden=data['user_destination_is_hidden']
+                if 'user_destination_is_hidden' in data else None,
             user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
             master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
             type=data['type'],
@@ -1076,21 +1087,31 @@ class MessagesPostResponse(Message):
 
 class MessagesPatchRequest(Serializer):
 
+    user_source_is_hidden = BooleanField(default=False, required=False)
+    user_destination_is_hidden = BooleanField(default=False, required=False)
     status = ChoiceField(
         choices=(
             ('Read', 'Read',),
             ('Unread', 'Unread',),
         ),
+        required=False,
     )
 
     class Meta:
 
         fields = (
+            'user_source_is_hidden',
+            'user_destination_is_hidden',
             'status',
         )
 
     def update(self, instance, data):
-        instance.status = data['status']
+        if 'user_source_is_hidden' in data:
+            instance.user_source_is_hidden = data['user_source_is_hidden']
+        if 'user_destination_is_hidden' in data:
+            instance.user_destination_is_hidden = data['user_destination_is_hidden']
+        if 'status' in data:
+            instance.status = data['status']
         instance.save()
         return instance
 
