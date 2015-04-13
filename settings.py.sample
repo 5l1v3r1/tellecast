@@ -26,6 +26,20 @@ DATABASES = {
         'USER': '...',
     }
 }
+BROKER = '...'
+BROKER_POOL_LIMIT = 0
+CELERY_ACCEPT_CONTENT = [
+    'json',
+]
+CELERY_ACKS_LATE = True
+CELERY_IGNORE_RESULT = True
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERYD_LOG_FORMAT = '[%(asctime)s: %(levelname)s] %(message)s'
+CELERYD_POOL_RESTARTS = True
+CELERYD_PREFETCH_MULTIPLIER = 1
+CELERYD_TASK_SOFT_TIME_LIMIT = 3600
+CELERYD_TASK_TIME_LIMIT = 7200
 DEBUG = True
 DEFAULT_FROM_EMAIL = '...'
 EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
@@ -33,6 +47,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 1099511627776
 INSTALLED_APPS = (
     'api',
     'debug_toolbar',
+    'djcelery',
     'suit',
     'django.contrib.admin',
     'django.contrib.admindocs',
@@ -89,6 +104,7 @@ MIDDLEWARE_CLASSES = (
 )
 PUSH_NOTIFICATIONS_SETTINGS = {
     'APNS_CERTIFICATE': '...',
+    'APNS_HOST': '...',
     'GCM_API_KEY': '...',
 }
 REST_FRAMEWORK = {

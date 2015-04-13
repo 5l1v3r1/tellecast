@@ -16,7 +16,7 @@ from django.db.models import (
 )
 from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy
@@ -26,6 +26,8 @@ from push_notifications.fields import HexIntegerField
 from push_notifications.gcm import gcm_send_message
 from social.apps.django_app.default.models import UserSocialAuth
 from uuidfield import UUIDField
+
+from api import celery
 
 
 class User(Model):
@@ -394,7 +396,7 @@ class DeviceAPNS(Model):
         verbose_name_plural = 'APNS Devices'
 
     def send_message(self, extra):
-        return apns_send_message(registration_id=self.registration_id, extra=extra)
+        return apns_send_message(self.registration_id, extra)
 
 
 class DeviceGCM(Model):
@@ -413,7 +415,7 @@ class DeviceGCM(Model):
         verbose_name_plural = 'GCM Devices'
 
     def send_message(self, data):
-        return gcm_send_message(registration_id=self.registration_id, data=data)
+        return gcm_send_message(self.registration_id, data)
 
 
 @receiver(pre_save, sender=UserPhoto)
@@ -451,6 +453,11 @@ def slave_tell_pre_save(instance, **kwargs):
     if not instance.position:
         position = SlaveTell.objects.filter(owned_by=instance.owned_by).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(post_save, sender=Message)
+def message_post_save(instance, **kwargs):
+    celery.push_notifications.delay(instance.id)
 
 
 @receiver(pre_save, sender=MessageAttachment)

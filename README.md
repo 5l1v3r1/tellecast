@@ -41,5 +41,6 @@ How to run?
 ```
 $ cd tellecast
 $ workon tellecast
+$ celery worker --app=api --concurrency=8 --loglevel=WARNING --pool=prefork
 $ python manage.py runserver 0.0.0.0:8000
 ```
