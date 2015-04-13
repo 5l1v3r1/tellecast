@@ -13,7 +13,12 @@ from rest_framework.mixins import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.status import (
-    HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED,
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
 )
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -1198,6 +1203,16 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         '''
         serializer = serializers.MessagesPostRequest(data=request.data)
         serializer.is_valid(raise_exception=True)
+        message = models.Message.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'])
+            |
+            Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
+        ).order_by(
+            '-inserted_at',
+        ).first()
+        if message:
+            if message.type in ['Request', 'Response - Blocked']:
+                return Response(status=HTTP_403_FORBIDDEN)
         serializer = serializers.MessagesPostResponse(serializer.save(user_source=request.user))
         headers = self.get_success_headers(serializer.data)
         return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
