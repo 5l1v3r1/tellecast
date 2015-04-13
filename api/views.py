@@ -1111,9 +1111,17 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         Input
         =====
 
+        + user_source_is_hidden
+            - Type: boolean (default = False)
+            - Status: optional
+
         + user_destination_id
             - Type: integer
             - Status: mandatory
+
+        + user_destination_is_hidden
+            - Type: boolean (default = False)
+            - Status: optional
 
         + user_status_id
             - Type: integer
@@ -1198,9 +1206,17 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             - Type: integer
             - Status: mandatory
 
+        + user_source_is_hidden
+            - Type: boolean (default = False)
+            - Status: optional
+
+        + user_destination_is_hidden
+            - Type: boolean (default = False)
+            - Status: optional
+
         + status
             - Type: string
-            - Status: mandatory
+            - Status: optional
             - Choices:
                 - Read
                 - Unread
