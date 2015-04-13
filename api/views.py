@@ -507,7 +507,15 @@ def users_profile(request, id):
           message: Invalid Input
     serializer: api.serializers.UsersProfile
     '''
-    return Response(data=serializers.UsersProfile(get_object_or_404(models.User, id=id)).data, status=HTTP_200_OK)
+    return Response(
+        data=serializers.UsersProfile(
+            get_object_or_404(models.User, id=id),
+            context={
+                'request': request,
+            },
+        ).data,
+        status=HTTP_200_OK,
+    )
 
 
 class MasterTells(ModelViewSet):

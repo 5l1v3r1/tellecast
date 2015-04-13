@@ -981,6 +981,8 @@ class UsersResponse(User):
 
 class UsersProfile(RegisterResponse):
 
+    messages = SerializerMethodField()
+
     class Meta:
 
         fields = (
@@ -1003,8 +1005,24 @@ class UsersProfile(RegisterResponse):
             'status',
             'urls',
             'master_tells',
+            'messages',
         )
         model = models.User
+
+    def get_messages(self, instance):
+        request = self.context.get('request', None)
+        if request is None:
+            return False
+        if not request.user.is_authenticated():
+            return False
+        if not models.Message.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id=instance.id)
+            |
+            Q(user_source_id=instance.id, user_destination_id=request.user.id),
+            type='Message',
+        ).count():
+            return False
+        return True
 
 
 class MessagesPostRequest(Serializer):
