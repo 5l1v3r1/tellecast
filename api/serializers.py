@@ -1012,16 +1012,28 @@ class UsersProfile(RegisterResponse):
     def get_messages(self, instance):
         request = self.context.get('request', None)
         if request is None:
-            return False
+            return 0
         if not request.user.is_authenticated():
-            return False
-        if not models.Message.objects.filter(
+            return 0
+        message = models.Message.objects.filter(
             Q(user_source_id=request.user.id, user_destination_id=instance.id)
             |
             Q(user_source_id=instance.id, user_destination_id=request.user.id),
-            type='Message',
-        ).count():
-            return False
+        ).first()
+        if not message:
+            return 0
+        if message.type == 'Request':
+            return 1
+        if message.type == 'Response - Deferred':
+            return 2
+        if message.type == 'Response - Rejected':
+            return 3
+        if message.type == 'Response - Blocked':
+            return 4
+        if message.type == 'Response - Accepted':
+            return 5
+        if message.type == 'Message':
+            return 5
         return True
 
 
