@@ -1019,7 +1019,7 @@ class UsersProfile(RegisterResponse):
             Q(user_source_id=request.user.id, user_destination_id=instance.id)
             |
             Q(user_source_id=instance.id, user_destination_id=request.user.id),
-        ).first()
+        ).order_by('-inserted_at').first()
         if not message:
             return 0
         if message.type == 'Request':
