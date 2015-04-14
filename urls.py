@@ -8,11 +8,14 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic.base import RedirectView
 from rest_framework.authtoken.models import Token
+from rest_framework.renderers import JSONRenderer
 from rest_framework.routers import SimpleRouter
 from rest_framework_swagger import urls
 from social.apps.django_app.default.models import Association, Nonce
 
 from api import views
+
+JSONRenderer.charset = 'utf-8'
 
 autodiscover()
 
