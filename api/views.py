@@ -1211,8 +1211,12 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             '-inserted_at',
         ).first()
         if message:
-            if message.type in ['Request', 'Response - Blocked']:
-                return Response(status=HTTP_403_FORBIDDEN)
+            if message.user_source_id == request.user.id:
+                if message.type in ['Request']:
+                    return Response(status=HTTP_403_FORBIDDEN)
+            if message.user_destination_id == request.user.id:
+                if message.type in ['Response - Blocked']:
+                    return Response(status=HTTP_403_FORBIDDEN)
         serializer = serializers.MessagesPostResponse(serializer.save(user_source=request.user))
         headers = self.get_success_headers(serializer.data)
         return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
