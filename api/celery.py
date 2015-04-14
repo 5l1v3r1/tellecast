@@ -6,6 +6,7 @@ from os import environ
 
 from celery import Celery
 from django.conf import settings
+from ujson import dumps
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
@@ -22,7 +23,7 @@ def push_notifications(id):
         return
     for device in models.DeviceAPNS.objects.filter(user_id=message.user_destination_id).order_by('id').all():
         try:
-            device.send_message(serializers.Message(message).data)
+            device.send_message(dumps(serializers.Message(message).data))
         except Exception:
             from traceback import print_exc
             print_exc()
