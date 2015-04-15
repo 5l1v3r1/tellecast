@@ -27,7 +27,7 @@ def push_notifications(id):
     }
     for device in models.DeviceAPNS.objects.filter(user_id=message.user_destination_id).order_by('id').all():
         try:
-            device.send_message(dumps(json))
+            device.send_message(json)
         except Exception:
             from traceback import print_exc
             print_exc()
