@@ -1188,6 +1188,14 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         ======
 
         (see below; "Response Class" -> "Model Schema")
+
+        Push Notification
+        =================
+
+        {
+            'payload': '(see below; "Response Class" -> "Model Schema")',
+            'type': 'messages',
+        }
         </pre>
         ---
         omit_parameters:
@@ -1252,6 +1260,14 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         ======
 
         (see below; "Response Class" -> "Model Schema")
+
+        Push Notification
+        =================
+
+        {
+            'payload': '(see below; "Response Class" -> "Model Schema")',
+            'type': 'messages',
+        }
         </pre>
         ---
         omit_parameters:
