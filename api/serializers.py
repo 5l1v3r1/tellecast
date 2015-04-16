@@ -1023,18 +1023,21 @@ class UsersProfile(RegisterResponse):
         if not message:
             return 0
         if message.type == 'Request':
-            return 1
+            if message.user_source_id == request.user.id:
+                return 1
+            if message.user_source_id == instance.id:
+                return 2
         if message.type == 'Response - Deferred':
-            return 2
-        if message.type == 'Response - Rejected':
             return 3
-        if message.type == 'Response - Blocked':
+        if message.type == 'Response - Rejected':
             return 4
+        if message.type == 'Response - Blocked':
+            return 5
         if message.type == 'Response - Accepted':
-            return 5
+            return 6
         if message.type == 'Message':
-            return 5
-        return True
+            return 6
+        return 0
 
 
 class MessagesPostRequest(Serializer):
