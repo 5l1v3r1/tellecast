@@ -770,6 +770,7 @@ class UsersRequest(User):
         self.update_photos(instance, data)
         self.update_social_profiles(instance, data)
         self.update_status(instance, data)
+        self.update_status_attachments(instance, data)
         self.update_urls(instance, data)
         return instance
 
