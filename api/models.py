@@ -16,6 +16,7 @@ from django.db.models import (
 )
 from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
+from django.contrib.gis.db.models import GeoManager, PointField
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -28,6 +29,63 @@ from social.apps.django_app.default.models import UserSocialAuth
 from uuidfield import UUIDField
 
 from api import celery
+
+
+class Tellzone(Model):
+
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
+    location = CharField(ugettext_lazy('Location'), db_index=True, max_length=255)
+    phone = CharField(ugettext_lazy('Phone'), db_index=True, max_length=255)
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+    hours = TextField(ugettext_lazy('Hours'))
+    point = PointField(ugettext_lazy('Point'), db_index=True)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+
+    objects = GeoManager()
+
+    class Meta:
+
+        db_table = 'api_tellzones'
+        ordering = (
+            '-inserted_at',
+        )
+        verbose_name = 'Tellzone'
+        verbose_name_plural = 'Tellzones'
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
+class Offer(Model):
+
+    tellzone = ForeignKey(Tellzone, related_name='offers')
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    description = TextField(ugettext_lazy('Description'), db_index=True)
+    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
+    code = CharField(ugettext_lazy('Code'), db_index=True, max_length=255)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+    expires_at = DateTimeField(ugettext_lazy('Expires At'), blank=True, db_index=True, null=True)
+
+    class Meta:
+
+        db_table = 'api_offers'
+        ordering = (
+            '-inserted_at',
+        )
+        verbose_name = 'Offer'
+        verbose_name_plural = 'Offers'
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
 
 
 class User(Model):
@@ -71,8 +129,11 @@ class User(Model):
         default='Private',
         max_length=255,
     )
+    point = PointField(ugettext_lazy('Point'), blank=True, db_index=True, null=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+
+    objects = GeoManager()
 
     class Meta:
 
@@ -235,6 +296,44 @@ class UserURL(Model):
         )
         verbose_name = 'User URL'
         verbose_name_plural = 'User URLs'
+
+
+class UserTellzone(Model):
+
+    user = ForeignKey(User, related_name='tellzones')
+    tellzone = ForeignKey(Tellzone, related_name='users')
+    viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
+    favorited_at = DateTimeField(ugettext_lazy('Favorited At'), blank=True, db_index=True, null=True)
+
+    class Meta:
+
+        db_table = 'api_users_tellzones'
+        ordering = (
+            'user',
+            'tellzone',
+            '-viewed_at',
+            '-favorited_at',
+        )
+        verbose_name = 'User Tellzone'
+        verbose_name_plural = 'User Tellzones'
+
+
+class UserOffer(Model):
+
+    user = ForeignKey(User, related_name='offers')
+    offer = ForeignKey(Offer, related_name='users')
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+
+        db_table = 'api_users_offers'
+        ordering = (
+            'user',
+            'offer',
+            '-timestamp',
+        )
+        verbose_name = 'User Offer'
+        verbose_name_plural = 'User Offers'
 
 
 class MasterTell(Model):
