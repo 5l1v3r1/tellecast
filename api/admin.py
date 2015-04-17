@@ -11,6 +11,130 @@ from social.apps.django_app.default.models import UserSocialAuth
 from api import models
 
 
+class Tellzone(ModelAdmin):
+
+    fields = (
+        'name',
+        'photo',
+        'location',
+        'phone',
+        'url',
+        'hours',
+        'point',
+
+    )
+    list_display = (
+        'id',
+        'name',
+        'location',
+        'phone',
+        'url',
+        'point',
+        'offers_',
+        'users_',
+        'inserted_at',
+        'updated_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'name',
+        'location',
+        'phone',
+        'url',
+        'inserted_at',
+        'updated_at',
+    )
+    list_select_related = (
+        'offers',
+        'users',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'photo',
+        'location',
+        'phone',
+        'url',
+    )
+
+    def offers_(self, instance):
+        return instance.offers.get_queryset().count()
+
+    offers_.allow_tags = True
+    offers_.short_description = 'Offers'
+
+    def users_(self, instance):
+        return instance.users.get_queryset().count()
+
+    users_.allow_tags = True
+    users_.short_description = 'Users'
+
+site.register(models.Tellzone, Tellzone)
+
+
+class Offer(ModelAdmin):
+
+    fields = (
+        'tellzone',
+        'name',
+        'description',
+        'photo',
+        'code',
+        'expires_at',
+
+    )
+    list_display = (
+        'id',
+        'tellzone',
+        'name',
+        'code',
+        'users_',
+        'inserted_at',
+        'updated_at',
+        'expires_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'tellzone',
+        'name',
+        'code',
+        'inserted_at',
+        'updated_at',
+        'expires_at',
+    )
+    list_select_related = (
+        'tellzone',
+        'users',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'tellzone',
+        'name',
+        'photo',
+        'location',
+        'phone',
+        'url',
+    )
+
+    def users_(self, instance):
+        return instance.users.get_queryset().count()
+
+    users_.allow_tags = True
+    users_.short_description = 'Users'
+
+site.register(models.Offer, Offer)
+
+
 class User(ModelAdmin):
 
     fields = (
@@ -104,6 +228,7 @@ class UserPhoto(ModelAdmin):
         'id',
     )
     search_fields = (
+        'user',
         'string',
         'position',
     )
@@ -140,6 +265,7 @@ class UserSocialProfile(ModelAdmin):
         'id',
     )
     search_fields = (
+        'user',
         'netloc',
         'url',
     )
@@ -180,6 +306,7 @@ class UserStatus(ModelAdmin):
         'id',
     )
     search_fields = (
+        'user',
         'string',
         'title',
         'url',
@@ -255,11 +382,89 @@ class UserURL(ModelAdmin):
         'id',
     )
     search_fields = (
+        'user',
         'string',
         'position',
     )
 
 site.register(models.UserURL, UserURL)
+
+
+class UserTellzone(ModelAdmin):
+
+    fields = (
+        'user',
+        'tellzone',
+        'viewed_at',
+        'favorited_at',
+
+    )
+    list_display = (
+        'id',
+        'user',
+        'tellzone',
+        'viewed_at',
+        'favorited_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'tellzone',
+        'viewed_at',
+        'favorited_at',
+    )
+    list_select_related = (
+        'user',
+        'tellzone',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'user',
+        'tellzone',
+    )
+
+site.register(models.UserTellzone, UserTellzone)
+
+
+class UserOffer(ModelAdmin):
+
+    fields = (
+        'user',
+        'offer',
+    )
+    list_display = (
+        'id',
+        'user',
+        'offer',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'offer',
+        'timestamp',
+    )
+    list_select_related = (
+        'user',
+        'offer',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'user',
+        'offer',
+    )
+
+site.register(models.UserOffer, UserOffer)
 
 
 class MasterTell(ModelAdmin):
@@ -298,6 +503,8 @@ class MasterTell(ModelAdmin):
         'id',
     )
     search_fields = (
+        'created_by',
+        'owned_by',
         'position',
         'inserted_at',
         'updated_at',
@@ -361,6 +568,9 @@ class SlaveTell(ModelAdmin):
         'id',
     )
     search_fields = (
+        'master_tell',
+        'created_by',
+        'owned_by',
         'type',
         'is_editable',
         'position',
@@ -424,6 +634,10 @@ class Message(ModelAdmin):
         '-inserted_at',
     )
     search_fields = (
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
         'type',
         'contents',
         'status',
@@ -509,6 +723,7 @@ class DeviceAPNS(ModelAdmin):
         'id',
     )
     search_fields = (
+        'user',
         'name',
         'device_id',
         'registration_id',
@@ -549,6 +764,7 @@ class DeviceGCM(ModelAdmin):
         'id',
     )
     search_fields = (
+        'user',
         'name',
         'device_id',
         'registration_id',
