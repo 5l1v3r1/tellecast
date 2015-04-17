@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from django.conf import settings
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy
+from drf_extra_fields.geo_fields import PointField
 from rest_framework.serializers import (
     BooleanField,
     CharField,
     ChoiceField,
     DateField,
     EmailField,
+    FloatField,
     IntegerField,
     ModelSerializer,
     Serializer,
@@ -18,9 +22,117 @@ from rest_framework.serializers import (
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
-from ujson import dumps
+from ujson import dumps, loads
 
 from api import models
+
+
+class Offer(ModelSerializer):
+
+    is_saved = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'description',
+            'photo',
+            'code',
+            'inserted_at',
+            'updated_at',
+            'expires_at',
+            'is_saved',
+        )
+        model = models.Offer
+
+    def get_is_saved(self, instance):
+        request = self.context.get('request', None)
+        if not request.user.is_authenticated():
+            return False
+        if not models.UserOffer.objects.filter(user_id=request.user.id, offer_id=instance.id).count():
+            return False
+        return True
+
+
+class Tellzone(ModelSerializer):
+
+    hours = SerializerMethodField()
+    point = PointField()
+    offers = Offer(many=True)
+    distance = SerializerMethodField()
+    tellecasters = SerializerMethodField()
+    connections = SerializerMethodField()
+    views = SerializerMethodField()
+    favorites = SerializerMethodField()
+    is_viewed = SerializerMethodField()
+    is_favorited = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'offers',
+            'distance',
+            'tellecasters',
+            'connections',
+            'views',
+            'favorites',
+            'is_viewed',
+            'is_favorited',
+        )
+        model = models.Tellzone
+
+    def get_hours(self, instance):
+        try:
+            return loads(instance.hours)
+        except Exception:
+            pass
+        return {}
+
+    def get_distance(self, instance):
+        return getattr(instance.distance, 'm')
+
+    def get_tellecasters(self, instance):
+        return 0
+
+    def get_connections(self, instance):
+        return 0
+
+    def get_views(self, instance):
+        return models.UserTellzone.objects.filter(tellzone_id=instance.id, viewed_at__isnull=False).count()
+
+    def get_favorites(self, instance):
+        return models.UserTellzone.objects.filter(tellzone_id=instance.id, favorited_at__isnull=False).count()
+
+    def get_is_viewed(self, instance):
+        request = self.context.get('request', None)
+        if not request.user.is_authenticated():
+            return False
+        if not models.UserTellzone.objects.filter(
+            user_id=request.user.id, tellzone_id=instance.id, viewed_at__isnull=False,
+        ).count():
+            return False
+        return True
+
+    def get_is_favorited(self, instance):
+        request = self.context.get('request', None)
+        if not request.user.is_authenticated():
+            return False
+        if not models.UserTellzone.objects.filter(
+            user_id=request.user.id, tellzone_id=instance.id, favorited_at__isnull=False,
+        ).count():
+            return False
+        return True
 
 
 class User(ModelSerializer):
@@ -35,6 +147,7 @@ class User(ModelSerializer):
     description = CharField(required=False)
     phone = CharField(required=False)
     phone_status = CharField(required=False)
+    point = PointField(required=False)
 
     class Meta:
 
@@ -51,6 +164,7 @@ class User(ModelSerializer):
             'description',
             'phone',
             'phone_status',
+            'point',
             'inserted_at',
             'updated_at',
         )
@@ -284,6 +398,17 @@ class DeviceGCM(ModelSerializer):
         model = models.DeviceGCM
 
 
+class TellzonesRequest(Serializer):
+
+    latitude = FloatField()
+    longitude = FloatField()
+    radius = FloatField()
+
+
+class TellzonesResponse(Tellzone):
+    pass
+
+
 class RegisterRequestUserPhoto(ModelSerializer):
 
     position = IntegerField(required=False)
@@ -443,6 +568,7 @@ class RegisterRequest(Serializer):
         ),
         required=False,
     )
+    point = PointField(required=False)
     photos = RegisterRequestUserPhoto(help_text='List of User Photos', many=True, required=False)
     social_profiles = RegisterRequestUserSocialProfile(
         help_text='List of User Social Profiles', many=True, required=False,
@@ -463,6 +589,7 @@ class RegisterRequest(Serializer):
             location=data['location'] if 'location' in data else None,
             description=data['description'] if 'description' in data else None,
             phone=data['phone'] if 'phone' in data else None,
+            point=data['point'] if 'point' in data else None,
         )
         if 'phone_status' in data:
             user.phone_status = data['phone_status']
@@ -627,6 +754,7 @@ class RegisterResponse(User):
             'description',
             'phone',
             'phone_status',
+            'point',
             'inserted_at',
             'updated_at',
             'photos',
@@ -666,6 +794,7 @@ class AuthenticateResponse(User):
             'description',
             'phone',
             'phone_status',
+            'point',
             'inserted_at',
             'updated_at',
             'token',
@@ -736,6 +865,7 @@ class UsersRequest(User):
             'description',
             'phone',
             'phone_status',
+            'point',
             'photos',
             'social_profiles',
             'status',
@@ -766,6 +896,8 @@ class UsersRequest(User):
             instance.phone = data['phone']
         if 'phone_status' in data:
             instance.phone_status = data['phone_status']
+        if 'point' in data:
+            instance.point = data['point']
         instance.save()
         self.update_photos(instance, data)
         self.update_social_profiles(instance, data)
@@ -967,6 +1099,7 @@ class UsersResponse(User):
             'description',
             'phone',
             'phone_status',
+            'point',
             'inserted_at',
             'updated_at',
             'photos',
@@ -978,6 +1111,138 @@ class UsersResponse(User):
 
     def get_token(self, instance):
         return instance.get_token()
+
+
+class UsersTellzonesRequest(ModelSerializer):
+
+    tellzone_id = IntegerField()
+    action = ChoiceField(
+        choices=(
+            ('View', 'View',),
+            ('Favorite', 'Favorite',),
+        ),
+    )
+
+    class Meta:
+
+        fields = (
+            'tellzone_id',
+            'action',
+        )
+        model = models.UserTellzone
+
+    def create_or_update(self):
+        request = self.context.get('request', None)
+        if request is None:
+            return {}
+        if not request.user.is_authenticated():
+            return {}
+        user_tellzone = models.UserTellzone.objects.filter(
+            user_id=request.user.id, tellzone_id=self.validated_data['tellzone_id'],
+        ).first()
+        if not user_tellzone:
+            user_tellzone = models.UserTellzone.objects.create(
+                user_id=request.user.id, tellzone_id=self.validated_data['tellzone_id'],
+            )
+        if self.validated_data['action'] == 'View':
+            user_tellzone.viewed_at = datetime.now()
+        if self.validated_data['action'] == 'Favorite':
+            user_tellzone.favorited_at = datetime.now()
+        user_tellzone.save()
+        return user_tellzone
+
+    def delete(self):
+        request = self.context.get('request', None)
+        if request is None:
+            return {}
+        if not request.user.is_authenticated():
+            return {}
+        user_tellzone = models.UserTellzone.objects.filter(
+            user_id=request.user.id, tellzone_id=self.validated_data['tellzone_id'],
+        ).first()
+        if not user_tellzone:
+            return {}
+        if self.validated_data['action'] == 'View':
+            user_tellzone.viewed_at = None
+        if self.validated_data['action'] == 'Favorite':
+            user_tellzone.favorited_at = None
+        user_tellzone.save()
+        return {}
+
+
+class UsersTellzonesResponse(ModelSerializer):
+
+    user_id = IntegerField()
+    tellzone_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_id',
+            'tellzone_id',
+            'viewed_at',
+            'favorited_at',
+        )
+        model = models.UserTellzone
+
+
+class UsersOffersRequest(ModelSerializer):
+
+    offer_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'offer_id',
+        )
+        model = models.UserOffer
+
+    def create_or_update(self):
+        request = self.context.get('request', None)
+        if request is None:
+            return {}
+        if not request.user.is_authenticated():
+            return {}
+        user_offer = models.UserOffer.objects.filter(
+            user_id=request.user.id, offer_id=self.validated_data['offer_id'],
+        ).first()
+        if not user_offer:
+            user_offer = models.UserOffer.objects.create(
+                user_id=request.user.id, offer_id=self.validated_data['offer_id'],
+            )
+        user_offer.save()
+        return user_offer
+
+    def delete(self):
+        request = self.context.get('request', None)
+        if request is None:
+            return {}
+        if not request.user.is_authenticated():
+            return {}
+        user_offer = models.UserOffer.objects.filter(
+            user_id=request.user.id, offer_id=self.validated_data['offer_id'],
+        ).first()
+        if not user_offer:
+            return {}
+        user_offer.delete()
+        return {}
+
+
+class UsersOffersResponse(ModelSerializer):
+
+    user_id = IntegerField()
+    offer_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_id',
+            'offer_id',
+            'timestamp',
+        )
+        model = models.UserOffer
 
 
 class UsersProfile(RegisterResponse):
@@ -999,6 +1264,7 @@ class UsersProfile(RegisterResponse):
             'description',
             'phone',
             'phone_status',
+            'point',
             'inserted_at',
             'updated_at',
             'photos',

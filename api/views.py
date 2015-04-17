@@ -2,6 +2,8 @@
 
 from django.conf import settings
 from django.contrib.auth import login
+from django.contrib.gis.geos import fromstr
+from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -91,6 +93,17 @@ def register(request):
         - Choices:
             - Private
             - Public
+
+    + point
+        - Type: dictionary (of floats)
+        - Status: optional
+
+        Example:
+
+        {
+            'latitude': 0.0000000000,
+            'longitude': 0.0000000000,
+        }
 
     + photos (see /api/users/ for more details)
         - Type: list (a list of Photo objects)
@@ -244,18 +257,59 @@ def tellzones(request):
         - Type: float
         - Status: mandatory
 
+    + radius
+        - Unit: meter (m)
+        - Type: float
+        - Status: mandatory
+
     Output
     ======
 
     (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: latitude
+          paramType: query
+          required: true
+          type: number
+        - name: longitude
+          paramType: query
+          required: true
+          type: number
+        - name: radius
+          paramType: query
+          required: true
+          type: number
+    response_serializer: api.serializers.TellzonesResponse
     responseMessages:
         - code: 400
           message: Invalid Input
-    serializer: api.serializers.Tellzone
     '''
-    return Response(data={}, status=HTTP_200_OK)
+    serializer = serializers.TellzonesRequest(data=request.QUERY_PARAMS)
+    if not serializer.is_valid():
+        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    point = fromstr(
+        'POINT(%(longitude)s %(latitude)s)' % {
+            'latitude': serializer.data['latitude'],
+            'longitude': serializer.data['longitude'],
+        }
+    )
+    data = []
+    for tellzone in models.Tellzone.objects.filter(
+        point__distance_lte=(point, D(m=float(serializer.data['radius']))),
+    ).distance(
+        point,
+    ).all():
+        data.append(serializers.TellzonesResponse(
+            tellzone,
+            context={
+                'request': request,
+            },
+        ).data)
+    return Response(data=data, status=HTTP_200_OK)
 
 
 class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixin, UpdateModelMixin):
@@ -323,6 +377,17 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         - Choices:
             - Private
             - Public
+
+    + point
+        - Type: dictionary (of floats)
+        - Status: optional
+
+        Example:
+
+        {
+            'latitude': 0.0000000000,
+            'longitude': 0.0000000000,
+        }
 
     + photos
         - Type: list (a list of Photo objects; see below)
@@ -533,6 +598,115 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         return Response(data={}, status=HTTP_204_NO_CONTENT)
 
 
+@api_view(('POST', 'DELETE',))
+@permission_classes((IsAuthenticated,))
+def users_tellzones(request, id):
+    '''
+    View/Favorite/Unview/Unfavorite a Tellzone
+
+    <pre>
+    Input
+    =====
+
+    + tellzone_id
+        - Type: integer
+        - Status: mandatory
+
+    + action
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - View
+            - Favorite
+
+    Output
+    ======
+
+    + POST: (see below; "Response Class" -> "Model Schema")
+
+    + DELETE: N/A
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UsersTellzonesRequest
+    response_serializer: api.serializers.UsersTellzonesResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.UsersTellzonesRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    if not serializer.is_valid():
+        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    if request.method == 'POST':
+        return Response(
+            data=serializers.UsersTellzonesResponse(serializer.create_or_update()).data,
+            status=HTTP_201_CREATED,
+        )
+    if request.method == 'DELETE':
+        serializer.delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
+@api_view(('POST', 'DELETE',))
+@permission_classes((IsAuthenticated,))
+def users_offers(request, id):
+    '''
+    Save/Unsave an Offer
+
+    <pre>
+    Input
+    =====
+
+    + offer_id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    + POST: (see below; "Response Class" -> "Model Schema")
+
+    + DELETE: N/A
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UsersOffersRequest
+    response_serializer: api.serializers.UsersOffersResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.UsersOffersRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    if not serializer.is_valid():
+        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    if request.method == 'POST':
+        return Response(
+            data=serializers.UsersOffersResponse(serializer.create_or_update()).data,
+            status=HTTP_201_CREATED,
+        )
+    if request.method == 'DELETE':
+        serializer.delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
 @api_view(('GET',))
 @permission_classes(())
 def users_profile(request, id):
@@ -553,46 +727,6 @@ def users_profile(request, id):
         ).data,
         status=HTTP_200_OK,
     )
-
-
-@api_view(('POST',))
-@permission_classes((IsAuthenticated,))
-def users_tellzones(request, id):
-    '''
-    View/Favorite a Tellzone
-    ---
-    omit_parameters:
-        - form
-    parameters:
-        - name: body
-          paramType: body
-          pytype: api.serializers.UserTellzoneRequest
-    response_serializer: api.serializers.UserTellzoneResponse
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    '''
-    return Response(data={}, status=HTTP_200_OK)
-
-
-@api_view(('POST',))
-@permission_classes((IsAuthenticated,))
-def users_offers(request, id):
-    '''
-    Save an Offer
-    ---
-    omit_parameters:
-        - form
-    parameters:
-        - name: body
-          paramType: body
-          pytype: api.serializers.UserOfferRequest
-    response_serializer: api.serializers.UserOfferResponse
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    '''
-    return Response(data={}, status=HTTP_200_OK)
 
 
 class MasterTells(ModelViewSet):
@@ -1242,19 +1376,19 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             - Type: list
             - Status: optional
 
-        Example:
+            Example:
 
-        [
-            {
-                "string": "...",
-                "position": 1,
-            },
-            ...,
-            {
-                "string": "...",
-                "position": n,
-            },
-        ]
+            [
+                {
+                    "string": "...",
+                    "position": 1,
+                },
+                ...,
+                {
+                    "string": "...",
+                    "position": n,
+                },
+            ]
 
         Output
         ======

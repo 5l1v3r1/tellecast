@@ -21,7 +21,6 @@ class Tellzone(ModelAdmin):
         'url',
         'hours',
         'point',
-
     )
     list_display = (
         'id',
@@ -86,7 +85,6 @@ class Offer(ModelAdmin):
         'photo',
         'code',
         'expires_at',
-
     )
     list_display = (
         'id',
@@ -149,7 +147,7 @@ class User(ModelAdmin):
         'description',
         'phone',
         'phone_status',
-
+        'point',
     )
     list_display = (
         'id',
@@ -397,7 +395,6 @@ class UserTellzone(ModelAdmin):
         'tellzone',
         'viewed_at',
         'favorited_at',
-
     )
     list_display = (
         'id',
