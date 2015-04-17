@@ -1282,6 +1282,13 @@ class UsersProfile(RegisterResponse):
             return 0
         if not request.user.is_authenticated():
             return 0
+        if models.Message.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id=instance.id)
+            |
+            Q(user_source_id=instance.id, user_destination_id=request.user.id),
+            type='Message',
+        ).count():
+            return 6
         message = models.Message.objects.filter(
             Q(user_source_id=request.user.id, user_destination_id=instance.id)
             |
