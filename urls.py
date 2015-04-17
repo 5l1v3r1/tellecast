@@ -53,11 +53,14 @@ urlpatterns = patterns(
             'delete': 'destroy',
         }),
     ),
+    url(r'^api/users/(?P<id>[^/]+)/offers/$', views.users_offers),
     url(r'^api/users/(?P<id>[^/]+)/profile/$', views.users_profile),
+    url(r'^api/users/(?P<id>[^/]+)/tellzones/$', views.users_tellzones),
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
+    url(r'^api/tellzones/$', views.tellzones),
     url(r'^api/', include(router.urls)),
 )
 
