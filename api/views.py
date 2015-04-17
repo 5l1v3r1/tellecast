@@ -1421,7 +1421,12 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'])
             |
             Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
-            type='Message',
+            type__in=[
+                'Response - Accepted',
+                'Response - Deferred',
+                'Response - Rejected',
+                'Message',
+            ],
         ).count():
             message = models.Message.objects.filter(
                 Q(
