@@ -226,6 +226,38 @@ def authenticate(request, backend):
     return Response(data=serializers.AuthenticateResponse(user).data, status=HTTP_200_OK)
 
 
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def tellzones(request):
+    '''
+    SELECT Tellzones
+
+    <pre>
+    Input
+    =====
+
+    + latitude
+        - Type: float
+        - Status: mandatory
+
+    + longitude
+        - Type: float
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    serializer: api.serializers.Tellzone
+    '''
+    return Response(data={}, status=HTTP_200_OK)
+
+
 class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixin, UpdateModelMixin):
 
     '''
@@ -521,6 +553,46 @@ def users_profile(request, id):
         ).data,
         status=HTTP_200_OK,
     )
+
+
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def users_tellzones(request, id):
+    '''
+    View/Favorite a Tellzone
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UserTellzoneRequest
+    response_serializer: api.serializers.UserTellzoneResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    return Response(data={}, status=HTTP_200_OK)
+
+
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def users_offers(request, id):
+    '''
+    Save an Offer
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UserOfferRequest
+    response_serializer: api.serializers.UserOfferResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    return Response(data={}, status=HTTP_200_OK)
 
 
 class MasterTells(ModelViewSet):
