@@ -398,35 +398,6 @@ class Message(ModelSerializer):
         model = models.Message
 
 
-class TellcardUser(ModelSerializer):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'photo',
-            'first_name',
-            'last_name',
-            'photo',
-            'location',
-        )
-        model = models.User
-
-
-class Tellcard(ModelSerializer):
-
-    user = TellcardUser(source='user_destination')
-
-    class Meta:
-
-        fields = (
-            'id',
-            'user',
-            'timestamp',
-        )
-        model = models.Tellcard
-
-
 class BlockUser(ModelSerializer):
 
     class Meta:
@@ -1498,8 +1469,26 @@ class TellcardsRequest(ModelSerializer):
         return instance
 
 
-class TellcardsResponse(Tellcard):
-    pass
+class TellcardsResponse(ModelSerializer):
+
+    user = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'timestamp',
+        )
+        model = models.Tellcard
+
+    def get_user(self, instance):
+        request = self.context.get('request', None)
+        if request:
+            if 'type' in request.QUERY_PARAMS:
+                if request.QUERY_PARAMS['type'] == 'destination':
+                    return UsersProfile(instance.user_source).data
+        return UsersProfile(instance.user_destination).data
 
 
 class BlocksRequest(ModelSerializer):

@@ -1723,7 +1723,7 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             - Type: string
             - Status: mandatory
             - Choices:
-                - Source (saved by me)
+                - Source (saved by me; default)
                 - Destination (saved by others)
 
         Output
@@ -1744,7 +1744,13 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(
+                page,
+                context={
+                    'request': request,
+                },
+                many=True,
+            )
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=HTTP_200_OK)
