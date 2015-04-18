@@ -61,6 +61,19 @@ urlpatterns = patterns(
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
     url(
+        r'^api/tellcards/$',
+        views.Tellcards.as_view({
+            'get': 'list',
+            'post': 'create',
+        }),
+    ),
+    url(
+        r'^api/tellcards/(?P<id>[^/]+)/$',
+        views.Tellcards.as_view({
+            'delete': 'destroy',
+        }),
+    ),
+    url(
         r'^api/blocks/$',
         views.Blocks.as_view({
             'get': 'list',

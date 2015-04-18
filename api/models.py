@@ -519,6 +519,22 @@ class MessageAttachment(Model):
         verbose_name_plural = 'Message Attachments'
 
 
+class Tellcard(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, related_name='+')
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_tellcards'
+        ordering = (
+            'user_source',
+            '-timestamp',
+        )
+        verbose_name = 'Tellcard'
+        verbose_name_plural = 'Tellcards'
+
+
 class Block(Model):
 
     user_source = ForeignKey(User, related_name='+')

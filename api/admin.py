@@ -623,6 +623,40 @@ class MessageAttachment(ModelAdmin):
 site.register(models.MessageAttachment, MessageAttachment)
 
 
+class Tellcard(ModelAdmin):
+
+    fields = (
+        'user_source',
+        'user_destination',
+    )
+    list_display = (
+        'id',
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+    list_select_related = (
+        'user_source',
+        'user_destination',
+    )
+    ordering = (
+        'user_source',
+        '-timestamp',
+    )
+    search_fields = ()
+
+site.register(models.Tellcard, Tellcard)
+
+
 class Block(ModelAdmin):
 
     fields = (

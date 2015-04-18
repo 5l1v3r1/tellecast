@@ -398,6 +398,35 @@ class Message(ModelSerializer):
         model = models.Message
 
 
+class TellcardUser(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo',
+            'first_name',
+            'last_name',
+            'photo',
+            'location',
+        )
+        model = models.User
+
+
+class Tellcard(ModelSerializer):
+
+    user = TellcardUser(source='user_destination')
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'timestamp',
+        )
+        model = models.Tellcard
+
+
 class BlockUser(ModelSerializer):
 
     class Meta:
@@ -1437,6 +1466,39 @@ class MessagesPatchRequest(Serializer):
 
 
 class MessagesPatchResponse(Message):
+    pass
+
+
+class TellcardsRequest(ModelSerializer):
+
+    user_destination_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'user_destination_id',
+        )
+        model = models.Tellcard
+
+    def create(self):
+        request = self.context.get('request', None)
+        if not request:
+            return False
+        if not request.user.is_authenticated():
+            return False
+        instance = models.Tellcard.objects.filter(
+            user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+        ).first()
+        if not instance:
+            instance = models.Tellcard.objects.create(
+                user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+            )
+        instance.timestamp = datetime.now()
+        instance.save()
+        return instance
+
+
+class TellcardsResponse(Tellcard):
     pass
 
 

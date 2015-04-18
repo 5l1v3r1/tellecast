@@ -1691,6 +1691,129 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         return super(Messages, self).destroy(request, *args, **kwargs)
 
 
+class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 100
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.TellcardsResponse
+
+    def get_queryset(self):
+        if 'type' in self.request.QUERY_PARAMS:
+            if self.request.QUERY_PARAMS['type'] == 'source':
+                return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+            if self.request.QUERY_PARAMS['type'] == 'destination':
+                return models.Tellcard.objects.filter(
+                    user_destination_id=self.request.user.id,
+                ).order_by('-timestamp').all()
+        return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+
+    def list(self, request, *args, **kwargs):
+        '''
+        SELECT Tellcards
+
+        <pre>
+        Input
+        =====
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Source (saved by me)
+                - Destination (saved by others)
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        parameters:
+            - name: type
+              paramType: query
+              type: string
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.TellcardsResponse
+        '''
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        '''
+        INSERT a Tellcard
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.TellcardsRequest
+        response_serializer: api.serializers.TellcardsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.TellcardsRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(data=serializers.TellcardsResponse(serializer.create()).data, status=HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        '''
+        DELETE a Tellcard
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        self.get_object().delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
 class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
 
     lookup_field = 'id'
