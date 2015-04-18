@@ -398,6 +398,35 @@ class DeviceGCM(ModelSerializer):
         model = models.DeviceGCM
 
 
+class BlockUser(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo',
+            'first_name',
+            'last_name',
+            'photo',
+            'location',
+        )
+        model = models.User
+
+
+class Block(ModelSerializer):
+
+    user = BlockUser(source='user_destination')
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'timestamp',
+        )
+        model = models.Block
+
+
 class TellzonesRequest(Serializer):
 
     latitude = FloatField()
@@ -935,8 +964,7 @@ class UsersRequest(User):
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
                 user_social_profile = instance.social_profiles.get_queryset().filter(
-                    Q(id=social_profile['id'] if 'id' in social_profile else 0)
-                    |
+                    Q(id=social_profile['id'] if 'id' in social_profile else 0) |
                     Q(netloc=social_profile['netloc'] if 'netloc' in social_profile else ''),
                 ).first()
                 if not user_social_profile:
@@ -990,8 +1018,7 @@ class UsersRequest(User):
             if 'attachments' in data['status']:
                 for attachment in data['status']['attachments']:
                     user_status_attachment = models.UserStatusAttachment.objects.filter(
-                        Q(id=attachment['id'] if 'id' in attachment else 0)
-                        |
+                        Q(id=attachment['id'] if 'id' in attachment else 0) |
                         Q(string=attachment['string'] if 'string' in attachment else ''),
                         user_status_id=user_status.id,
                     ).first()
@@ -1017,8 +1044,7 @@ class UsersRequest(User):
         if 'urls' in data:
             for url in data['urls']:
                 user_url = instance.urls.get_queryset().filter(
-                    Q(id=url['id'] if 'id' in url else 0)
-                    |
+                    Q(id=url['id'] if 'id' in url else 0) |
                     Q(string=url['string'] if 'string' in url else ''),
                 ).first()
                 if not user_url:
@@ -1283,15 +1309,13 @@ class UsersProfile(RegisterResponse):
         if not request.user.is_authenticated():
             return 0
         if models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=instance.id)
-            |
+            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
             Q(user_source_id=instance.id, user_destination_id=request.user.id),
             type='Message',
         ).count():
             return 6
         message = models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=instance.id)
-            |
+            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
             Q(user_source_id=instance.id, user_destination_id=request.user.id),
         ).order_by('-inserted_at').first()
         if not message:
@@ -1362,7 +1386,7 @@ class MessagesPostRequest(Serializer):
             user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
             user_destination_id=data['user_destination_id'],
             user_destination_is_hidden=data['user_destination_is_hidden']
-                if 'user_destination_is_hidden' in data else None,
+            if 'user_destination_is_hidden' in data else None,
             user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
             master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
             type=data['type'],
@@ -1424,4 +1448,41 @@ class MessagesPatchRequest(Serializer):
 
 
 class MessagesPatchResponse(Message):
+    pass
+
+
+class BlocksRequest(ModelSerializer):
+
+    user_destination_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'user_destination_id',
+        )
+        model = models.Block
+
+    def create(self):
+        request = self.context.get('request', None)
+        if not request:
+            return False
+        if not request.user.is_authenticated():
+            return False
+        instance = models.Block.objects.filter(
+            user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+        ).first()
+        if not instance:
+            instance = models.Block.objects.create(
+                user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+            )
+        instance.timestamp = datetime.now()
+        instance.save()
+        return instance
+
+
+class BlocksResponse(Block):
+    pass
+
+
+class Null(Serializer):
     pass

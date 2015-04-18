@@ -519,6 +519,22 @@ class DeviceGCM(Model):
         return gcm_send_message(self.registration_id, data)
 
 
+class Block(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, related_name='+')
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_blocks'
+        ordering = (
+            'user_source',
+            '-timestamp',
+        )
+        verbose_name = 'Block'
+        verbose_name_plural = 'Blocks'
+
+
 @receiver(pre_save, sender=UserPhoto)
 def user_photo_pre_save(instance, **kwargs):
     if not instance.position:

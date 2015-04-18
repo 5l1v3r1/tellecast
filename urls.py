@@ -61,6 +61,19 @@ urlpatterns = patterns(
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
     url(r'^api/tellzones/$', views.tellzones),
+    url(
+        r'^api/blocks/$',
+        views.Blocks.as_view({
+            'get': 'list',
+            'post': 'create',
+        }),
+    ),
+    url(
+        r'^api/blocks/(?P<id>[^/]+)/$',
+        views.Blocks.as_view({
+            'delete': 'destroy',
+        }),
+    ),
     url(r'^api/', include(router.urls)),
 )
 

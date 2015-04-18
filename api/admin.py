@@ -769,6 +769,44 @@ class DeviceGCM(ModelAdmin):
 
 site.register(models.DeviceGCM, DeviceGCM)
 
+
+class Block(ModelAdmin):
+
+    fields = (
+        'user_source',
+        'user_destination',
+    )
+    list_display = (
+        'id',
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+    list_select_related = (
+        'user_source',
+        'user_destination',
+    )
+    ordering = (
+        'user_source',
+        '-timestamp',
+    )
+    search_fields = (
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+
+site.register(models.Block, Block)
+
 site.unregister(Administrator)
 
 delattr(AdministratorAdmin, 'form')

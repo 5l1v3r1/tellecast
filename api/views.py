@@ -546,6 +546,7 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
             - code: 400
               message: Invalid Input
     destroy:
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -815,6 +816,7 @@ class MasterTells(ModelViewSet):
             - code: 400
               message: Invalid Input
     destroy:
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -1061,6 +1063,7 @@ class SlaveTells(ModelViewSet):
             - code: 400
               message: Invalid Input
     destroy:
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -1275,8 +1278,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         if request.query_params.get('recent', True):
             for user in models.User.objects.exclude(id=request.user.id).order_by('id').all():
                 message = models.Message.objects.filter(
-                    Q(user_source_id=request.user.id, user_destination_id=user.id)
-                    |
+                    Q(user_source_id=request.user.id, user_destination_id=user.id) |
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
                     user_status_id__isnull=True,
                     master_tell_id__isnull=True,
@@ -1418,8 +1420,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         serializer = serializers.MessagesPostRequest(data=request.data)
         serializer.is_valid(raise_exception=True)
         if not models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'])
-            |
+            Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id']) |
             Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
             type__in=[
                 'Response - Accepted',
@@ -1432,8 +1433,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 Q(
                     user_source_id=request.user.id,
                     user_destination_id=serializer.validated_data['user_destination_id'],
-                )
-                |
+                ) |
                 Q(
                     user_source_id=serializer.validated_data['user_destination_id'],
                     user_destination_id=request.user.id,
@@ -1529,6 +1529,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         + N/A
         </pre>
         ---
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -1589,6 +1590,7 @@ class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModel
             - code: 400
               message: Invalid Input
     destroy:
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -1705,6 +1707,7 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
             - code: 400
               message: Invalid Input
     destroy:
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -1756,6 +1759,113 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
         '''
         DELETE a GCM Device
         ---
+        '''
+        self.get_object().delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
+class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 100
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.BlocksResponse
+
+    def get_queryset(self):
+        return models.Block.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+
+    def list(self, request, *args, **kwargs):
+        '''
+        SELECT Blocks
+
+        <pre>
+        Input
+        =====
+
+        + N/A
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.BlocksResponse
+        '''
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        '''
+        INSERT a Block
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.BlocksRequest
+        response_serializer: api.serializers.BlocksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.BlocksRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(data=serializers.BlocksResponse(serializer.create()).data, status=HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        '''
+        DELETE a Block
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
         '''
         self.get_object().delete()
         return Response(data={}, status=HTTP_204_NO_CONTENT)
