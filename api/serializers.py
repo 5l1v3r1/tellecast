@@ -258,6 +258,42 @@ class UserURL(ModelSerializer):
         model = models.UserURL
 
 
+class DeviceAPNS(ModelSerializer):
+
+    id = IntegerField(required=False)
+    name = CharField()
+    device_id = CharField()
+    registration_id = CharField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceAPNS
+
+
+class DeviceGCM(ModelSerializer):
+
+    id = IntegerField(required=False)
+    name = CharField()
+    device_id = CharField()
+    registration_id = CharField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceGCM
+
+
 class MasterTell(ModelSerializer):
 
     id = IntegerField(required=False)
@@ -362,42 +398,6 @@ class Message(ModelSerializer):
         model = models.Message
 
 
-class DeviceAPNS(ModelSerializer):
-
-    id = IntegerField(required=False)
-    name = CharField()
-    device_id = CharField()
-    registration_id = CharField()
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-            'device_id',
-            'registration_id',
-        )
-        model = models.DeviceAPNS
-
-
-class DeviceGCM(ModelSerializer):
-
-    id = IntegerField(required=False)
-    name = CharField()
-    device_id = CharField()
-    registration_id = CharField()
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-            'device_id',
-            'registration_id',
-        )
-        model = models.DeviceGCM
-
-
 class BlockUser(ModelSerializer):
 
     class Meta:
@@ -425,17 +425,6 @@ class Block(ModelSerializer):
             'timestamp',
         )
         model = models.Block
-
-
-class TellzonesRequest(Serializer):
-
-    latitude = FloatField()
-    longitude = FloatField()
-    radius = FloatField()
-
-
-class TellzonesResponse(Tellzone):
-    pass
 
 
 class RegisterRequestUserPhoto(ModelSerializer):
@@ -1139,6 +1128,73 @@ class UsersResponse(User):
         return instance.get_token()
 
 
+class UsersProfile(RegisterResponse):
+
+    messages = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'email',
+            'email_status',
+            'photo',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'phone_status',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'photos',
+            'social_profiles',
+            'status',
+            'urls',
+            'master_tells',
+            'messages',
+        )
+        model = models.User
+
+    def get_messages(self, instance):
+        request = self.context.get('request', None)
+        if request is None:
+            return 0
+        if not request.user.is_authenticated():
+            return 0
+        if models.Message.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
+            Q(user_source_id=instance.id, user_destination_id=request.user.id),
+            type='Message',
+        ).count():
+            return 6
+        message = models.Message.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
+            Q(user_source_id=instance.id, user_destination_id=request.user.id),
+        ).order_by('-inserted_at').first()
+        if not message:
+            return 0
+        if message.type == 'Request':
+            if message.user_source_id == request.user.id:
+                return 1
+            if message.user_source_id == instance.id:
+                return 2
+        if message.type == 'Response - Deferred':
+            return 3
+        if message.type == 'Response - Rejected':
+            return 4
+        if message.type == 'Response - Blocked':
+            return 5
+        if message.type == 'Response - Accepted':
+            return 6
+        if message.type == 'Message':
+            return 6
+        return 0
+
+
 class UsersTellzonesRequest(ModelSerializer):
 
     tellzone_id = IntegerField()
@@ -1269,73 +1325,6 @@ class UsersOffersResponse(ModelSerializer):
             'timestamp',
         )
         model = models.UserOffer
-
-
-class UsersProfile(RegisterResponse):
-
-    messages = SerializerMethodField()
-
-    class Meta:
-
-        fields = (
-            'id',
-            'email',
-            'email_status',
-            'photo',
-            'first_name',
-            'last_name',
-            'date_of_birth',
-            'gender',
-            'location',
-            'description',
-            'phone',
-            'phone_status',
-            'point',
-            'inserted_at',
-            'updated_at',
-            'photos',
-            'social_profiles',
-            'status',
-            'urls',
-            'master_tells',
-            'messages',
-        )
-        model = models.User
-
-    def get_messages(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return 0
-        if not request.user.is_authenticated():
-            return 0
-        if models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
-            Q(user_source_id=instance.id, user_destination_id=request.user.id),
-            type='Message',
-        ).count():
-            return 6
-        message = models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
-            Q(user_source_id=instance.id, user_destination_id=request.user.id),
-        ).order_by('-inserted_at').first()
-        if not message:
-            return 0
-        if message.type == 'Request':
-            if message.user_source_id == request.user.id:
-                return 1
-            if message.user_source_id == instance.id:
-                return 2
-        if message.type == 'Response - Deferred':
-            return 3
-        if message.type == 'Response - Rejected':
-            return 4
-        if message.type == 'Response - Blocked':
-            return 5
-        if message.type == 'Response - Accepted':
-            return 6
-        if message.type == 'Message':
-            return 6
-        return 0
 
 
 class MessagesPostRequest(Serializer):
@@ -1481,6 +1470,17 @@ class BlocksRequest(ModelSerializer):
 
 
 class BlocksResponse(Block):
+    pass
+
+
+class TellzonesRequest(Serializer):
+
+    latitude = FloatField()
+    longitude = FloatField()
+    radius = FloatField()
+
+
+class TellzonesResponse(Tellzone):
     pass
 
 

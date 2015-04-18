@@ -11,126 +11,6 @@ from social.apps.django_app.default.models import UserSocialAuth
 from api import models
 
 
-class Tellzone(ModelAdmin):
-
-    fields = (
-        'name',
-        'photo',
-        'location',
-        'phone',
-        'url',
-        'hours',
-        'point',
-    )
-    list_display = (
-        'id',
-        'name',
-        'location',
-        'phone',
-        'url',
-        'point',
-        'offers_',
-        'users_',
-        'inserted_at',
-        'updated_at',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'name',
-        'location',
-        'phone',
-        'url',
-        'inserted_at',
-        'updated_at',
-    )
-    list_select_related = (
-        'offers',
-        'users',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'name',
-        'photo',
-        'location',
-        'phone',
-        'url',
-    )
-
-    def offers_(self, instance):
-        return instance.offers.get_queryset().count()
-
-    offers_.allow_tags = True
-    offers_.short_description = 'Offers'
-
-    def users_(self, instance):
-        return instance.users.get_queryset().count()
-
-    users_.allow_tags = True
-    users_.short_description = 'Users'
-
-site.register(models.Tellzone, Tellzone)
-
-
-class Offer(ModelAdmin):
-
-    fields = (
-        'tellzone',
-        'name',
-        'description',
-        'photo',
-        'code',
-        'expires_at',
-    )
-    list_display = (
-        'id',
-        'tellzone',
-        'name',
-        'code',
-        'users_',
-        'inserted_at',
-        'updated_at',
-        'expires_at',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'tellzone',
-        'name',
-        'code',
-        'inserted_at',
-        'updated_at',
-        'expires_at',
-    )
-    list_select_related = (
-        'tellzone',
-        'users',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'name',
-        'description',
-        'photo',
-        'code',
-    )
-
-    def users_(self, instance):
-        return instance.users.get_queryset().count()
-
-    users_.allow_tags = True
-    users_.short_description = 'Users'
-
-site.register(models.Offer, Offer)
-
-
 class User(ModelAdmin):
 
     fields = (
@@ -456,6 +336,86 @@ class UserOffer(ModelAdmin):
 site.register(models.UserOffer, UserOffer)
 
 
+class DeviceAPNS(ModelAdmin):
+
+    fields = (
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'device_id',
+        'registration_id',
+    )
+
+site.register(models.DeviceAPNS, DeviceAPNS)
+
+
+class DeviceGCM(ModelAdmin):
+
+    fields = (
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'device_id',
+        'registration_id',
+    )
+
+site.register(models.DeviceGCM, DeviceGCM)
+
+
 class MasterTell(ModelAdmin):
 
     fields = (
@@ -663,86 +623,6 @@ class MessageAttachment(ModelAdmin):
 site.register(models.MessageAttachment, MessageAttachment)
 
 
-class DeviceAPNS(ModelAdmin):
-
-    fields = (
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_display = (
-        'id',
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'name',
-        'device_id',
-        'registration_id',
-    )
-
-site.register(models.DeviceAPNS, DeviceAPNS)
-
-
-class DeviceGCM(ModelAdmin):
-
-    fields = (
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_display = (
-        'id',
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'name',
-        'device_id',
-        'registration_id',
-    )
-
-site.register(models.DeviceGCM, DeviceGCM)
-
-
 class Block(ModelAdmin):
 
     fields = (
@@ -775,6 +655,126 @@ class Block(ModelAdmin):
     search_fields = ()
 
 site.register(models.Block, Block)
+
+
+class Tellzone(ModelAdmin):
+
+    fields = (
+        'name',
+        'photo',
+        'location',
+        'phone',
+        'url',
+        'hours',
+        'point',
+    )
+    list_display = (
+        'id',
+        'name',
+        'location',
+        'phone',
+        'url',
+        'point',
+        'offers_',
+        'users_',
+        'inserted_at',
+        'updated_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'name',
+        'location',
+        'phone',
+        'url',
+        'inserted_at',
+        'updated_at',
+    )
+    list_select_related = (
+        'offers',
+        'users',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'photo',
+        'location',
+        'phone',
+        'url',
+    )
+
+    def offers_(self, instance):
+        return instance.offers.get_queryset().count()
+
+    offers_.allow_tags = True
+    offers_.short_description = 'Offers'
+
+    def users_(self, instance):
+        return instance.users.get_queryset().count()
+
+    users_.allow_tags = True
+    users_.short_description = 'Users'
+
+site.register(models.Tellzone, Tellzone)
+
+
+class Offer(ModelAdmin):
+
+    fields = (
+        'tellzone',
+        'name',
+        'description',
+        'photo',
+        'code',
+        'expires_at',
+    )
+    list_display = (
+        'id',
+        'tellzone',
+        'name',
+        'code',
+        'users_',
+        'inserted_at',
+        'updated_at',
+        'expires_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'tellzone',
+        'name',
+        'code',
+        'inserted_at',
+        'updated_at',
+        'expires_at',
+    )
+    list_select_related = (
+        'tellzone',
+        'users',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'description',
+        'photo',
+        'code',
+    )
+
+    def users_(self, instance):
+        return instance.users.get_queryset().count()
+
+    users_.allow_tags = True
+    users_.short_description = 'Users'
+
+site.register(models.Offer, Offer)
 
 site.unregister(Administrator)
 

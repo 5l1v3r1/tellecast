@@ -239,79 +239,6 @@ def authenticate(request, backend):
     return Response(data=serializers.AuthenticateResponse(user).data, status=HTTP_200_OK)
 
 
-@api_view(('GET',))
-@permission_classes((IsAuthenticated,))
-def tellzones(request):
-    '''
-    SELECT Tellzones
-
-    <pre>
-    Input
-    =====
-
-    + latitude
-        - Type: float
-        - Status: mandatory
-
-    + longitude
-        - Type: float
-        - Status: mandatory
-
-    + radius
-        - Unit: meter (m)
-        - Type: float
-        - Status: mandatory
-
-    Output
-    ======
-
-    (see below; "Response Class" -> "Model Schema")
-    </pre>
-    ---
-    omit_parameters:
-        - form
-    parameters:
-        - name: latitude
-          paramType: query
-          required: true
-          type: number
-        - name: longitude
-          paramType: query
-          required: true
-          type: number
-        - name: radius
-          paramType: query
-          required: true
-          type: number
-    response_serializer: api.serializers.TellzonesResponse
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    '''
-    serializer = serializers.TellzonesRequest(data=request.QUERY_PARAMS)
-    if not serializer.is_valid():
-        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
-    point = fromstr(
-        'POINT(%(longitude)s %(latitude)s)' % {
-            'latitude': serializer.data['latitude'],
-            'longitude': serializer.data['longitude'],
-        }
-    )
-    data = []
-    for tellzone in models.Tellzone.objects.filter(
-        point__distance_lte=(point, D(m=float(serializer.data['radius']))),
-    ).distance(
-        point,
-    ).all():
-        data.append(serializers.TellzonesResponse(
-            tellzone,
-            context={
-                'request': request,
-            },
-        ).data)
-    return Response(data=data, status=HTTP_200_OK)
-
-
 class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixin, UpdateModelMixin):
 
     '''
@@ -599,6 +526,28 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         return Response(data={}, status=HTTP_204_NO_CONTENT)
 
 
+@api_view(('GET',))
+@permission_classes(())
+def users_profile(request, id):
+    '''
+    Retrieve the profile of a User
+    ---
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    serializer: api.serializers.UsersProfile
+    '''
+    return Response(
+        data=serializers.UsersProfile(
+            get_object_or_404(models.User, id=id),
+            context={
+                'request': request,
+            },
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('POST', 'DELETE',))
 @permission_classes((IsAuthenticated,))
 def users_tellzones(request, id):
@@ -708,26 +657,231 @@ def users_offers(request, id):
         return Response(data={}, status=HTTP_204_NO_CONTENT)
 
 
-@api_view(('GET',))
-@permission_classes(())
-def users_profile(request, id):
+class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
+
     '''
-    Retrieve the profile of a User
+    APNS Devices
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: optional
+
+    + name
+        - Type: string
+        - Status: mandatory
+
+    + device_id
+        - Type: UUID
+        - Status: mandatory
+
+    + registration_id
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
     ---
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    serializer: api.serializers.UsersProfile
+    list:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.DeviceAPNS
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.DeviceAPNS
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.DeviceAPNS
+        response_serializer: api.serializers.DeviceAPNS
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
     '''
-    return Response(
-        data=serializers.UsersProfile(
-            get_object_or_404(models.User, id=id),
-            context={
-                'request': request,
-            },
-        ).data,
-        status=HTTP_200_OK,
-    )
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.DeviceAPNS
+
+    def get_queryset(self):
+        return models.DeviceAPNS.objects.filter(user_id=self.request.user.id).order_by('id').all()
+
+    def list(self, request, *args, **kwargs):
+        '''
+        SELECT APNS Devices
+        ---
+        '''
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        '''
+        SELECT an APNS Device
+        ---
+        '''
+        return Response(data=self.get_serializer(self.get_object()).data, status=HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        '''
+        INSERT an APNS Device
+        ---
+        '''
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        headers = self.get_success_headers(serializer.data)
+        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        '''
+        DELETE an APNS Device
+        ---
+        '''
+        self.get_object().delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
+class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
+
+    '''
+    GCM Devices
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: optional
+
+    + name
+        - Type: string
+        - Status: mandatory
+
+    + device_id
+        - Type: integer (hexadecimal notation)
+        - Status: mandatory
+
+    + registration_id
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    list:
+        parameters:
+            - name: inserted_at
+              paramType: query
+              type: datetime
+            - name: updated_at
+              paramType: query
+              type: datetime
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.DeviceGCM
+    retrieve:
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.DeviceGCM
+    create:
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.DeviceGCM
+        response_serializer: api.serializers.DeviceGCM
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    destroy:
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+    '''
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.DeviceGCM
+
+    def get_queryset(self):
+        return models.DeviceGCM.objects.filter(user_id=self.request.user.id).order_by('id').all()
+
+    def list(self, request, *args, **kwargs):
+        '''
+        SELECT GCM Devices
+        ---
+        '''
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(data=serializer.data, status=HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        '''
+        SELECT a GCM Device
+        ---
+        '''
+        return Response(data=self.get_serializer(self.get_object()).data, status=HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        '''
+        INSERT a GCM Device
+        ---
+        '''
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        headers = self.get_success_headers(serializer.data)
+        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        '''
+        DELETE a GCM Device
+        ---
+        '''
+        self.get_object().delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
 
 
 class MasterTells(ModelViewSet):
@@ -1537,233 +1691,6 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         return super(Messages, self).destroy(request, *args, **kwargs)
 
 
-class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
-
-    '''
-    APNS Devices
-
-    <pre>
-    Input
-    =====
-
-    + id
-        - Type: integer
-        - Status: optional
-
-    + name
-        - Type: string
-        - Status: mandatory
-
-    + device_id
-        - Type: UUID
-        - Status: mandatory
-
-    + registration_id
-        - Type: string
-        - Status: mandatory
-
-    Output
-    ======
-
-    (see below; "Response Class" -> "Model Schema")
-    </pre>
-    ---
-    list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.DeviceAPNS
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.DeviceAPNS
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.DeviceAPNS
-        response_serializer: api.serializers.DeviceAPNS
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    destroy:
-        response_serializer: api.serializers.Null
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    '''
-
-    lookup_field = 'id'
-    page_kwarg = 'page'
-    paginate_by = None
-    paginate_by_param = 'per_page'
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (JSONRenderer,)
-    serializer_class = serializers.DeviceAPNS
-
-    def get_queryset(self):
-        return models.DeviceAPNS.objects.filter(user_id=self.request.user.id).order_by('id').all()
-
-    def list(self, request, *args, **kwargs):
-        '''
-        SELECT APNS Devices
-        ---
-        '''
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=HTTP_200_OK)
-
-    def retrieve(self, request, *args, **kwargs):
-        '''
-        SELECT an APNS Device
-        ---
-        '''
-        return Response(data=self.get_serializer(self.get_object()).data, status=HTTP_200_OK)
-
-    def create(self, request, *args, **kwargs):
-        '''
-        INSERT an APNS Device
-        ---
-        '''
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
-        headers = self.get_success_headers(serializer.data)
-        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
-
-    def destroy(self, request, *args, **kwargs):
-        '''
-        DELETE an APNS Device
-        ---
-        '''
-        self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
-
-
-class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
-
-    '''
-    GCM Devices
-
-    <pre>
-    Input
-    =====
-
-    + id
-        - Type: integer
-        - Status: optional
-
-    + name
-        - Type: string
-        - Status: mandatory
-
-    + device_id
-        - Type: integer (hexadecimal notation)
-        - Status: mandatory
-
-    + registration_id
-        - Type: string
-        - Status: mandatory
-
-    Output
-    ======
-
-    (see below; "Response Class" -> "Model Schema")
-    </pre>
-    ---
-    list:
-        parameters:
-            - name: inserted_at
-              paramType: query
-              type: datetime
-            - name: updated_at
-              paramType: query
-              type: datetime
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.DeviceGCM
-    retrieve:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.DeviceGCM
-    create:
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.DeviceGCM
-        response_serializer: api.serializers.DeviceGCM
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    destroy:
-        response_serializer: api.serializers.Null
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-    '''
-
-    lookup_field = 'id'
-    page_kwarg = 'page'
-    paginate_by = None
-    paginate_by_param = 'per_page'
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (JSONRenderer,)
-    serializer_class = serializers.DeviceGCM
-
-    def get_queryset(self):
-        return models.DeviceGCM.objects.filter(user_id=self.request.user.id).order_by('id').all()
-
-    def list(self, request, *args, **kwargs):
-        '''
-        SELECT GCM Devices
-        ---
-        '''
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=HTTP_200_OK)
-
-    def retrieve(self, request, *args, **kwargs):
-        '''
-        SELECT a GCM Device
-        ---
-        '''
-        return Response(data=self.get_serializer(self.get_object()).data, status=HTTP_200_OK)
-
-    def create(self, request, *args, **kwargs):
-        '''
-        INSERT a GCM Device
-        ---
-        '''
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
-        headers = self.get_success_headers(serializer.data)
-        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
-
-    def destroy(self, request, *args, **kwargs):
-        '''
-        DELETE a GCM Device
-        ---
-        '''
-        self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
-
-
 class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
 
     lookup_field = 'id'
@@ -1869,6 +1796,79 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
         '''
         self.get_object().delete()
         return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def tellzones(request):
+    '''
+    SELECT Tellzones
+
+    <pre>
+    Input
+    =====
+
+    + latitude
+        - Type: float
+        - Status: mandatory
+
+    + longitude
+        - Type: float
+        - Status: mandatory
+
+    + radius
+        - Unit: meter (m)
+        - Type: float
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: latitude
+          paramType: query
+          required: true
+          type: number
+        - name: longitude
+          paramType: query
+          required: true
+          type: number
+        - name: radius
+          paramType: query
+          required: true
+          type: number
+    response_serializer: api.serializers.TellzonesResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.TellzonesRequest(data=request.QUERY_PARAMS)
+    if not serializer.is_valid():
+        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    point = fromstr(
+        'POINT(%(longitude)s %(latitude)s)' % {
+            'latitude': serializer.data['latitude'],
+            'longitude': serializer.data['longitude'],
+        }
+    )
+    data = []
+    for tellzone in models.Tellzone.objects.filter(
+        point__distance_lte=(point, D(m=float(serializer.data['radius']))),
+    ).distance(
+        point,
+    ).all():
+        data.append(serializers.TellzonesResponse(
+            tellzone,
+            context={
+                'request': request,
+            },
+        ).data)
+    return Response(data=data, status=HTTP_200_OK)
 
 
 def handler400(request):

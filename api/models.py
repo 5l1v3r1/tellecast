@@ -336,6 +336,44 @@ class UserOffer(Model):
         verbose_name_plural = 'User Offers'
 
 
+class DeviceAPNS(Model):
+
+    user = ForeignKey(User, related_name='+')
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    device_id = UUIDField(db_index=True, max_length=255, name=ugettext_lazy('Device ID'))
+    registration_id = CharField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_devices_apns'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'APNS Device'
+        verbose_name_plural = 'APNS Devices'
+
+    def send_message(self, extra):
+        return apns_send_message(self.registration_id, extra)
+
+
+class DeviceGCM(Model):
+
+    user = ForeignKey(User, related_name='+')
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    device_id = HexIntegerField(ugettext_lazy('Device ID'), db_index=True, max_length=255)
+    registration_id = TextField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
+
+    class Meta:
+        db_table = 'api_devices_gcm'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'GCM Device'
+        verbose_name_plural = 'GCM Devices'
+
+    def send_message(self, data):
+        return gcm_send_message(self.registration_id, data)
+
+
 class MasterTell(Model):
 
     created_by = ForeignKey(User, related_name='+')
@@ -479,44 +517,6 @@ class MessageAttachment(Model):
         )
         verbose_name = 'Message Attachment'
         verbose_name_plural = 'Message Attachments'
-
-
-class DeviceAPNS(Model):
-
-    user = ForeignKey(User, related_name='+')
-    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
-    device_id = UUIDField(db_index=True, max_length=255, name=ugettext_lazy('Device ID'))
-    registration_id = CharField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
-
-    class Meta:
-        db_table = 'api_devices_apns'
-        ordering = (
-            'id',
-        )
-        verbose_name = 'APNS Device'
-        verbose_name_plural = 'APNS Devices'
-
-    def send_message(self, extra):
-        return apns_send_message(self.registration_id, extra)
-
-
-class DeviceGCM(Model):
-
-    user = ForeignKey(User, related_name='+')
-    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
-    device_id = HexIntegerField(ugettext_lazy('Device ID'), db_index=True, max_length=255)
-    registration_id = TextField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
-
-    class Meta:
-        db_table = 'api_devices_gcm'
-        ordering = (
-            'id',
-        )
-        verbose_name = 'GCM Device'
-        verbose_name_plural = 'GCM Devices'
-
-    def send_message(self, data):
-        return gcm_send_message(self.registration_id, data)
 
 
 class Block(Model):
