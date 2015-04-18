@@ -116,12 +116,10 @@ class Offer(ModelAdmin):
         'id',
     )
     search_fields = (
-        'tellzone',
         'name',
+        'description',
         'photo',
-        'location',
-        'phone',
-        'url',
+        'code',
     )
 
     def users_(self, instance):
@@ -180,6 +178,14 @@ class User(ModelAdmin):
         'email',
         'first_name',
         'last_name',
+
+        'email',
+        'photo',
+        'first_name',
+        'last_name',
+        'location',
+        'description',
+        'phone',
     )
 
     def master_tells_(self, instance):
@@ -226,9 +232,7 @@ class UserPhoto(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user',
         'string',
-        'position',
     )
 
 site.register(models.UserPhoto, UserPhoto)
@@ -263,7 +267,6 @@ class UserSocialProfile(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user',
         'netloc',
         'url',
     )
@@ -304,7 +307,6 @@ class UserStatus(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user',
         'string',
         'title',
         'url',
@@ -343,9 +345,7 @@ class UserStatusAttachment(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user_status',
         'string',
-        'position',
     )
 
 site.register(models.UserStatusAttachment, UserStatusAttachment)
@@ -380,9 +380,7 @@ class UserURL(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user',
         'string',
-        'position',
     )
 
 site.register(models.UserURL, UserURL)
@@ -420,10 +418,7 @@ class UserTellzone(ModelAdmin):
     ordering = (
         'id',
     )
-    search_fields = (
-        'user',
-        'tellzone',
-    )
+    search_fields = ()
 
 site.register(models.UserTellzone, UserTellzone)
 
@@ -456,10 +451,7 @@ class UserOffer(ModelAdmin):
     ordering = (
         'id',
     )
-    search_fields = (
-        'user',
-        'offer',
-    )
+    search_fields = ()
 
 site.register(models.UserOffer, UserOffer)
 
@@ -500,11 +492,7 @@ class MasterTell(ModelAdmin):
         'id',
     )
     search_fields = (
-        'created_by',
-        'owned_by',
-        'position',
-        'inserted_at',
-        'updated_at',
+        'contents',
     )
 
     def slave_tells_(self, instance):
@@ -565,14 +553,11 @@ class SlaveTell(ModelAdmin):
         'id',
     )
     search_fields = (
-        'master_tell',
-        'created_by',
-        'owned_by',
-        'type',
-        'is_editable',
-        'position',
-        'inserted_at',
-        'updated_at',
+        'photo',
+        'first_name',
+        'last_name',
+        'contents',
+        'description',
     )
 
 site.register(models.SlaveTell, SlaveTell)
@@ -631,15 +616,7 @@ class Message(ModelAdmin):
         '-inserted_at',
     )
     search_fields = (
-        'user_source',
-        'user_destination',
-        'user_status',
-        'master_tell',
-        'type',
         'contents',
-        'status',
-        'inserted_at',
-        'updated_at',
     )
 
     def attachments_(self, instance):
@@ -680,9 +657,7 @@ class MessageAttachment(ModelAdmin):
         'id',
     )
     search_fields = (
-        'message',
         'string',
-        'position',
     )
 
 site.register(models.MessageAttachment, MessageAttachment)
@@ -720,7 +695,6 @@ class DeviceAPNS(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user',
         'name',
         'device_id',
         'registration_id',
@@ -761,7 +735,6 @@ class DeviceGCM(ModelAdmin):
         'id',
     )
     search_fields = (
-        'user',
         'name',
         'device_id',
         'registration_id',
@@ -799,11 +772,7 @@ class Block(ModelAdmin):
         'user_source',
         '-timestamp',
     )
-    search_fields = (
-        'user_source',
-        'user_destination',
-        'timestamp',
-    )
+    search_fields = ()
 
 site.register(models.Block, Block)
 
