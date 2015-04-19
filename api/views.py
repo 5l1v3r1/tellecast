@@ -1040,7 +1040,7 @@ def master_tells_ids(request):
 @permission_classes((IsAuthenticated,))
 def master_tells_positions(request):
     '''
-    Bulk update positions of Master Tells
+    Bulk update `position` attribute of Master Tells
 
     <pre>
     Input
@@ -1287,7 +1287,7 @@ def slave_tells_ids(request):
 @permission_classes((IsAuthenticated,))
 def slave_tells_positions(request):
     '''
-    Bulk update positions of Slave Tells
+    Bulk update `position` attribute of Slave Tells
 
     <pre>
     Input
@@ -1693,6 +1693,62 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
               message: Invalid Input
         '''
         return super(Messages, self).destroy(request, *args, **kwargs)
+
+
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def messages_bulk(request):
+    '''
+    Bulk update `user_source_is_hidden`, `user_destination_is_hidden`, and `status` attributes of Messages
+
+    <pre>
+    Input
+    =====
+
+    [
+        {
+            "id": 1,
+            "user_source_is_hidden": true,
+            "user_destination_is_hidden": true,
+            "status": "Read",
+        },
+        ...,
+        ...,
+        ...,
+        {
+            "id": 1,
+            "user_source_is_hidden": true,
+            "user_destination_is_hidden": true,
+            "status": "Read",
+        }
+    ]
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+    response_serializer: api.serializers.Message
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    data = []
+    for item in request.DATA:
+        message = models.Message.objects.filter(id=item['id']).first()
+        if not message:
+            continue
+        serializer = serializers.MessagesPatchRequest(message, data=item, partial=True)
+        if not serializer.is_valid(raise_exception=False):
+            continue
+        data.append(serializers.MessagesPatchResponse(serializer.save()).data)
+    return Response(data=data, status=HTTP_200_OK)
 
 
 class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):

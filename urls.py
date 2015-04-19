@@ -60,6 +60,7 @@ urlpatterns = patterns(
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
+    url(r'^api/messages/bulk/$', views.messages_bulk),
     url(
         r'^api/tellcards/$',
         views.Tellcards.as_view({
