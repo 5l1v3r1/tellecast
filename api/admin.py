@@ -421,6 +421,7 @@ class MasterTell(ModelAdmin):
     fields = (
         'created_by',
         'owned_by',
+        'is_visible',
         'contents',
         'position',
     )
@@ -428,6 +429,7 @@ class MasterTell(ModelAdmin):
         'id',
         'created_by',
         'owned_by',
+        'is_visible',
         'position',
         'slave_tells_',
         'inserted_at',
@@ -440,6 +442,7 @@ class MasterTell(ModelAdmin):
         'id',
         'created_by',
         'owned_by',
+        'is_visible',
         'position',
         'inserted_at',
         'updated_at',

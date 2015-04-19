@@ -378,6 +378,7 @@ class MasterTell(Model):
 
     created_by = ForeignKey(User, related_name='+')
     owned_by = ForeignKey(User, related_name='master_tells')
+    is_visible = BooleanField(ugettext_lazy('Is Visible?'), db_index=True, default=True)
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)

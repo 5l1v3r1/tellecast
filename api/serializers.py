@@ -299,6 +299,7 @@ class MasterTell(ModelSerializer):
     id = IntegerField(required=False)
     created_by_id = IntegerField(required=False)
     owned_by_id = IntegerField(required=False)
+    is_visible = BooleanField(required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -307,6 +308,7 @@ class MasterTell(ModelSerializer):
             'id',
             'created_by_id',
             'owned_by_id',
+            'is_visible',
             'contents',
             'position',
             'inserted_at',
@@ -324,7 +326,7 @@ class SlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
-    is_editable = BooleanField(required=True)
+    is_editable = BooleanField(required=False)
     description = CharField(required=False)
     position = IntegerField(required=False)
 
@@ -521,7 +523,7 @@ class RegisterRequestSlaveTell(ModelSerializer):
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
-    is_editable = BooleanField(required=True)
+    is_editable = BooleanField(required=False)
     description = CharField(required=False)
     position = IntegerField(required=False)
 
@@ -542,12 +544,14 @@ class RegisterRequestSlaveTell(ModelSerializer):
 
 class RegisterRequestMasterTell(ModelSerializer):
 
+    is_visible = BooleanField(required=False)
     position = IntegerField(required=False)
     slave_tells = RegisterRequestSlaveTell(help_text='List of Slave Tells', many=True)
 
     class Meta:
 
         fields = (
+            'is_visible',
             'contents',
             'position',
             'slave_tells',
@@ -728,6 +732,7 @@ class RegisterResponseSlaveTell(SlaveTell):
 
 class RegisterResponseMasterTell(MasterTell):
 
+    is_visible = BooleanField(required=False)
     slave_tells = RegisterResponseSlaveTell(help_text='List of Slave Tells', many=True, required=False)
 
     class Meta:
@@ -736,6 +741,7 @@ class RegisterResponseMasterTell(MasterTell):
             'id',
             'created_by_id',
             'owned_by_id',
+            'is_visible',
             'contents',
             'position',
             'inserted_at',
@@ -1130,6 +1136,7 @@ class UsersResponse(User):
 
 class UsersProfile(RegisterResponse):
 
+    master_tells = SerializerMethodField()
     messages = SerializerMethodField()
 
     class Meta:
@@ -1158,6 +1165,12 @@ class UsersProfile(RegisterResponse):
             'messages',
         )
         model = models.User
+
+    def get_master_tells(self, instance):
+        return [
+            RegisterResponseMasterTell(master_tell).data
+            for master_tell in instance.master_tells.filter(is_visible=True).order_by('position').all()
+        ]
 
     def get_messages(self, instance):
         request = self.context.get('request', None)

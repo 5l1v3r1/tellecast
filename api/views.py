@@ -905,6 +905,10 @@ class MasterTells(ModelViewSet):
         - Type: integer
         - Status: optional
 
+    + is_visible
+        - Type: boolean (default = True)
+        - Status: optional
+
     + contents
         - Type: string
         - Status: mandatory
@@ -1145,8 +1149,8 @@ class SlaveTells(ModelViewSet):
             - video/x-mpeg
 
     + is_editable
-        - Type: boolean
-        - Status: mandatory
+        - Type: boolean (default = True)
+        - Status: optional
 
     + contents
         - Type: string
