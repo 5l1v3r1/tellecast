@@ -1427,6 +1427,9 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             - name: master_tell_id
               paramType: query
               type: integer
+            - name: since_id
+              paramType: query
+              type: integer
             - name: max_id
               paramType: query
               type: integer
