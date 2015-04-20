@@ -1393,6 +1393,12 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             Type: integer
             Status: optional
 
+        + since_id
+            Description: (similar to how it works in all major APIs; Example: twitter.com) Only applicable if
+            `recent` = False.
+            Type: integer
+            Status: optional
+
         + max_id
             Description: (similar to how it works in all major APIs; Example: twitter.com) Only applicable if
             `recent` = False.
@@ -1463,6 +1469,13 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 query = query.filter(master_tell_id=master_tell_id)
             else:
                 query = query.filter(master_tell_id__isnull=True)
+            since_id = 0
+            try:
+                since_id = int(request.query_params.get('since_id', '0'))
+            except Exception:
+                pass
+            if since_id:
+                query = query.filter(id__gt=since_id)
             max_id = 0
             try:
                 max_id = int(request.query_params.get('max_id', '0'))
