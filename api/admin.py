@@ -266,6 +266,47 @@ class UserURL(ModelAdmin):
 site.register(models.UserURL, UserURL)
 
 
+class UserLocation(ModelAdmin):
+
+    fields = (
+        'user',
+        'point',
+        'bearing',
+        'is_casting',
+    )
+    list_display = (
+        'id',
+        'user',
+        'point',
+        'bearing',
+        'is_casting',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'point',
+        'bearing',
+        'is_casting',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'user',
+        '-timestamp',
+    )
+    search_fields = (
+        'point',
+        'bearing',
+    )
+
+site.register(models.UserLocation, UserLocation)
+
+
 class UserTellzone(ModelAdmin):
 
     fields = (

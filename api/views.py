@@ -23,6 +23,7 @@ from rest_framework.status import (
     HTTP_403_FORBIDDEN,
 )
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from social.apps.django_app.default.models import DjangoStorage
 from social.backends.utils import get_backend
@@ -655,6 +656,122 @@ def users_offers(request, id):
     if request.method == 'DELETE':
         serializer.delete()
         return Response(data={}, status=HTTP_204_NO_CONTENT)
+
+
+class Radar(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+
+    def get(self, request, *args, **kwargs):
+        '''
+        GET Items
+
+        <pre>
+        Input
+        =====
+
+        + latitude
+            - Type: float
+            - Status: mandatory
+
+        + longitude
+            - Type: float
+            - Status: mandatory
+
+        + radius
+            - Unit: meter (m)
+            - Type: float
+            - Status: mandatory
+
+        + threshold
+            - Unit: meter (m)
+            - Type: float
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.RadarGetRequest
+        response_serializer: api.serializers.RadarGetResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        users = []
+        offers = []
+        return Response(
+            data=serializers.RadarGetResponse({
+                'users': users,
+                'offers': offers,
+            }).data,
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        '''
+        POST Location
+
+        <pre>
+        Input
+        =====
+
+        + point
+            - Type: dictionary (of floats)
+            - Status: mandatory
+
+            Example:
+
+            {
+                'latitude': 0.0000000000,
+                'longitude': 0.0000000000,
+            }
+
+        + bearing
+            - Type: integer
+            - Status: mandatory
+
+        + is_casting
+            - Type: boolean (default = True)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.RadarPostRequest
+        response_serializer: api.serializers.RadarPostResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.RadarPostRequest(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_location = serializer.save(user=request.user)
+        return Response(
+            data=serializers.RadarPostResponse(
+                models.Tellzone.objects.filter(
+                    point__distance_lte=(user_location.point, D(m=10.00)),
+                ).distance(user_location.point).all(),
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
 
 
 class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
@@ -2096,12 +2213,14 @@ def tellzones(request):
     ).distance(
         point,
     ).all():
-        data.append(serializers.TellzonesResponse(
-            tellzone,
-            context={
-                'request': request,
-            },
-        ).data)
+        data.append(
+            serializers.TellzonesResponse(
+                tellzone,
+                context={
+                    'request': request,
+                },
+            ).data
+        )
     return Response(data=data, status=HTTP_200_OK)
 
 

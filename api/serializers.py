@@ -1344,6 +1344,117 @@ class UsersOffersResponse(ModelSerializer):
         model = models.UserOffer
 
 
+class RadarGetRequest(Serializer):
+
+    latitude = FloatField()
+    longitude = FloatField()
+    radius = FloatField()
+    threshold = FloatField()
+
+
+class RadarGetResponseUsersItems(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo',
+            'first_name',
+            'last_name',
+            'location',
+            'description',
+        )
+        model = models.User
+
+
+class RadarGetResponseUsers(Serializer):
+
+    bearing = IntegerField()
+    degrees = FloatField()
+    radius = FloatField()
+    items = RadarGetResponseUsersItems(many=True, required=False)
+
+
+class RadarGetResponseOffersItemsTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Tellzone
+
+
+class RadarGetResponseOffersItems(ModelSerializer):
+
+    tellzone = RadarGetResponseOffersItemsTellzone()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'description',
+            'photo',
+            'code',
+            'inserted_at',
+            'updated_at',
+            'expires_at',
+            'tellzone',
+        )
+        model = models.Offer
+
+
+class RadarGetResponseOffers(Serializer):
+
+    bearing = IntegerField()
+    degrees = FloatField()
+    radius = FloatField()
+    items = RadarGetResponseOffersItems(many=True, required=False)
+
+
+class RadarGetResponse(Serializer):
+
+    users = RadarGetResponseUsers(many=True, required=False)
+    offers = RadarGetResponseOffers(many=True, required=False)
+
+
+class RadarPostRequest(ModelSerializer):
+
+    point = PointField()
+    bearing = IntegerField()
+    is_casting = BooleanField(required=False)
+
+    class Meta:
+
+        fields = (
+            'point',
+            'bearing',
+            'is_casting',
+        )
+        model = models.UserLocation
+
+
+class RadarPostResponse(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class MessagesPostRequest(Serializer):
 
     user_source_is_hidden = BooleanField(default=False, required=False)

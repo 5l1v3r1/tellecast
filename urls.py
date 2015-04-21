@@ -56,11 +56,11 @@ urlpatterns = patterns(
     url(r'^api/users/(?P<id>[^/]+)/profile/$', views.users_profile),
     url(r'^api/users/(?P<id>[^/]+)/tellzones/$', views.users_tellzones),
     url(r'^api/users/(?P<id>[^/]+)/offers/$', views.users_offers),
+    url(r'^api/radar/$', views.Radar.as_view()),
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
-    # url(r'^api/messages/$', views.messages),
     url(r'^api/messages/bulk/is_hidden/$', views.messages_bulk_is_hidden),
     url(r'^api/messages/bulk/status/$', views.messages_bulk_status),
     url(

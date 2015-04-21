@@ -261,7 +261,7 @@ class UserStatus(Model):
         return self.string
 
     def __unicode__(self):
-        return self.string
+        return unicode(self.string)
 
 
 class UserStatusAttachment(Model):
@@ -296,6 +296,27 @@ class UserURL(Model):
         )
         verbose_name = 'User URL'
         verbose_name_plural = 'User URLs'
+
+
+class UserLocation(Model):
+
+    user = ForeignKey(User, related_name='locations')
+    point = PointField(ugettext_lazy('Point'), db_index=True)
+    bearing = IntegerField(ugettext_lazy('Bearing'), db_index=True)
+    is_casting = BooleanField(ugettext_lazy('Is Casting?'), db_index=True, default=True)
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    objects = GeoManager()
+
+    class Meta:
+
+        db_table = 'api_locations'
+        ordering = (
+            'user',
+            '-timestamp',
+        )
+        verbose_name = 'User Location'
+        verbose_name_plural = 'User Locations'
 
 
 class UserTellzone(Model):
