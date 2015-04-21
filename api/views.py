@@ -1710,6 +1710,43 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         '''
         return super(Messages, self).destroy(request, *args, **kwargs)
 
+    def delete(self, request, *args, **kwargs):
+        '''
+        Bulk delete Messages
+
+        <pre>
+        Input
+        =====
+
+        + user_id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.MessagesDeleteRequest
+        response_serializer: api.serializers.MessagesDeleteResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.MessagesDeleteRequest(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        models.Message.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
+            Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+        ).delete()
+        return Response(data=serializers.MessagesDeleteResponse(), status=HTTP_204_NO_CONTENT)
+
 
 @api_view(('POST',))
 @permission_classes((IsAuthenticated,))
@@ -1732,7 +1769,7 @@ def messages_bulk(request):
         ...,
         ...,
         {
-            "id": 1,
+            "id": N,
             "user_source_is_hidden": true,
             "user_destination_is_hidden": true,
             "status": "Read",

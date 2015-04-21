@@ -429,6 +429,10 @@ class Block(ModelSerializer):
         model = models.Block
 
 
+class Null(Serializer):
+    pass
+
+
 class RegisterRequestUserPhoto(ModelSerializer):
 
     position = IntegerField(required=False)
@@ -1453,6 +1457,15 @@ class MessagesPatchResponse(Message):
     pass
 
 
+class MessagesDeleteRequest(Serializer):
+
+    user_id = IntegerField()
+
+
+class MessagesDeleteResponse(Null):
+    pass
+
+
 class TellcardsRequest(ModelSerializer):
 
     user_destination_id = IntegerField()
@@ -1545,8 +1558,4 @@ class TellzonesRequest(Serializer):
 
 
 class TellzonesResponse(Tellzone):
-    pass
-
-
-class Null(Serializer):
     pass

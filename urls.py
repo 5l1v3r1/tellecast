@@ -32,6 +32,8 @@ router.register(r'master-tells', views.MasterTells, base_name='master-tells')
 router.register(r'slave-tells', views.SlaveTells, base_name='slave-tells')
 router.register(r'messages', views.Messages, base_name='messages')
 
+router.get_routes(views.Messages)[0].mapping['delete'] = 'delete'
+
 urlpatterns = patterns(
     '',
     url(r'^$', RedirectView.as_view(url=reverse_lazy('admin:index'))),
@@ -60,6 +62,7 @@ urlpatterns = patterns(
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
+    # url(r'^api/messages/$', views.messages),
     url(r'^api/messages/bulk/$', views.messages_bulk),
     url(
         r'^api/tellcards/$',
