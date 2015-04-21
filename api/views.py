@@ -1459,9 +1459,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             )
             user_id = request.query_params.get('user_id', None)
             if user_id:
-                query = query.filter(
-                    Q(user_source_id=user_id) | Q(user_destination_id=user_id),
-                )
+                query = query.filter(Q(user_source_id=user_id) | Q(user_destination_id=user_id))
             user_status_id = request.query_params.get('user_status_id', None)
             if user_status_id:
                 query = query.filter(user_status_id=user_status_id)
@@ -1493,10 +1491,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 pass
             for message in query.order_by('-inserted_at').all()[:limit]:
                 messages.append(message)
-        return Response(
-            data=[serializers.Message(message).data for message in messages],
-            status=HTTP_200_OK,
-        )
+        return Response(data=[serializers.Message(message).data for message in messages], status=HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         '''
@@ -1710,71 +1705,20 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         '''
         return super(Messages, self).destroy(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        '''
-        Bulk delete Messages
-
-        <pre>
-        Input
-        =====
-
-        + user_id
-            - Type: integer
-            - Status: mandatory
-
-        Output
-        ======
-
-        (see below; "Response Class" -> "Model Schema")
-        </pre>
-        ---
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.MessagesDeleteRequest
-        response_serializer: api.serializers.MessagesDeleteResponse
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        '''
-        serializer = serializers.MessagesDeleteRequest(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
-            Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
-        ).delete()
-        return Response(data=serializers.MessagesDeleteResponse(), status=HTTP_204_NO_CONTENT)
-
 
 @api_view(('POST',))
 @permission_classes((IsAuthenticated,))
-def messages_bulk(request):
+def messages_bulk_is_hidden(request):
     '''
-    Bulk update `user_source_is_hidden`, `user_destination_is_hidden`, and `status` attributes of Messages
+    Bulk update `user_source_is_hidden` and `user_destination_is_hidden` attributes of Messages
 
     <pre>
     Input
     =====
 
-    [
-        {
-            "id": 1,
-            "user_source_is_hidden": true,
-            "user_destination_is_hidden": true,
-            "status": "Read",
-        },
-        ...,
-        ...,
-        ...,
-        {
-            "id": N,
-            "user_source_is_hidden": true,
-            "user_destination_is_hidden": true,
-            "status": "Read",
-        }
-    ]
+    + user_id
+        - Type: integer
+        - Status: mandatory
 
     Output
     ======
@@ -1787,20 +1731,68 @@ def messages_bulk(request):
     parameters:
         - name: body
           paramType: body
-    response_serializer: api.serializers.Message
+          pytype: api.serializers.MessagesBulkRequest
+    response_serializer: api.serializers.MessagesBulkResponse
     responseMessages:
         - code: 400
           message: Invalid Input
     '''
+    serializer = serializers.MessagesBulkRequest(data=request.data)
+    serializer.is_valid(raise_exception=True)
     data = []
-    for item in request.DATA:
-        message = models.Message.objects.filter(id=item['id']).first()
-        if not message:
-            continue
-        serializer = serializers.MessagesPatchRequest(message, data=item, partial=True)
-        if not serializer.is_valid(raise_exception=False):
-            continue
-        data.append(serializers.MessagesPatchResponse(serializer.save()).data)
+    for message in models.Message.objects.filter(
+        Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
+        Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+    ).order_by('-inserted_at').all():
+        if message.user_source_id == request.user.id:
+            message.user_source_is_hidden = True
+        if message.user_destination_id == request.user.id:
+            message.user_destination_is_hidden = True
+        message.save()
+        data.append(serializers.MessagesBulkResponse(message).data)
+    return Response(data=data, status=HTTP_200_OK)
+
+
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def messages_bulk_status(request):
+    '''
+    Bulk update `status` attributes of Messages
+
+    <pre>
+    Input
+    =====
+
+    + user_id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.MessagesBulkRequest
+    response_serializer: api.serializers.MessagesBulkResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.MessagesBulkRequest(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = []
+    for message in models.Message.objects.filter(
+        Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+    ).order_by('-inserted_at').all():
+        message.status = 'Read'
+        message.save()
+        data.append(serializers.MessagesBulkResponse(message).data)
     return Response(data=data, status=HTTP_200_OK)
 
 

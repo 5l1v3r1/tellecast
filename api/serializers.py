@@ -1457,12 +1457,12 @@ class MessagesPatchResponse(Message):
     pass
 
 
-class MessagesDeleteRequest(Serializer):
+class MessagesBulkRequest(Serializer):
 
     user_id = IntegerField()
 
 
-class MessagesDeleteResponse(Null):
+class MessagesBulkResponse(Message):
     pass
 
 
