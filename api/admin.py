@@ -56,13 +56,11 @@ class User(ModelAdmin):
     )
     search_fields = (
         'email',
-        'first_name',
-        'last_name',
-
-        'email',
         'photo',
         'first_name',
         'last_name',
+        'date_of_birth',
+        'gender',
         'location',
         'description',
         'phone',
@@ -300,7 +298,6 @@ class UserLocation(ModelAdmin):
         '-timestamp',
     )
     search_fields = (
-        'point',
         'bearing',
     )
 
@@ -783,6 +780,7 @@ class Tellzone(ModelAdmin):
         'location',
         'phone',
         'url',
+        'hours',
     )
 
     def offers_(self, instance):
