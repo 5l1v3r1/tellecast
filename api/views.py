@@ -157,8 +157,10 @@ def register(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
-    user = serializer.save(force_insert=True, user=request.user)
-    return Response(data=serializers.RegisterResponse(user).data, status=HTTP_201_CREATED)
+    return Response(
+        data=serializers.RegisterResponse(serializer.save(force_insert=True, user=request.user)).data,
+        status=HTTP_201_CREATED,
+    )
 
 
 @api_view(('POST',))
@@ -601,8 +603,7 @@ def users_tellzones(request, id):
         return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
     if request.method == 'POST':
         return Response(
-            data=serializers.UsersTellzonesResponse(serializer.create_or_update()).data,
-            status=HTTP_201_CREATED,
+            data=serializers.UsersTellzonesResponse(serializer.create_or_update()).data, status=HTTP_201_CREATED,
         )
     if request.method == 'DELETE':
         serializer.delete()
@@ -652,8 +653,7 @@ def users_offers(request, id):
         return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
     if request.method == 'POST':
         return Response(
-            data=serializers.UsersOffersResponse(serializer.create_or_update()).data,
-            status=HTTP_201_CREATED,
+            data=serializers.UsersOffersResponse(serializer.create_or_update()).data, status=HTTP_201_CREATED,
         )
     if request.method == 'DELETE':
         serializer.delete()
@@ -720,26 +720,42 @@ class Radar(APIView):
             point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
             is_casting=True,
             timestamp__gt=datetime.now() - timedelta(minutes=1),
-        ).distance(point).select_related('user').order_by('distance').all():
+        ).distance(
+            point,
+        ).select_related(
+            'user',
+        ).order_by(
+            'distance',
+        ).all():
             users.append(user_location.user)
         offers = []
         for tellzone in models.Tellzone.objects.filter(
             point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
-        ).distance(point).select_related('offers').order_by('distance').all():
+        ).distance(
+            point,
+        ).select_related(
+            'offers',
+        ).order_by(
+            'distance',
+        ).all():
             for offer in tellzone.offers.order_by('id').all():
                 offers.append(offer)
         return Response(
             data=serializers.RadarGetResponse({
-                'users': [{
-                    'degrees': 0.00,
-                    'radius': 0.00,
-                    'items': users,
-                }],
-                'offers': [{
-                    'degrees': 0.00,
-                    'radius': 0.00,
-                    'items': offers,
-                }],
+                'users': [
+                    {
+                        'degrees': 0.00,
+                        'radius': 0.00,
+                        'items': users,
+                    },
+                ],
+                'offers': [
+                    {
+                        'degrees': 0.00,
+                        'radius': 0.00,
+                        'items': offers,
+                    },
+                ],
             }).data,
             status=HTTP_200_OK,
         )
@@ -795,7 +811,9 @@ class Radar(APIView):
             data=serializers.RadarPostResponse(
                 models.Tellzone.objects.filter(
                     point__distance_lte=(user_location.point, D(ft=30.00)),
-                ).distance(user_location.point).all(),
+                ).distance(
+                    user_location.point,
+                ).all(),
                 many=True,
             ).data,
             status=HTTP_200_OK,
@@ -900,8 +918,7 @@ class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModel
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user)
-        headers = self.get_success_headers(serializer.data)
-        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
+        return Response(data=serializer.data, status=HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -1017,8 +1034,7 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user)
-        headers = self.get_success_headers(serializer.data)
-        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
+        return Response(data=serializer.data, status=HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -1224,7 +1240,7 @@ def master_tells_positions(request):
     data = []
     for item in request.DATA:
         try:
-            master_tell = models.MasterTell.objects.get(id=item['id'])
+            master_tell = models.MasterTell.objects.get(id=item['id'], owned_by_id=request.user.id)
             master_tell.position = item['position']
             master_tell.save()
             data.append(serializers.MasterTell(master_tell).data)
@@ -1471,7 +1487,7 @@ def slave_tells_positions(request):
     data = []
     for item in request.DATA:
         try:
-            slave_tell = models.SlaveTell.objects.get(id=item['id'])
+            slave_tell = models.SlaveTell.objects.get(id=item['id'], owned_by_id=request.user.id)
             slave_tell.position = item['position']
             slave_tell.save()
             data.append(serializers.SlaveTell(slave_tell).data)
@@ -1594,7 +1610,9 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
                     user_status_id__isnull=True,
                     master_tell_id__isnull=True,
-                ).order_by('-inserted_at').first()
+                ).order_by(
+                    '-inserted_at',
+                ).first()
                 if message:
                     messages.append(message)
             messages = sorted(messages, key=lambda message: message.inserted_at, reverse=True)
@@ -1762,9 +1780,10 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 if message.user_destination_id == request.user.id:
                     if message.type in ['Response - Blocked']:
                         return Response(status=HTTP_403_FORBIDDEN)
-        serializer = serializers.MessagesPostResponse(serializer.save(user_source=request.user))
-        headers = self.get_success_headers(serializer.data)
-        return Response(data=serializer.data, headers=headers, status=HTTP_201_CREATED)
+        return Response(
+            data=serializers.MessagesPostResponse(serializer.save(user_source=request.user)).data,
+            status=HTTP_201_CREATED,
+        )
 
     def partial_update(self, request, *args, **kwargs):
         '''
@@ -1821,9 +1840,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         instance = self.get_object()
         serializer = serializers.MessagesPatchRequest(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer = serializers.MessagesPatchResponse(serializer.save())
-        headers = self.get_success_headers(serializer.data)
-        return Response(data=serializer.data, headers=headers, status=HTTP_200_OK)
+        return Response(data=serializers.MessagesPatchResponse(serializer.save()).data, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -1888,7 +1905,9 @@ def messages_bulk_is_hidden(request):
     for message in models.Message.objects.filter(
         Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
         Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
-    ).order_by('-inserted_at').all():
+    ).order_by(
+        '-inserted_at',
+    ).all():
         if message.user_source_id == request.user.id:
             message.user_source_is_hidden = True
         if message.user_destination_id == request.user.id:
@@ -1934,7 +1953,9 @@ def messages_bulk_status(request):
     data = []
     for message in models.Message.objects.filter(
         Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
-    ).order_by('-inserted_at').all():
+    ).order_by(
+        '-inserted_at',
+    ).all():
         message.status = 'Read'
         message.save()
         data.append(serializers.MessagesBulkResponse(message).data)
@@ -1958,7 +1979,9 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             if self.request.QUERY_PARAMS['type'] == 'destination':
                 return models.Tellcard.objects.filter(
                     user_destination_id=self.request.user.id,
-                ).order_by('-timestamp').all()
+                ).order_by(
+                    '-timestamp',
+                ).all()
         return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
 
     def list(self, request, *args, **kwargs):
@@ -2002,8 +2025,7 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
                 many=True,
             )
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=HTTP_200_OK)
+        return Response(data=self.get_serializer(queryset, many=True).data, status=HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         '''
@@ -2109,8 +2131,7 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(data=serializer.data, status=HTTP_200_OK)
+        return Response(data=self.get_serializer(queryset, many=True).data, status=HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         '''
