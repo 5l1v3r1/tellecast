@@ -21,7 +21,7 @@ class Command(BaseCommand):
         self.bucket = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY).get_bucket('tellecast')
         super(Command, self).__init__(*args, **kwargs)
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **kwargs):
         for user in models.User.objects.all():
             print 'user.photo', user.id
             self.process(user.photo, 'image/*', (1920, 320,))
