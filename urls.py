@@ -68,6 +68,7 @@ urlpatterns = patterns(
         views.Tellcards.as_view({
             'get': 'list',
             'post': 'create',
+            'delete': 'delete',
         }),
     ),
     url(
@@ -81,6 +82,7 @@ urlpatterns = patterns(
         views.Blocks.as_view({
             'get': 'list',
             'post': 'create',
+            'delete': 'delete',
         }),
     ),
     url(

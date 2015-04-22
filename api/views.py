@@ -2087,6 +2087,47 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
         serializer.create()
         return Response(data={}, status=HTTP_200_OK)
 
+    def delete(self, request, *args, **kwargs):
+        '''
+        DELETE a Tellcard
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.TellcardsRequest
+        response_serializer: api.serializers.TellcardsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.TellcardsRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        models.Tellcard.objects.filter(
+            user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'],
+        ).delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
+
     def destroy(self, request, *args, **kwargs):
         '''
         DELETE a Tellcard
@@ -2193,6 +2234,47 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
         serializer.is_valid(raise_exception=True)
         serializer.create()
         return Response(data={}, status=HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        '''
+        DELETE a Block
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.BlocksRequest
+        response_serializer: api.serializers.BlocksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.BlocksRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        models.Block.objects.filter(
+            user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'],
+        ).delete()
+        return Response(data={}, status=HTTP_204_NO_CONTENT)
 
     def destroy(self, request, *args, **kwargs):
         '''
