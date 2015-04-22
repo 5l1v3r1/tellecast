@@ -1149,7 +1149,6 @@ class UsersProfile(RegisterResponse):
             'description',
             'phone',
             'phone_status',
-            'point',
             'inserted_at',
             'updated_at',
             'photos',
