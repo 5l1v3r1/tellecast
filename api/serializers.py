@@ -1608,7 +1608,7 @@ class TellcardsResponse(ModelSerializer):
         request = self.context.get('request', None)
         if request:
             if 'type' in request.QUERY_PARAMS:
-                if request.QUERY_PARAMS['type'] == 'destination':
+                if request.QUERY_PARAMS['type'] == 'Destination':
                     return UsersProfile(instance.user_source).data
         return UsersProfile(instance.user_destination).data
 
