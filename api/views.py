@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.gis.geos import fromstr
@@ -706,12 +708,38 @@ class Radar(APIView):
             - code: 400
               message: Invalid Input
         '''
+        serializer = serializers.RadarGetRequest(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        point = fromstr('POINT(%(longitude)s %(latitude)s)' % {
+            'latitude': serializer.validated_data['latitude'],
+            'longitude': serializer.validated_data['longitude'],
+        })
         users = []
+        for user_location in models.UserLocation.objects.filter(
+            ~Q(user_id=request.user.id),
+            point__distance_lte=(point, D(m=serializer.validated_data['radius'])),
+            is_casting=True,
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
+        ).distance(point).select_related('user').order_by('distance').all():
+            users.append(user_location.user)
         offers = []
+        for tellzone in models.Tellzone.objects.filter(
+            point__distance_lte=(point, D(m=serializer.validated_data['radius'])),
+        ).distance(point).select_related('offers').order_by('distance').all():
+            for offer in tellzone.offers.order_by('id').all():
+                offers.append(offer)
         return Response(
             data=serializers.RadarGetResponse({
-                'users': users,
-                'offers': offers,
+                'users': [{
+                    'degrees': 0.00,
+                    'radius': 0.00,
+                    'items': users,
+                }],
+                'offers': [{
+                    'degrees': 0.00,
+                    'radius': 0.00,
+                    'items': offers,
+                }],
             }).data,
             status=HTTP_200_OK,
         )

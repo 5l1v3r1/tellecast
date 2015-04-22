@@ -1369,7 +1369,6 @@ class RadarGetResponseUsersItems(ModelSerializer):
 
 class RadarGetResponseUsers(Serializer):
 
-    bearing = IntegerField()
     degrees = FloatField()
     radius = FloatField()
     items = RadarGetResponseUsersItems(many=True, required=False)
@@ -1416,7 +1415,6 @@ class RadarGetResponseOffersItems(ModelSerializer):
 
 class RadarGetResponseOffers(Serializer):
 
-    bearing = IntegerField()
     degrees = FloatField()
     radius = FloatField()
     items = RadarGetResponseOffersItems(many=True, required=False)
