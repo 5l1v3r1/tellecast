@@ -48,6 +48,8 @@ class Offer(ModelSerializer):
 
     def get_is_saved(self, instance):
         request = self.context.get('request', None)
+        if request is None:
+            return False
         if not request.user.is_authenticated():
             return False
         if not models.UserOffer.objects.filter(user_id=request.user.id, offer_id=instance.id).count():
@@ -116,6 +118,8 @@ class Tellzone(ModelSerializer):
 
     def get_is_viewed(self, instance):
         request = self.context.get('request', None)
+        if request is None:
+            return False
         if not request.user.is_authenticated():
             return False
         if not models.UserTellzone.objects.filter(
@@ -126,6 +130,8 @@ class Tellzone(ModelSerializer):
 
     def get_is_favorited(self, instance):
         request = self.context.get('request', None)
+        if request is None:
+            return False
         if not request.user.is_authenticated():
             return False
         if not models.UserTellzone.objects.filter(
@@ -1133,6 +1139,7 @@ class UsersProfile(RegisterResponse):
 
     master_tells = SerializerMethodField()
     messages = SerializerMethodField()
+    is_tellcard = SerializerMethodField()
 
     class Meta:
 
@@ -1157,6 +1164,7 @@ class UsersProfile(RegisterResponse):
             'urls',
             'master_tells',
             'messages',
+            'is_tellcard',
         )
         model = models.User
 
@@ -1202,6 +1210,16 @@ class UsersProfile(RegisterResponse):
         if message.type == 'Message':
             return 6
         return 0
+
+    def get_is_tellcard(self, instance):
+        request = self.context.get('request', None)
+        if request is None:
+            return False
+        if not request.user.is_authenticated():
+            return False
+        if not models.Tellcard.objects.filter(user_source_id=request.user.id, user_destination_id=instance.id).count():
+            return False
+        return True
 
 
 class UsersTellzonesRequest(ModelSerializer):
@@ -1557,7 +1575,7 @@ class TellcardsRequest(ModelSerializer):
 
     def create(self):
         request = self.context.get('request', None)
-        if not request:
+        if request is None:
             return False
         if not request.user.is_authenticated():
             return False
@@ -1608,7 +1626,7 @@ class BlocksRequest(ModelSerializer):
 
     def create(self):
         request = self.context.get('request', None)
-        if not request:
+        if request is None:
             return False
         if not request.user.is_authenticated():
             return False

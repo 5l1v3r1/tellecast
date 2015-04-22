@@ -2037,7 +2037,16 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
                 many=True,
             )
             return self.get_paginated_response(serializer.data)
-        return Response(data=self.get_serializer(queryset, many=True).data, status=HTTP_200_OK)
+        return Response(
+            data=self.get_serializer(
+                queryset,
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
 
     def create(self, request, *args, **kwargs):
         '''
