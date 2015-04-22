@@ -174,10 +174,28 @@ class User(Model):
             return object.user.id == self.id
         if isinstance(object, UserSocialProfile):
             return object.user.id == self.id
+        if isinstance(object, UserLocation):
+            return object.user.id == self.id
+        if isinstance(object, UserTellzone):
+            return object.user.id == self.id
+        if isinstance(object, UserOffer):
+            return object.user.id == self.id
+        if isinstance(object, DeviceAPNS):
+            return object.user.id == self.id
+        if isinstance(object, DeviceGCM):
+            return object.user.id == self.id
         if isinstance(object, MasterTell):
             return object.owned_by.id == self.id
         if isinstance(object, SlaveTell):
             return object.owned_by.id == self.id
+        if isinstance(object, Message):
+            return object.user_source.id == self.id
+        if isinstance(object, MessageAttachment):
+            return object.message.user_source.id == self.id
+        if isinstance(object, Tellcard):
+            return object.user_source.id == self.id
+        if isinstance(object, Block):
+            return object.user_source.id == self.id
 
     def is_authenticated(self):
         return True
