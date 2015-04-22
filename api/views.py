@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
+from math import atan2, pi
 
 from django.conf import settings
 from django.contrib.auth import login
@@ -10,6 +11,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy
+from numpy import mean
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.mixins import (
     CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
@@ -32,6 +34,7 @@ from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
 
 from api import models, serializers
+from api.algorithms.clusters import get_clusters
 
 
 @api_view(('POST',))
@@ -686,11 +689,6 @@ class Radar(APIView):
             - Type: float
             - Status: mandatory
 
-        + threshold
-            - Unit: foot
-            - Type: float
-            - Status: mandatory
-
         Output
         ======
 
@@ -727,7 +725,12 @@ class Radar(APIView):
         ).order_by(
             'distance',
         ).all():
-            users.append(user_location.user)
+            users.append((
+                user_location.user,
+                user_location.point,
+                self.get_degrees(point, user_location.point),
+                self.get_radius(user_location.distance),
+            ))
         offers = []
         for tellzone in models.Tellzone.objects.filter(
             point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
@@ -739,23 +742,16 @@ class Radar(APIView):
             'distance',
         ).all():
             for offer in tellzone.offers.order_by('id').all():
-                offers.append(offer)
+                offers.append((
+                    offer,
+                    tellzone.point,
+                    self.get_degrees(point, tellzone.point),
+                    self.get_radius(tellzone.distance),
+                ))
         return Response(
             data=serializers.RadarGetResponse({
-                'users': [
-                    {
-                        'degrees': 0.00,
-                        'radius': 0.00,
-                        'items': users,
-                    },
-                ],
-                'offers': [
-                    {
-                        'degrees': 0.00,
-                        'radius': 0.00,
-                        'items': offers,
-                    },
-                ],
+                'users': self.get_containers(get_clusters(users)),
+                'offers': self.get_containers(get_clusters(offers)),
             }).data,
             status=HTTP_200_OK,
         )
@@ -818,6 +814,22 @@ class Radar(APIView):
             ).data,
             status=HTTP_200_OK,
         )
+
+    def get_containers(self, groups):
+        containers = []
+        for group in groups:
+            containers.append({
+                'degrees': mean([item[2] for item in group]),
+                'radius': mean([item[3] for item in group]),
+                'items': [item[0] for item in group],
+            })
+        return containers
+
+    def get_degrees(self, point_1, point_2):
+        return 360 - (((atan2((point_1.y - point_2.y), (point_1.x - point_2.x)) * (180 / pi)) + 360) % 360)
+
+    def get_radius(self, distance):
+        return getattr(distance, 'ft')
 
 
 class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):

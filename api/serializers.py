@@ -1342,7 +1342,6 @@ class RadarGetRequest(Serializer):
     latitude = FloatField()
     longitude = FloatField()
     radius = FloatField()
-    threshold = FloatField()
 
 
 class RadarGetResponseUsersItems(ModelSerializer):
