@@ -2075,7 +2075,8 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        return Response(data=serializers.TellcardsResponse(serializer.create()).data, status=HTTP_200_OK)
+        serializer.create()
+        return Response(data={}, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -2181,7 +2182,8 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        return Response(data=serializers.BlocksResponse(serializer.create()).data, status=HTTP_200_OK)
+        serializer.create()
+        return Response(data={}, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         '''
