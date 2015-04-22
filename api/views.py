@@ -682,12 +682,12 @@ class Radar(APIView):
             - Status: mandatory
 
         + radius
-            - Unit: meter (m)
+            - Unit: foot
             - Type: float
             - Status: mandatory
 
         + threshold
-            - Unit: meter (m)
+            - Unit: foot
             - Type: float
             - Status: mandatory
 
@@ -717,14 +717,14 @@ class Radar(APIView):
         users = []
         for user_location in models.UserLocation.objects.filter(
             ~Q(user_id=request.user.id),
-            point__distance_lte=(point, D(m=serializer.validated_data['radius'])),
+            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
             is_casting=True,
             timestamp__gt=datetime.now() - timedelta(minutes=1),
         ).distance(point).select_related('user').order_by('distance').all():
             users.append(user_location.user)
         offers = []
         for tellzone in models.Tellzone.objects.filter(
-            point__distance_lte=(point, D(m=serializer.validated_data['radius'])),
+            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
         ).distance(point).select_related('offers').order_by('distance').all():
             for offer in tellzone.offers.order_by('id').all():
                 offers.append(offer)
@@ -794,7 +794,7 @@ class Radar(APIView):
         return Response(
             data=serializers.RadarPostResponse(
                 models.Tellzone.objects.filter(
-                    point__distance_lte=(user_location.point, D(m=10.00)),
+                    point__distance_lte=(user_location.point, D(ft=30.00)),
                 ).distance(user_location.point).all(),
                 many=True,
             ).data,
@@ -2196,7 +2196,7 @@ def tellzones(request):
         - Status: mandatory
 
     + radius
-        - Unit: meter (m)
+        - Unit: foot
         - Type: float
         - Status: mandatory
 
@@ -2237,7 +2237,7 @@ def tellzones(request):
     )
     data = []
     for tellzone in models.Tellzone.objects.filter(
-        point__distance_lte=(point, D(m=float(serializer.data['radius']))),
+        point__distance_lte=(point, D(ft=serializer.data['radius'])),
     ).distance(
         point,
     ).all():
