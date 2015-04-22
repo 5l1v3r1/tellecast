@@ -460,15 +460,6 @@ class RegisterRequestUserSocialProfile(Serializer):
     )
     url = CharField()
 
-    class Meta:
-
-        fields = (
-            'access_token',
-            'netloc',
-            'url',
-        )
-        model = models.UserSocialProfile
-
     def validate(self, data):
         if data['netloc'] == 'linkedin.com':
             if 'access_token' not in data or not data['access_token']:
@@ -1191,7 +1182,9 @@ class UsersProfile(RegisterResponse):
         message = models.Message.objects.filter(
             Q(user_source_id=request.user.id, user_destination_id=instance.id) |
             Q(user_source_id=instance.id, user_destination_id=request.user.id),
-        ).order_by('-inserted_at').first()
+        ).order_by(
+            '-inserted_at',
+        ).first()
         if not message:
             return 0
         if message.type == 'Request':
@@ -1481,20 +1474,6 @@ class MessagesPostRequest(Serializer):
     )
     attachments = MessageAttachment(help_text='List of Message Attachments', many=True, required=False)
 
-    class Meta:
-
-        fields = (
-            'user_source_is_hidden',
-            'user_destination_id',
-            'user_destination_is_hidden',
-            'user_status_id',
-            'master_tell_id',
-            'type',
-            'contents',
-            'status',
-            'attachments',
-        )
-
     def create(self, data):
         message = models.Message.objects.create(
             user_source=data['user_source'],
@@ -1542,14 +1521,6 @@ class MessagesPatchRequest(Serializer):
         ),
         required=False,
     )
-
-    class Meta:
-
-        fields = (
-            'user_source_is_hidden',
-            'user_destination_is_hidden',
-            'status',
-        )
 
     def update(self, instance, data):
         if 'user_source_is_hidden' in data:
