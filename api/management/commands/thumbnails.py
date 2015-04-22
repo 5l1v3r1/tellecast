@@ -104,9 +104,10 @@ class Command(BaseCommand):
             if format == '*':
                 format = 'png'
             _, destination = mkstemp()
-            ProcessorPipeline(
-                [Transpose(), ResizeToFit(width=width, upscale=False)]
-            ).process(
+            ProcessorPipeline([
+                Transpose(),
+                ResizeToFit(width=width, upscale=False),
+            ]).process(
                 Image.open(source)
             ).save(destination, format=format)
             return destination
