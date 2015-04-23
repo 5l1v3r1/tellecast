@@ -17,6 +17,7 @@ from django.db.models import (
 from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db.models import GeoManager, PointField
+from django.db.models import Q
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -640,6 +641,14 @@ def message_attachment_pre_save(instance, **kwargs):
             message=instance.message,
         ).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(post_save, sender=Block)
+def block_post_save(instance, **kwargs):
+    Tellcard.objects.filter(
+        Q(user_source_id=instance.user_source.id, user_destination_id=instance.user_destination.id) |
+        Q(user_source_id=instance.user_destination.id, user_destination_id=instance.user_source.id),
+    ).delete()
 
 user_logged_in.disconnect(update_last_login)
 
