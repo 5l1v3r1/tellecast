@@ -19,12 +19,7 @@ from rest_framework.mixins import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.status import (
-    HTTP_200_OK,
-    HTTP_201_CREATED,
-    HTTP_204_NO_CONTENT,
-    HTTP_400_BAD_REQUEST,
-    HTTP_401_UNAUTHORIZED,
-    HTTP_403_FORBIDDEN,
+    HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN,
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -531,7 +526,7 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         ---
         '''
         self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 @api_view(('GET',))
@@ -610,7 +605,7 @@ def users_tellzones(request, id):
         )
     if request.method == 'DELETE':
         serializer.delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 @api_view(('POST', 'DELETE',))
@@ -660,7 +655,7 @@ def users_offers(request, id):
         )
     if request.method == 'DELETE':
         serializer.delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 class Radar(APIView):
@@ -938,7 +933,7 @@ class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModel
         ---
         '''
         self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
@@ -1054,7 +1049,7 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
         ---
         '''
         self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 class MasterTells(ModelViewSet):
@@ -2126,7 +2121,7 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
         models.Tellcard.objects.filter(
             user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'],
         ).delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -2152,7 +2147,7 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
               message: Invalid Input
         '''
         self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
@@ -2274,7 +2269,7 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
         models.Block.objects.filter(
             user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'],
         ).delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -2300,7 +2295,7 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
               message: Invalid Input
         '''
         self.get_object().delete()
-        return Response(data={}, status=HTTP_204_NO_CONTENT)
+        return Response(data={}, status=HTTP_200_OK)
 
 
 @api_view(('GET',))
