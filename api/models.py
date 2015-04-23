@@ -55,6 +55,10 @@ class Tellzone(Model):
         verbose_name = 'Tellzone'
         verbose_name_plural = 'Tellzones'
 
+    @classmethod
+    def radius(cls):
+        return 30.00
+
     def __str__(self):
         return self.name
 

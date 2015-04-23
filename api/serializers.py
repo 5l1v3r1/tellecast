@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy
 from drf_extra_fields.geo_fields import PointField
@@ -102,13 +103,70 @@ class Tellzone(ModelSerializer):
         return {}
 
     def get_distance(self, instance):
-        return getattr(instance.distance, 'm')
+        return getattr(instance.distance, 'ft')
+
+    def get_users(self, instance):
+        users = []
+        request = self.context.get('request', None)
+        for user_location in models.UserLocation.objects.filter(
+            ~Q(user_id=request.user.id if request is not None and request.user.is_authenticated() else 0),
+            point__distance_lte=(instance.point, D(ft=models.Tellzone.radius())),
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
+        ).select_related(
+            'user',
+        ).order_by(
+            '-timestamp',
+        ).all():
+            users.append(user_location.user)
+        return users
 
     def get_tellecasters(self, instance):
-        return 0
+        return [
+            UsersProfile(
+                user,
+                context={
+                    'request': self.context.get('request', None),
+                },
+            ).data
+            for user in self.get_users(instance)
+        ]
 
     def get_connections(self, instance):
-        return 0
+        request = self.context.get('request', None)
+        if request is None:
+            return []
+        if not request.user.is_authenticated():
+            return []
+        connections = []
+        user_ids = [user.id for user in self.get_users(instance)]
+        for tellcard in models.Tellcard.objects.filter(
+            Q(user_source_id=request.user.id, user_destination_id__in=user_ids) |
+            Q(user_source_id__in=user_ids, user_destination_id=request.user.id),
+        ).select_related(
+            'user_source',
+            'user_destination',
+        ).order_by(
+            '-timestamp',
+        ).all():
+            if tellcard.user_source.id == request.user.id:
+                connections.append(
+                    UsersProfile(
+                        tellcard.user_destination,
+                        context={
+                            'request': request,
+                        },
+                    ).data
+                )
+            if tellcard.user_destination.id == request.user.id:
+                connections.append(
+                    UsersProfile(
+                        tellcard.user_source,
+                        context={
+                            'request': request,
+                        },
+                    ).data
+                )
+        return connections
 
     def get_views(self, instance):
         return models.UserTellzone.objects.filter(tellzone_id=instance.id, viewed_at__isnull=False).count()

@@ -801,7 +801,7 @@ class Radar(APIView):
         return Response(
             data=serializers.RadarPostResponse(
                 models.Tellzone.objects.filter(
-                    point__distance_lte=(user_location.point, D(ft=30.00)),
+                    point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
                 ).distance(
                     user_location.point,
                 ).all(),
