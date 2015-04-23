@@ -2111,7 +2111,7 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             - name: body
               paramType: body
               pytype: api.serializers.TellcardsRequest
-        response_serializer: api.serializers.TellcardsResponse
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input
@@ -2259,7 +2259,7 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
             - name: body
               paramType: body
               pytype: api.serializers.BlocksRequest
-        response_serializer: api.serializers.BlocksResponse
+        response_serializer: api.serializers.Null
         responseMessages:
             - code: 400
               message: Invalid Input

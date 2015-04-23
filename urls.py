@@ -64,6 +64,12 @@ urlpatterns = patterns(
     url(r'^api/messages/bulk/is_hidden/$', views.messages_bulk_is_hidden),
     url(r'^api/messages/bulk/status/$', views.messages_bulk_status),
     url(
+        r'^api/tellcards/delete/$',
+        views.Tellcards.as_view({
+            'post': 'delete',
+        }),
+    ),
+    url(
         r'^api/tellcards/$',
         views.Tellcards.as_view({
             'get': 'list',
@@ -75,6 +81,12 @@ urlpatterns = patterns(
         r'^api/tellcards/(?P<id>[^/]+)/$',
         views.Tellcards.as_view({
             'delete': 'destroy',
+        }),
+    ),
+    url(
+        r'^api/blocks/delete/$',
+        views.Blocks.as_view({
+            'post': 'delete',
         }),
     ),
     url(
