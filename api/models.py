@@ -596,6 +596,22 @@ class Block(Model):
         verbose_name_plural = 'Blocks'
 
 
+class Report(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, related_name='+')
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_reports'
+        ordering = (
+            'user_source',
+            '-timestamp',
+        )
+        verbose_name = 'Report'
+        verbose_name_plural = 'Reports'
+
+
 @receiver(pre_save, sender=UserPhoto)
 def user_photo_pre_save(instance, **kwargs):
     if not instance.position:

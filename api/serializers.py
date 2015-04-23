@@ -1686,11 +1686,13 @@ class TellcardsResponse(ModelSerializer):
 class BlocksRequest(ModelSerializer):
 
     user_destination_id = IntegerField()
+    report = BooleanField(default=False, required=False)
 
     class Meta:
 
         fields = (
             'user_destination_id',
+            'report',
         )
         model = models.Block
 
@@ -1709,6 +1711,10 @@ class BlocksRequest(ModelSerializer):
             )
         instance.timestamp = datetime.now()
         instance.save()
+        if self.validated_data['report']:
+            models.Report.objects.create(
+                user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+            )
         return instance
 
 
