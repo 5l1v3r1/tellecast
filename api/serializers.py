@@ -1610,7 +1610,7 @@ class TellcardsResponse(ModelSerializer):
             if 'type' in request.QUERY_PARAMS:
                 if request.QUERY_PARAMS['type'] == 'Source':
                     return UsersProfile(
-                        instance.user_source,
+                        instance.user_destination,
                         context={
                             'request': request,
                         },
