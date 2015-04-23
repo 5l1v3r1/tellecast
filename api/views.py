@@ -2015,12 +2015,21 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
         parameters:
             - name: type
               paramType: query
+              required: true
               type: string
         responseMessages:
             - code: 400
               message: Invalid Input
         serializer: api.serializers.TellcardsResponse
         '''
+        type = request.QUERY_PARAMS['type'] if 'type' in request.QUERY_PARAMS else ''
+        if not type or type not in ['Source', 'Destination']:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `type`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
