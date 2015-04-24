@@ -48,12 +48,10 @@ class Offer(ModelSerializer):
         model = models.Offer
 
     def get_is_saved(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
+        user_id = get_user_id(self.context)
+        if not user_id:
             return False
-        if not request.user.is_authenticated():
-            return False
-        if not models.UserOffer.objects.filter(user_id=request.user.id, offer_id=instance.id).count():
+        if not models.UserOffer.objects.filter(user_id=user_id, offer_id=instance.id).count():
             return False
         return True
 
@@ -107,9 +105,8 @@ class Tellzone(ModelSerializer):
 
     def get_users(self, instance):
         users = []
-        request = self.context.get('request', None)
         for user_location in models.UserLocation.objects.filter(
-            ~Q(user_id=request.user.id if request is not None and request.user.is_authenticated() else 0),
+            ~Q(user_id=get_user_id(self.context)),
             point__distance_lte=(instance.point, D(ft=models.Tellzone.radius())),
             timestamp__gt=datetime.now() - timedelta(minutes=1),
         ).select_related(
@@ -121,51 +118,27 @@ class Tellzone(ModelSerializer):
         return users
 
     def get_tellecasters(self, instance):
-        return [
-            UsersProfile(
-                user,
-                context={
-                    'request': self.context.get('request', None),
-                },
-            ).data
-            for user in self.get_users(instance)
-        ]
+        return [UsersProfile(user, context=self.context).data for user in self.get_users(instance)]
 
     def get_connections(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return []
-        if not request.user.is_authenticated():
-            return []
         connections = []
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return connections
         user_ids = [user.id for user in self.get_users(instance)]
         for tellcard in models.Tellcard.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id__in=user_ids) |
-            Q(user_source_id__in=user_ids, user_destination_id=request.user.id),
+            Q(user_source_id=user_id, user_destination_id__in=user_ids) |
+            Q(user_source_id__in=user_ids, user_destination_id=user_id),
         ).select_related(
             'user_source',
             'user_destination',
         ).order_by(
             '-timestamp',
         ).all():
-            if tellcard.user_source.id == request.user.id:
-                connections.append(
-                    UsersProfile(
-                        tellcard.user_destination,
-                        context={
-                            'request': request,
-                        },
-                    ).data
-                )
-            if tellcard.user_destination.id == request.user.id:
-                connections.append(
-                    UsersProfile(
-                        tellcard.user_source,
-                        context={
-                            'request': request,
-                        },
-                    ).data
-                )
+            if tellcard.user_source.id == user_id:
+                connections.append(UsersProfile(tellcard.user_destination, context=self.context).data)
+            if tellcard.user_destination.id == user_id:
+                connections.append(UsersProfile(tellcard.user_source, context=self.context).data)
         return connections
 
     def get_views(self, instance):
@@ -175,25 +148,21 @@ class Tellzone(ModelSerializer):
         return models.UserTellzone.objects.filter(tellzone_id=instance.id, favorited_at__isnull=False).count()
 
     def get_is_viewed(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return False
-        if not request.user.is_authenticated():
+        user_id = get_user_id(self.context)
+        if not user_id:
             return False
         if not models.UserTellzone.objects.filter(
-            user_id=request.user.id, tellzone_id=instance.id, viewed_at__isnull=False,
+            user_id=user_id, tellzone_id=instance.id, viewed_at__isnull=False,
         ).count():
             return False
         return True
 
     def get_is_favorited(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return False
-        if not request.user.is_authenticated():
+        user_id = get_user_id(self.context)
+        if not user_id:
             return False
         if not models.UserTellzone.objects.filter(
-            user_id=request.user.id, tellzone_id=instance.id, favorited_at__isnull=False,
+            user_id=user_id, tellzone_id=instance.id, favorited_at__isnull=False,
         ).count():
             return False
         return True
@@ -1235,27 +1204,25 @@ class UsersProfile(RegisterResponse):
         ]
 
     def get_messages(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return 0
-        if not request.user.is_authenticated():
-            return 0
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return False
         if models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
-            Q(user_source_id=instance.id, user_destination_id=request.user.id),
+            Q(user_source_id=user_id, user_destination_id=instance.id) |
+            Q(user_source_id=instance.id, user_destination_id=user_id),
             type='Message',
         ).count():
             return 6
         message = models.Message.objects.filter(
-            Q(user_source_id=request.user.id, user_destination_id=instance.id) |
-            Q(user_source_id=instance.id, user_destination_id=request.user.id),
+            Q(user_source_id=user_id, user_destination_id=instance.id) |
+            Q(user_source_id=instance.id, user_destination_id=user_id),
         ).order_by(
             '-inserted_at',
         ).first()
         if not message:
             return 0
         if message.type == 'Request':
-            if message.user_source_id == request.user.id:
+            if message.user_source_id == user_id:
                 return 1
             if message.user_source_id == instance.id:
                 return 2
@@ -1294,17 +1261,15 @@ class UsersTellzonesRequest(ModelSerializer):
         model = models.UserTellzone
 
     def create_or_update(self):
-        request = self.context.get('request', None)
-        if request is None:
-            return {}
-        if not request.user.is_authenticated():
+        user_id = get_user_id(self.context)
+        if not user_id:
             return {}
         user_tellzone = models.UserTellzone.objects.filter(
-            user_id=request.user.id, tellzone_id=self.validated_data['tellzone_id'],
+            user_id=user_id, tellzone_id=self.validated_data['tellzone_id'],
         ).first()
         if not user_tellzone:
             user_tellzone = models.UserTellzone.objects.create(
-                user_id=request.user.id, tellzone_id=self.validated_data['tellzone_id'],
+                user_id=user_id, tellzone_id=self.validated_data['tellzone_id'],
             )
         if self.validated_data['action'] == 'View':
             user_tellzone.viewed_at = datetime.now()
@@ -1314,13 +1279,11 @@ class UsersTellzonesRequest(ModelSerializer):
         return user_tellzone
 
     def delete(self):
-        request = self.context.get('request', None)
-        if request is None:
-            return {}
-        if not request.user.is_authenticated():
+        user_id = get_user_id(self.context)
+        if not user_id:
             return {}
         user_tellzone = models.UserTellzone.objects.filter(
-            user_id=request.user.id, tellzone_id=self.validated_data['tellzone_id'],
+            user_id=user_id, tellzone_id=self.validated_data['tellzone_id'],
         ).first()
         if not user_tellzone:
             return {}
@@ -1361,30 +1324,20 @@ class UsersOffersRequest(ModelSerializer):
         model = models.UserOffer
 
     def create_or_update(self):
-        request = self.context.get('request', None)
-        if request is None:
+        user_id = get_user_id(self.context)
+        if not user_id:
             return {}
-        if not request.user.is_authenticated():
-            return {}
-        user_offer = models.UserOffer.objects.filter(
-            user_id=request.user.id, offer_id=self.validated_data['offer_id'],
-        ).first()
+        user_offer = models.UserOffer.objects.filter(user_id=user_id, offer_id=self.validated_data['offer_id']).first()
         if not user_offer:
-            user_offer = models.UserOffer.objects.create(
-                user_id=request.user.id, offer_id=self.validated_data['offer_id'],
-            )
+            user_offer = models.UserOffer.objects.create(user_id=user_id, offer_id=self.validated_data['offer_id'])
         user_offer.save()
         return user_offer
 
     def delete(self):
-        request = self.context.get('request', None)
-        if request is None:
+        user_id = get_user_id(self.context)
+        if not user_id:
             return {}
-        if not request.user.is_authenticated():
-            return {}
-        user_offer = models.UserOffer.objects.filter(
-            user_id=request.user.id, offer_id=self.validated_data['offer_id'],
-        ).first()
+        user_offer = models.UserOffer.objects.filter(user_id=user_id, offer_id=self.validated_data['offer_id']).first()
         if not user_offer:
             return {}
         user_offer.delete()
@@ -1627,17 +1580,15 @@ class TellcardsRequest(ModelSerializer):
         model = models.Tellcard
 
     def create(self):
-        request = self.context.get('request', None)
-        if request is None:
-            return False
-        if not request.user.is_authenticated():
+        user_id = get_user_id(self.context)
+        if not user_id:
             return False
         instance = models.Tellcard.objects.filter(
-            user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+            user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
         ).first()
         if not instance:
             instance = models.Tellcard.objects.create(
-                user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+                user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
             )
         instance.timestamp = datetime.now()
         instance.save()
@@ -1662,19 +1613,9 @@ class TellcardsResponse(ModelSerializer):
         if request:
             if 'type' in request.QUERY_PARAMS:
                 if request.QUERY_PARAMS['type'] == 'Source':
-                    return UsersProfile(
-                        instance.user_destination,
-                        context={
-                            'request': request,
-                        },
-                    ).data
+                    return UsersProfile(instance.user_destination, context=self.context).data
                 if request.QUERY_PARAMS['type'] == 'Destination':
-                    return UsersProfile(
-                        instance.user_source,
-                        context={
-                            'request': request,
-                        },
-                    ).data
+                    return UsersProfile(instance.user_source, context=self.context).data
         return UsersProfile(instance.user_destination).data
 
 
@@ -1692,23 +1633,21 @@ class BlocksRequest(ModelSerializer):
         model = models.Block
 
     def create(self):
-        request = self.context.get('request', None)
-        if request is None:
-            return False
-        if not request.user.is_authenticated():
+        user_id = get_user_id(self.context)
+        if not user_id:
             return False
         instance = models.Block.objects.filter(
-            user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+            user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
         ).first()
         if not instance:
             instance = models.Block.objects.create(
-                user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+                user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
             )
         instance.timestamp = datetime.now()
         instance.save()
         if self.validated_data['report']:
             models.Report.objects.create(
-                user_source_id=request.user.id, user_destination_id=self.validated_data['user_destination_id'],
+                user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
             )
         return instance
 
@@ -1729,11 +1668,18 @@ class TellzonesResponse(Tellzone):
 
 
 def get_is_tellcard(context, instance):
-    request = context.get('request', None)
-    if request is None:
+    user_id = get_user_id(context)
+    if not user_id:
         return False
-    if not request.user.is_authenticated():
-        return False
-    if not models.Tellcard.objects.filter(user_source_id=request.user.id, user_destination_id=instance.id).count():
+    if not models.Tellcard.objects.filter(user_source_id=user_id, user_destination_id=instance.id).count():
         return False
     return True
+
+
+def get_user_id(context):
+    request = context.get('request', None)
+    if request is None:
+        return 0
+    if not request.user.is_authenticated():
+        return 0
+    return request.user.id
