@@ -499,9 +499,21 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(
+                page,
+                context={
+                    'request': request,
+                },
+                many=True,
+            )
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(
+            queryset,
+            context={
+                'request': request,
+            },
+            many=True,
+        )
         return Response(data=serializer.data, status=HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
@@ -509,7 +521,15 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         SELECT User
         ---
         '''
-        return Response(data=self.get_serializer(self.get_object()).data, status=HTTP_200_OK)
+        return Response(
+            data=self.get_serializer(
+                self.get_object(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
 
     def update(self, request, *args, **kwargs):
         '''
@@ -518,7 +538,15 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         '''
         serializer = serializers.UsersRequest(self.get_object(), data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
-        return Response(data=serializers.UsersResponse(serializer.save()).data, status=HTTP_200_OK)
+        return Response(
+            data=serializers.UsersResponse(
+                serializer.save(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
 
     def destroy(self, request, *args, **kwargs):
         '''

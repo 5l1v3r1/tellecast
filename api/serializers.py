@@ -1163,6 +1163,7 @@ class UsersResponse(User):
     )
     status = UsersResponseUserStatus(help_text='User Status', required=False)
     urls = UsersResponseUserURL(help_text='List of User URLs', many=True, required=False)
+    is_tellcard = SerializerMethodField()
 
     class Meta:
 
@@ -1186,11 +1187,19 @@ class UsersResponse(User):
             'social_profiles',
             'status',
             'urls',
+            'is_tellcard',
         )
         model = models.User
 
-    def get_token(self, instance):
-        return instance.get_token()
+    def get_is_tellcard(self, instance):
+        request = self.context.get('request', None)
+        if request is None:
+            return False
+        if not request.user.is_authenticated():
+            return False
+        if not models.Tellcard.objects.filter(user_source_id=request.user.id, user_destination_id=instance.id).count():
+            return False
+        return True
 
 
 class UsersProfile(RegisterResponse):
