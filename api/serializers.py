@@ -1192,14 +1192,7 @@ class UsersResponse(User):
         model = models.User
 
     def get_is_tellcard(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return False
-        if not request.user.is_authenticated():
-            return False
-        if not models.Tellcard.objects.filter(user_source_id=request.user.id, user_destination_id=instance.id).count():
-            return False
-        return True
+        return get_is_tellcard(self.context, instance)
 
 
 class UsersProfile(RegisterResponse):
@@ -1279,14 +1272,7 @@ class UsersProfile(RegisterResponse):
         return 0
 
     def get_is_tellcard(self, instance):
-        request = self.context.get('request', None)
-        if request is None:
-            return False
-        if not request.user.is_authenticated():
-            return False
-        if not models.Tellcard.objects.filter(user_source_id=request.user.id, user_destination_id=instance.id).count():
-            return False
-        return True
+        return get_is_tellcard(self.context, instance)
 
 
 class UsersTellzonesRequest(ModelSerializer):
@@ -1740,3 +1726,14 @@ class TellzonesRequest(Serializer):
 
 class TellzonesResponse(Tellzone):
     pass
+
+
+def get_is_tellcard(context, instance):
+    request = context.get('request', None)
+    if request is None:
+        return False
+    if not request.user.is_authenticated():
+        return False
+    if not models.Tellcard.objects.filter(user_source_id=request.user.id, user_destination_id=instance.id).count():
+        return False
+    return True
