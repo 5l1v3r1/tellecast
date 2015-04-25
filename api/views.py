@@ -557,7 +557,7 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
 
     def get_queryset(self):
         ids = []
-        for block in models.Block.filter(
+        for block in models.Block.objects.filter(
             Q(user_source_id=self.request.id) | Q(user_destination_id=self.request.id),
         ).order_by(
             '-timestamp',
@@ -1932,7 +1932,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
 
     def get_queryset(self):
         ids = []
-        for block in models.Block.filter(
+        for block in models.Block.objects.filter(
             Q(user_source_id=self.request.id) | Q(user_destination_id=self.request.id),
         ).order_by(
             '-timestamp',
@@ -2501,7 +2501,7 @@ def handler500(request):
 
 
 def is_blocked(one, two):
-    if models.Block.filter(
+    if models.Block.objects.filter(
         Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
     ).count():
         return True
