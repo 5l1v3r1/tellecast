@@ -10,6 +10,8 @@ from sklearn.cluster import KMeans
 def get_clusters(items):
     groups = {}
     length = len(items)
+    if not length:
+        return groups.values()
     co_ordinates = array([[item[1].x, item[1].y] for item in items])
     distances = squareform(pdist(co_ordinates, (lambda one, two: get_distance(one[0], one[1], two[0], two[1]))))
     resource = KMeans(n_clusters=16 if length >= 16 else length, precompute_distances=True)
