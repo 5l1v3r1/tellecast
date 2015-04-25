@@ -487,7 +487,6 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
     paginate_by = 100
     paginate_by_param = 'per_page'
     permission_classes = (IsAuthenticated,)
-    queryset = models.User.objects.all()
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UsersResponse
 
@@ -556,6 +555,21 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         self.get_object().delete()
         return Response(data={}, status=HTTP_200_OK)
 
+    def get_queryset(self):
+        ids = []
+        for block in models.Block.filter(
+            Q(user_source_id=self.request.id) | Q(user_destination_id=self.request.id),
+        ).order_by(
+            '-timestamp',
+        ).all():
+            if block.user_source.id == self.request.id:
+                if block.user_destination.id not in ids:
+                    ids.append(block.user_destination.id)
+            if block.user_destination.id == self.request.id:
+                if block.user_source.id not in ids:
+                    ids.append(block.user_source.id)
+        return models.User.objects.exclude(id__in=ids).order_by('id').all()
+
 
 @api_view(('GET',))
 @permission_classes(())
@@ -568,6 +582,14 @@ def users_profile(request, id):
           message: Invalid Input
     serializer: api.serializers.UsersProfile
     '''
+    if request.user.is_authenticated():
+        if is_blocked(request.user.id, id):
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
     return Response(
         data=serializers.UsersProfile(
             get_object_or_404(models.User, id=id),
@@ -748,6 +770,8 @@ class Radar(APIView):
         ).order_by(
             'distance',
         ).all():
+            if is_blocked(request.user.id, user_location.user.id):
+                continue
             users.append((
                 user_location.user,
                 user_location.point,
@@ -922,9 +946,6 @@ class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModel
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.DeviceAPNS
 
-    def get_queryset(self):
-        return models.DeviceAPNS.objects.filter(user_id=self.request.user.id).order_by('id').all()
-
     def list(self, request, *args, **kwargs):
         '''
         SELECT APNS Devices
@@ -962,6 +983,9 @@ class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModel
         '''
         self.get_object().delete()
         return Response(data={}, status=HTTP_200_OK)
+
+    def get_queryset(self):
+        return models.DeviceAPNS.objects.filter(user_id=self.request.user.id).order_by('id').all()
 
 
 class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMixin):
@@ -1038,9 +1062,6 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.DeviceGCM
 
-    def get_queryset(self):
-        return models.DeviceGCM.objects.filter(user_id=self.request.user.id).order_by('id').all()
-
     def list(self, request, *args, **kwargs):
         '''
         SELECT GCM Devices
@@ -1078,6 +1099,9 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
         '''
         self.get_object().delete()
         return Response(data={}, status=HTTP_200_OK)
+
+    def get_queryset(self):
+        return models.DeviceGCM.objects.filter(user_id=self.request.user.id).order_by('id').all()
 
 
 class MasterTells(ModelViewSet):
@@ -1541,9 +1565,6 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.Message
 
-    def get_queryset(self):
-        return models.Message.objects.order_by('-inserted_at').all()
-
     def list(self, request, *args, **kwargs):
         '''
         SELECT Messages
@@ -1786,6 +1807,13 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         '''
         serializer = serializers.MessagesPostRequest(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `user_destination_id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
         if not models.Message.objects.filter(
             Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id']) |
             Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
@@ -1902,6 +1930,21 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         '''
         return super(Messages, self).destroy(request, *args, **kwargs)
 
+    def get_queryset(self):
+        ids = []
+        for block in models.Block.filter(
+            Q(user_source_id=self.request.id) | Q(user_destination_id=self.request.id),
+        ).order_by(
+            '-timestamp',
+        ).all():
+            if block.user_source.id == self.request.id:
+                if block.user_destination.id not in ids:
+                    ids.append(block.user_destination.id)
+            if block.user_destination.id == self.request.id:
+                if block.user_source.id not in ids:
+                    ids.append(block.user_source.id)
+        return models.Message.objects.exclude(ids__in=ids).order_by('-inserted_at').all()
+
 
 @api_view(('POST',))
 @permission_classes((IsAuthenticated,))
@@ -2007,18 +2050,6 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.TellcardsResponse
 
-    def get_queryset(self):
-        if 'type' in self.request.QUERY_PARAMS:
-            if self.request.QUERY_PARAMS['type'] == 'Source':
-                return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
-            if self.request.QUERY_PARAMS['type'] == 'Destination':
-                return models.Tellcard.objects.filter(
-                    user_destination_id=self.request.user.id,
-                ).order_by(
-                    '-timestamp',
-                ).all()
-        return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
-
     def list(self, request, *args, **kwargs):
         '''
         SELECT Tellcards
@@ -2116,6 +2147,13 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
+        if is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `user_destination_id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
         serializer.create()
         return Response(data={}, status=HTTP_200_OK)
 
@@ -2186,6 +2224,18 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
         self.get_object().delete()
         return Response(data={}, status=HTTP_200_OK)
 
+    def get_queryset(self):
+        if 'type' in self.request.QUERY_PARAMS:
+            if self.request.QUERY_PARAMS['type'] == 'Source':
+                return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+            if self.request.QUERY_PARAMS['type'] == 'Destination':
+                return models.Tellcard.objects.filter(
+                    user_destination_id=self.request.user.id,
+                ).order_by(
+                    '-timestamp',
+                ).all()
+        return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+
 
 class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
 
@@ -2196,9 +2246,6 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.BlocksResponse
-
-    def get_queryset(self):
-        return models.Block.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
 
     def list(self, request, *args, **kwargs):
         '''
@@ -2338,6 +2385,9 @@ class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin
         self.get_object().delete()
         return Response(data={}, status=HTTP_200_OK)
 
+    def get_queryset(self):
+        return models.Block.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+
 
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
@@ -2448,3 +2498,11 @@ def handler500(request):
         },
         status=500,
     )
+
+
+def is_blocked(one, two):
+    if models.Block.filter(
+        Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
+    ).count():
+        return True
+    return False
