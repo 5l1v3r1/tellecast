@@ -558,14 +558,14 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
     def get_queryset(self):
         ids = []
         for block in models.Block.objects.filter(
-            Q(user_source_id=self.request.id) | Q(user_destination_id=self.request.id),
+            Q(user_source_id=self.request.user.id) | Q(user_destination_id=self.request.user.id),
         ).order_by(
             '-timestamp',
         ).all():
-            if block.user_source.id == self.request.id:
+            if block.user_source.id == self.request.user.id:
                 if block.user_destination.id not in ids:
                     ids.append(block.user_destination.id)
-            if block.user_destination.id == self.request.id:
+            if block.user_destination.id == self.request.user.id:
                 if block.user_source.id not in ids:
                     ids.append(block.user_source.id)
         return models.User.objects.exclude(id__in=ids).order_by('id').all()
@@ -1933,14 +1933,14 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
     def get_queryset(self):
         ids = []
         for block in models.Block.objects.filter(
-            Q(user_source_id=self.request.id) | Q(user_destination_id=self.request.id),
+            Q(user_source_id=self.request.user.id) | Q(user_destination_id=self.request.user.id),
         ).order_by(
             '-timestamp',
         ).all():
-            if block.user_source.id == self.request.id:
+            if block.user_source.id == self.request.user.id:
                 if block.user_destination.id not in ids:
                     ids.append(block.user_destination.id)
-            if block.user_destination.id == self.request.id:
+            if block.user_destination.id == self.request.user.id:
                 if block.user_source.id not in ids:
                     ids.append(block.user_source.id)
         return models.Message.objects.exclude(ids__in=ids).order_by('-inserted_at').all()
