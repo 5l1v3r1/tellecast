@@ -1943,7 +1943,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             if block.user_destination.id == self.request.user.id:
                 if block.user_source.id not in ids:
                     ids.append(block.user_source.id)
-        return models.Message.objects.exclude(ids__in=ids).order_by('-inserted_at').all()
+        return models.Message.objects.exclude(id__in=ids).order_by('-inserted_at').all()
 
 
 @api_view(('POST',))
