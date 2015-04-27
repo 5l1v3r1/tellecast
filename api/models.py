@@ -27,7 +27,7 @@ from push_notifications.apns import apns_send_message
 from push_notifications.fields import HexIntegerField
 from push_notifications.gcm import gcm_send_message
 from social.apps.django_app.default.models import UserSocialAuth
-from uuidfield import UUIDField
+from django_extensions.db.fields import UUIDField
 
 from api import celery
 
