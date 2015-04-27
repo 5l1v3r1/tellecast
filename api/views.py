@@ -112,7 +112,7 @@ def register(request):
 
     + social_profiles (see /api/users/ for more details)
         - Type: list (a list of Social Profile objects)
-        - Status: mandatory ("linkedin.com" is mandatory)
+        - Status: mandatory (either "facebook.com" or "linkedin.com" is mandatory)
 
     + status (see /api/users/ for more details)
         - Type: dictionary (one Status object)
@@ -175,6 +175,7 @@ def authenticate(request, backend):
         - Type: string
         - Status: mandatory
         - Choices:
+            - facebook
             - linkedin-oauth2
 
     + access_token
@@ -190,7 +191,7 @@ def authenticate(request, backend):
     parameters:
         - description: >
               A valid Python Social Auth supported backend. As of now, only
-              "linkedin-oauth2" is supported. Reference:
+              "facebook" and "linkedin-oauth2" are supported. Reference:
               http://psa.matiasaguirre.net/docs/backends/index.html
           name: backend
           paramType: path
@@ -204,7 +205,7 @@ def authenticate(request, backend):
         - code: 400
           message: Invalid Input
     '''
-    if not backend == 'linkedin-oauth2':
+    if backend not in ['facebook', 'linkedin-oauth2']:
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `backend`'),
@@ -212,7 +213,7 @@ def authenticate(request, backend):
             status=HTTP_400_BAD_REQUEST,
         )
     backend = get_backend(settings.AUTHENTICATION_BACKENDS, backend)(strategy=DjangoStrategy(storage=DjangoStorage()))
-    if not backend or backend.name != 'linkedin-oauth2':
+    if not backend or backend.name not in ['facebook', 'linkedin-oauth2']:
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `backend`'),

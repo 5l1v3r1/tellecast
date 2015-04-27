@@ -494,7 +494,7 @@ class RegisterRequestUserSocialProfile(Serializer):
     url = CharField()
 
     def validate(self, data):
-        if data['netloc'] == 'linkedin.com':
+        if data['netloc'] in ['facebook.com', 'linkedin.com']:
             if 'access_token' not in data or not data['access_token']:
                 raise ValidationError(ugettext_lazy('Invalid `access_token`'))
         return data
@@ -674,6 +674,22 @@ class RegisterRequest(Serializer):
                 models.UserSocialProfile.objects.create(
                     user=user, netloc=social_profile['netloc'], url=social_profile['url'],
                 )
+                if social_profile['netloc'] == 'facebook.com':
+                    response = None
+                    try:
+                        response = get_backend(
+                            settings.AUTHENTICATION_BACKENDS, 'facebook',
+                        )(
+                            strategy=DjangoStrategy(storage=DjangoStorage())
+                        ).user_data(
+                            social_profile['access_token']
+                        )
+                    except Exception:
+                        pass
+                    if response and 'id' in response:
+                        UserSocialAuth.objects.create(
+                            user=user, provider='facebook', uid=response['id'], extra_data=dumps(response),
+                        )
                 if social_profile['netloc'] == 'linkedin.com':
                     response = None
                     try:
@@ -698,6 +714,23 @@ class RegisterRequest(Serializer):
         if not data['social_profiles']:
             return False
         for social_profile in data['social_profiles']:
+            if social_profile['netloc'] == 'facebook.com':
+                response = None
+                try:
+                    response = get_backend(
+                        settings.AUTHENTICATION_BACKENDS, 'facebook',
+                    )(
+                        strategy=DjangoStrategy(storage=DjangoStorage())
+                    ).user_data(
+                        social_profile['access_token']
+                    )
+                except Exception:
+                    pass
+                uid = response['id'] if response and 'id' in response else ''
+                if not uid:
+                    return False
+                if not UserSocialAuth.objects.filter(provider='facebook', uid=uid).count():
+                    return True
             if social_profile['netloc'] == 'linkedin.com':
                 response = None
                 try:
