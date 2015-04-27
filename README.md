@@ -7,7 +7,7 @@ Step 1
 ```
 $ mkdir tellecast
 $ cd tellecast
-$ git clone --recursive git@bitbucket.org:kalkura/tellecast.git .
+$ git clone --recursive git@bitbucket.org:tellterms/tellecast.git .
 $ cp settings.py.sample settings.py # edit as required
 ```
 
