@@ -744,9 +744,18 @@ class Radar(APIView):
         omit_parameters:
             - form
         parameters:
-            - name: body
-              paramType: body
-              pytype: api.serializers.RadarGetRequest
+            - name: latitude
+              paramType: query
+              required: true
+              type: number
+            - name: longitude
+              paramType: query
+              required: true
+              type: number
+            - name: radius
+              paramType: query
+              required: true
+              type: number
         response_serializer: api.serializers.RadarGetResponse
         responseMessages:
             - code: 400
