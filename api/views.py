@@ -752,7 +752,7 @@ class Radar(APIView):
             - code: 400
               message: Invalid Input
         '''
-        serializer = serializers.RadarGetRequest(data=request.data)
+        serializer = serializers.RadarGetRequest(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         point = fromstr('POINT(%(longitude)s %(latitude)s)' % {
             'latitude': serializer.validated_data['latitude'],
