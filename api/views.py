@@ -1647,7 +1647,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             - name: recent
               paramType: query
               required: true
-              type: boolean
+              type: string
             - name: user_id
               paramType: query
               type: integer
