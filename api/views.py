@@ -30,7 +30,7 @@ from social.apps.django_app.default.models import DjangoStorage
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
 
-from api import models, serializers
+from api import celery, models, serializers
 from api.algorithms.clusters import get_clusters
 
 
@@ -1875,10 +1875,24 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 if message.user_destination_id == request.user.id:
                     if message.type in ['Response - Blocked']:
                         return Response(status=HTTP_403_FORBIDDEN)
-        return Response(
-            data=serializers.MessagesPostResponse(serializer.save(user_source=request.user)).data,
-            status=HTTP_201_CREATED,
+        message = serializer.save(user_source=request.user)
+        celery.push_notifications.delay(
+            user_id=message.user_destination_id,
+            json={
+                'alert': {
+                    'body': message.contents,
+                    'title': 'New message from user',
+                },
+                'badge': str(
+                    models.Message.objects.filter(
+                        user_destination_id=message.user_destination_id,
+                        status='Unread',
+                    ).count()
+                ),
+                'type': 'message',
+            },
         )
+        return Response(data=serializers.MessagesPostResponse(message).data, status=HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
         '''
@@ -1935,7 +1949,15 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         instance = self.get_object()
         serializer = serializers.MessagesPatchRequest(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        return Response(data=serializers.MessagesPatchResponse(serializer.save()).data, status=HTTP_200_OK)
+        message = serializer.save()
+        if 'user_source_is_hidden' in request.data or 'user_destination_is_hidden' in request.data:
+            celery.push_notifications.delay(
+                user_id=request.user.id,
+                json={
+                    'type': 'updateMessage',
+                },
+            )
+        return Response(data=serializers.MessagesPatchResponse(message).data, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -2024,6 +2046,12 @@ def messages_bulk_is_hidden(request):
             message.user_destination_is_hidden = True
         message.save()
         data.append(serializers.MessagesBulkResponse(message).data)
+    celery.push_notifications.delay(
+        user_id=request.user.id,
+        json={
+            'type': 'updateThread',
+        },
+    )
     return Response(data=data, status=HTTP_200_OK)
 
 

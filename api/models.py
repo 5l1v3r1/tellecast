@@ -29,8 +29,6 @@ from push_notifications.gcm import gcm_send_message
 from social.apps.django_app.default.models import UserSocialAuth
 from django_extensions.db.fields import UUIDField
 
-from api import celery
-
 
 class Tellzone(Model):
 
@@ -648,11 +646,6 @@ def slave_tell_pre_save(instance, **kwargs):
     if not instance.position:
         position = SlaveTell.objects.filter(owned_by=instance.owned_by).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
-
-
-@receiver(post_save, sender=Message)
-def message_post_save(instance, **kwargs):
-    celery.push_notifications.delay(instance.id)
 
 
 @receiver(pre_save, sender=MessageAttachment)
