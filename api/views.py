@@ -1821,8 +1821,12 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         =================
 
         {
-            'payload': '(see below; "Response Class" -> "Model Schema")',
-            'type': 'messages',
+            'alert': {
+                'body': '{{ body }}',
+                'title': 'New message from user',
+            },
+            'badge': '{{ total_number_of_unread_messages }}',
+            'type': 'message',
         }
         </pre>
         ---
@@ -1930,8 +1934,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         =================
 
         {
-            'payload': '(see below; "Response Class" -> "Model Schema")',
-            'type': 'messages',
+            'type': 'updateMessage',
         }
         </pre>
         ---
@@ -2018,6 +2021,13 @@ def messages_bulk_is_hidden(request):
     ======
 
     (see below; "Response Class" -> "Model Schema")
+
+    Push Notification
+    =================
+
+    {
+        'type': 'updateThread',
+    }
     </pre>
     ---
     omit_parameters:
