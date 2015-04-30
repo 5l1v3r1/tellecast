@@ -1676,8 +1676,6 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 message = models.Message.objects.filter(
                     Q(user_source_id=request.user.id, user_destination_id=user.id) |
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
-                    user_status_id__isnull=True,
-                    master_tell_id__isnull=True,
                 ).order_by(
                     '-inserted_at',
                 ).first()
@@ -1694,13 +1692,9 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             user_status_id = request.query_params.get('user_status_id', None)
             if user_status_id:
                 query = query.filter(user_status_id=user_status_id)
-            else:
-                query = query.filter(user_status_id__isnull=True)
             master_tell_id = request.query_params.get('master_tell_id', None)
             if master_tell_id:
                 query = query.filter(master_tell_id=master_tell_id)
-            else:
-                query = query.filter(master_tell_id__isnull=True)
             since_id = 0
             try:
                 since_id = int(request.query_params.get('since_id', '0'))
