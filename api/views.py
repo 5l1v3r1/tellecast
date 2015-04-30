@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 from math import atan2, pi
+from random import uniform
 
 from django.conf import settings
 from django.contrib.auth import login
@@ -11,6 +12,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy
+from geopy.distance import vincenty
 from numpy import mean
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.mixins import (
@@ -787,6 +789,26 @@ class Radar(APIView):
                 user_location.point,
                 self.get_degrees(point, user_location.point),
                 self.get_radius(user_location.distance),
+            ))
+        for user in models.User.objects.filter(
+            email__in=[
+                'bradotts@gmail.com',
+                'fl@fernandoleal.me',
+                'kevin@tellecast.com',
+                'mbatchelder13@yahoo.com',
+            ],
+        ).order_by('id').all():
+            if is_blocked(request.user.id, user.id):
+                continue
+            p = fromstr('POINT(%(longitude)s %(latitude)s)' % {
+                'latitude': point.y + uniform(0.00001, 0.00009),
+                'longitude': point.x + uniform(0.00001, 0.00009),
+            })
+            users.append((
+                user,
+                p,
+                self.get_degrees(point, p),
+                vincenty((point.x, point.y), (p.x, p.y)).ft,
             ))
         offers = []
         for tellzone in models.Tellzone.objects.filter(

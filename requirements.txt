@@ -23,6 +23,7 @@ docutils==0.12
 drf-extensions==0.2.6
 enum34==1.0.4
 frosted==1.4.1
+geopy==1.10.0
 ipaddress==1.0.7
 itsdangerous==0.24
 kombu==3.0.24
