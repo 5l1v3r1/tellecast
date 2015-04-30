@@ -793,6 +793,7 @@ class Radar(APIView):
         for user in models.User.objects.filter(
             email__in=[
                 'bradotts@gmail.com',
+                'callmejerms@aol.com',
                 'fl@fernandoleal.me',
                 'kevin@tellecast.com',
                 'mbatchelder13@yahoo.com',
