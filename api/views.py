@@ -832,6 +832,10 @@ class Radar(APIView):
                 'longitude': 0.0000000000,
             }
 
+        + tellzone_id
+            - Type: integer
+            - Status: optional
+
         + bearing
             - Type: integer
             - Status: mandatory

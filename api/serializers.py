@@ -1400,7 +1400,28 @@ class RadarGetRequest(Serializer):
     radius = FloatField()
 
 
+class RadarGetResponseUsersItemsTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Tellzone
+
+
 class RadarGetResponseUsersItems(ModelSerializer):
+
+    tellzone = SerializerMethodField(required=False)
 
     class Meta:
 
@@ -1411,8 +1432,17 @@ class RadarGetResponseUsersItems(ModelSerializer):
             'last_name',
             'location',
             'description',
+            'tellzone',
         )
         model = models.User
+
+    def get_tellzone(self, instance):
+        user_location = models.UserLocation.objects.filter(user_id=instance.id).order_by('-timestamp').first()
+        if not user_location:
+            return
+        if not user_location.tellzone:
+            return
+        return RadarGetResponseUsersItemsTellzone(user_location.tellzone).data
 
 
 class RadarGetResponseUsers(Serializer):
@@ -1477,6 +1507,7 @@ class RadarGetResponse(Serializer):
 class RadarPostRequest(ModelSerializer):
 
     point = PointField()
+    tellzone_id = IntegerField(allow_null=True, required=False)
     bearing = IntegerField()
     is_casting = BooleanField(required=False)
 
@@ -1484,6 +1515,7 @@ class RadarPostRequest(ModelSerializer):
 
         fields = (
             'point',
+            'tellzone_id',
             'bearing',
             'is_casting',
         )

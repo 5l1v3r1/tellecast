@@ -269,6 +269,7 @@ class UserLocation(ModelAdmin):
     fields = (
         'user',
         'point',
+        'tellzone',
         'bearing',
         'is_casting',
     )
@@ -276,6 +277,7 @@ class UserLocation(ModelAdmin):
         'id',
         'user',
         'point',
+        'tellzone',
         'bearing',
         'is_casting',
         'timestamp',
@@ -287,6 +289,7 @@ class UserLocation(ModelAdmin):
         'id',
         'user',
         'point',
+        'tellzone',
         'bearing',
         'is_casting',
     )

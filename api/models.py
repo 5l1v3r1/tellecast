@@ -325,6 +325,7 @@ class UserLocation(Model):
 
     user = ForeignKey(User, related_name='locations')
     point = PointField(ugettext_lazy('Point'), db_index=True)
+    tellzone = ForeignKey(Tellzone, blank=True, default=None, null=True, related_name='+')
     bearing = IntegerField(ugettext_lazy('Bearing'), db_index=True)
     is_casting = BooleanField(ugettext_lazy('Is Casting?'), db_index=True, default=True)
     timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
