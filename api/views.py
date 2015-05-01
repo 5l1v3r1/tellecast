@@ -661,6 +661,56 @@ def users_tellzones(request, id):
         return Response(data={}, status=HTTP_200_OK)
 
 
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def users_tellzones_delete(request, id):
+    '''
+    Unview/Unfavorite a Tellzone
+
+    <pre>
+    Input
+    =====
+
+    + tellzone_id
+        - Type: integer
+        - Status: mandatory
+
+    + action
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - View
+            - Favorite
+
+    Output
+    ======
+
+    + N/A
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UsersTellzonesRequest
+    response_serializer: api.serializers.Null
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.UsersTellzonesRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    if not serializer.is_valid():
+        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    serializer.delete()
+    return Response(data={}, status=HTTP_200_OK)
+
+
 @api_view(('POST', 'DELETE',))
 @permission_classes((IsAuthenticated,))
 def users_offers(request, id):
@@ -709,6 +759,49 @@ def users_offers(request, id):
     if request.method == 'DELETE':
         serializer.delete()
         return Response(data={}, status=HTTP_200_OK)
+
+
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def users_offers_delete(request, id):
+    '''
+    Unsave an Offer
+
+    <pre>
+    Input
+    =====
+
+    + offer_id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    + N/A
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UsersOffersRequest
+    response_serializer: api.serializers.Null
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.UsersOffersRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    if not serializer.is_valid():
+        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    serializer.delete()
+    return Response(data={}, status=HTTP_200_OK)
 
 
 class Radar(APIView):
