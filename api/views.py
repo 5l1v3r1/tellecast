@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
-from math import atan2, pi
+from math import atan2, cos, pi, sin, sqrt
 from random import uniform
 
 from django.conf import settings
@@ -894,9 +894,13 @@ class Radar(APIView):
         ).order_by('id').all():
             if is_blocked(request.user.id, user.id):
                 continue
+            w = ((serializer.validated_data['radius'] * 0.3048) / 111300) * sqrt(uniform(0.0, 1.0))
+            t = 2 * pi * uniform(0.0, 1.0)
+            x = w * cos(t)
+            y = w * sin(t)
             p = fromstr('POINT(%(longitude)s %(latitude)s)' % {
-                'latitude': point.y + uniform(0.00001, 0.00009),
-                'longitude': point.x + uniform(0.00001, 0.00009),
+                'latitude': point.y + y,
+                'longitude': point.x + x,
             })
             users.append((
                 user,
