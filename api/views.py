@@ -830,6 +830,18 @@ class Radar(APIView):
             - Type: float
             - Status: mandatory
 
+        + widths_radar
+            - Description: Width of the screen
+            - Unit: `dip` (density-independent pixel) for Android; `point` for iOS
+            - Type: integer
+            - Status: mandatory
+
+        + widths_group
+            - Description: Width of the group (or the profile image)
+            - Unit: `dip` (density-independent pixel) for Android; `point` for iOS
+            - Type: integer
+            - Status: mandatory
+
         Output
         ======
 
@@ -848,6 +860,14 @@ class Radar(APIView):
               required: true
               type: number
             - name: radius
+              paramType: query
+              required: true
+              type: number
+            - name: widths_radar
+              paramType: query
+              required: true
+              type: number
+            - name: widths_group
               paramType: query
               required: true
               type: number
@@ -925,10 +945,15 @@ class Radar(APIView):
                     self.get_degrees(point, tellzone.point),
                     self.get_radius(tellzone.distance),
                 ))
+        eps = (
+            (serializer.validated_data['widths_group'] * serializer.validated_data['radius'])
+            /
+            serializer.validated_data['widths_radar']
+        )
         return Response(
             data=serializers.RadarGetResponse({
-                'users': self.get_containers(get_clusters(users)),
-                'offers': self.get_containers(get_clusters(offers)),
+                'users': self.get_containers(get_clusters(users, eps)),
+                'offers': self.get_containers(get_clusters(offers, eps)),
             }).data,
             status=HTTP_200_OK,
         )
