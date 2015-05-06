@@ -10,7 +10,7 @@ from ujson import dumps
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
-from api import models
+from api import models  # noqa
 
 tasks = Celery('api')
 tasks.config_from_object('django.conf:settings')

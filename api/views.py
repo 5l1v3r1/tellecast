@@ -946,15 +946,19 @@ class Radar(APIView):
                     self.get_radius(tellzone.distance),
                 ))
         eps = (
-            (serializer.validated_data['widths_group'] * serializer.validated_data['radius'])
-            /
+            (serializer.validated_data['widths_group'] * serializer.validated_data['radius']) /
             serializer.validated_data['widths_radar']
         )
         return Response(
-            data=serializers.RadarGetResponse({
-                'users': self.get_containers(get_clusters(users, eps)),
-                'offers': self.get_containers(get_clusters(offers, eps)),
-            }).data,
+            data=serializers.RadarGetResponse(
+                {
+                    'users': self.get_containers(get_clusters(users, eps)),
+                    'offers': self.get_containers(get_clusters(offers, eps)),
+                },
+                context={
+                    'request': request,
+                },
+            ).data,
             status=HTTP_200_OK,
         )
 

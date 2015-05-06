@@ -1402,7 +1402,40 @@ class RadarGetRequest(Serializer):
     widths_group = IntegerField()
 
 
+class RadarGetResponseUsersItemsPhotos(UserPhoto):
+    pass
+
+
+class RadarGetResponseUsersItemsStatusAttachment(UserStatusAttachment):
+    pass
+
+
+class RadarGetResponseUsersItemsStatus(UserStatus):
+
+    attachments = RegisterResponseUserStatusAttachment(
+        help_text='List of User Status Attachments', many=True, required=False,
+    )
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_id',
+            'string',
+            'title',
+            'url',
+            'notes',
+            'attachments',
+        )
+        model = models.UserStatus
+
+
 class RadarGetResponseUsersItems(ModelSerializer):
+
+    photos = RadarGetResponseUsersItemsPhotos(help_text='List of User Photos', many=True, required=False)
+    status = RadarGetResponseUsersItemsStatus(help_text='User Status', required=False)
+    master_tells = SerializerMethodField()
+    is_tellcard = SerializerMethodField()
 
     class Meta:
 
@@ -1413,8 +1446,23 @@ class RadarGetResponseUsersItems(ModelSerializer):
             'last_name',
             'location',
             'description',
+            'photos',
+            'status',
+            'master_tells',
+            'is_tellcard',
         )
         model = models.User
+
+    def get_master_tells(self, instance):
+        return [
+            RegisterResponseMasterTell(master_tell).data
+            for master_tell in instance.master_tells.filter(
+                owned_by_id=instance.id, is_visible=True
+            ).order_by('position').all()[0:5]
+        ]
+
+    def get_is_tellcard(self, instance):
+        return get_is_tellcard(self.context, instance)
 
 
 class RadarGetResponseUsers(Serializer):
