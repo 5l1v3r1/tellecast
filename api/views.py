@@ -882,7 +882,7 @@ class Radar(APIView):
             'latitude': serializer.validated_data['latitude'],
             'longitude': serializer.validated_data['longitude'],
         })
-        users = []
+        users = {}
         for user_location in models.UserLocation.objects.filter(
             ~Q(user_id=request.user.id),
             point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
@@ -893,16 +893,17 @@ class Radar(APIView):
         ).select_related(
             'user',
         ).order_by(
-            'distance',
+            '-timestamp',
         ).all():
             if is_blocked(request.user.id, user_location.user.id):
                 continue
-            users.append((
-                user_location.user,
-                user_location.point,
-                self.get_degrees(point, user_location.point),
-                self.get_radius(user_location.distance),
-            ))
+            if not user_location.user.id in users:
+                users[user_location.user.id] = (
+                    user_location.user,
+                    user_location.point,
+                    self.get_degrees(point, user_location.point),
+                    self.get_radius(user_location.distance),
+                )
         for user in models.User.objects.filter(
             email__in=[
                 'bradotts@gmail.com',
@@ -922,12 +923,13 @@ class Radar(APIView):
                 'latitude': point.y + y,
                 'longitude': point.x + x,
             })
-            users.append((
-                user,
-                p,
-                self.get_degrees(point, p),
-                vincenty((point.x, point.y), (p.x, p.y)).ft,
-            ))
+            if not user.id in users:
+                users[user.id] = (
+                    user,
+                    p,
+                    self.get_degrees(point, p),
+                    vincenty((point.x, point.y), (p.x, p.y)).ft,
+                )
         offers = []
         for tellzone in models.Tellzone.objects.filter(
             point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
@@ -952,7 +954,7 @@ class Radar(APIView):
         return Response(
             data=serializers.RadarGetResponse(
                 {
-                    'users': self.get_containers(get_clusters(users, eps)),
+                    'users': self.get_containers(get_clusters(users.values(), eps)),
                     'offers': self.get_containers(get_clusters(offers, eps)),
                 },
                 context={
