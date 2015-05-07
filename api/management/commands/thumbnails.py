@@ -28,6 +28,9 @@ class Command(BaseCommand):
             for photo in user.photos.get_queryset().all():
                 print 'user.photos[].string', photo.id
                 self.process(photo.string, 'image/*', (1920, 320,))
+        for user_status_attachment in models.UserStatusAttachment.objects.all():
+            print 'user_status_attachment.string', user_status_attachment.string
+            self.process(user_status_attachment.string, 'image/*', (1920, 320,))
         for slave_tell in models.SlaveTell.objects.all():
             print 'slave_tell.photo', slave_tell.id
             self.process(slave_tell.photo, 'image/*', (1920, 320,))
