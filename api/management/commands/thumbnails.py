@@ -39,6 +39,8 @@ class Command(BaseCommand):
             self.process(slave_tell.contents, slave_tell.type, (1920, 685,))
 
     def process(self, name, type, widths):
+        if not name:
+            return
         name = name.split('/')[-1]
         if not name:
             return
