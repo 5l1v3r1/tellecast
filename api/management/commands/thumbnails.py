@@ -62,7 +62,7 @@ class Command(BaseCommand):
         else:
             destination = None
             try:
-                destination = self.get_thumbnail(source, type, widths[0])
+                destination = self.get_thumbnail(source, type, name, widths[0])
             except Exception:
                 from traceback import print_exc
                 print_exc()
@@ -84,7 +84,7 @@ class Command(BaseCommand):
         else:
             destination = None
             try:
-                destination = self.get_thumbnail(source, type, widths[1])
+                destination = self.get_thumbnail(source, type, name, widths[1])
             except Exception:
                 from traceback import print_exc
                 print_exc()
@@ -98,13 +98,19 @@ class Command(BaseCommand):
                 print '            ', 'Failure'
         remove(source)
 
-    def get_thumbnail(self, source, type, width):
+    def get_thumbnail(self, source, type, name, width):
         if type.startswith('application'):
             pass
         if type.startswith('image'):
             format = type.split('/')[1]
             if format == '*':
-                format = 'png'
+                format = ''
+                try:
+                    format = name.split('.')[-1].lower()
+                except Exception:
+                    pass
+                if not format:
+                    format = 'png'
             _, destination = mkstemp()
             ProcessorPipeline([
                 Transpose(),
