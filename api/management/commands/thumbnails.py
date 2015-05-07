@@ -111,6 +111,8 @@ class Command(BaseCommand):
                     pass
                 if not format:
                     format = 'png'
+                if format == 'jpg':
+                    format = 'jpeg'
             _, destination = mkstemp()
             ProcessorPipeline([
                 Transpose(),
