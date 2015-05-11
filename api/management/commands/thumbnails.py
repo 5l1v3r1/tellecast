@@ -122,7 +122,7 @@ class Command(BaseCommand):
                 ResizeToFit(width=width, upscale=False),
             ]).process(
                 Image.open(source)
-            ).save(destination, format=format)
+            ).save(destination, format=format, quality=75)
             return destination
         if type.startswith('video'):
             pass
