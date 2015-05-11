@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from math import atan2, cos, pi, sin, sqrt
 from random import uniform
 
@@ -804,6 +804,136 @@ def users_offers_delete(request, id):
     return Response(data={}, status=HTTP_200_OK)
 
 
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def home(request):
+    '''
+    Retrieve the home of a User
+
+    <pre>
+    Input
+    =====
+
+    + latitude
+        - Type: float
+        - Status: mandatory
+
+    + longitude
+        - Type: float
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: latitude
+          paramType: query
+          required: true
+          type: number
+        - name: longitude
+          paramType: query
+          required: true
+          type: number
+    response_serializer: api.serializers.HomeResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.HomeRequest(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+    point = fromstr('POINT(%(longitude)s %(latitude)s)' % {
+        'latitude': serializer.validated_data['latitude'],
+        'longitude': serializer.validated_data['longitude'],
+    })
+    today = date.today()
+    views_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, viewed_at__isnull=False).count()
+    views_today = models.Tellcard.objects.filter(
+        user_destination_id=request.user.id, viewed_at__startswith=today,
+    ).count()
+    views_week = {}
+    for index in range(0, 7):
+        d = today - timedelta(days=index + 1)
+        views_week[d] = models.Tellcard.objects.filter(
+            user_destination_id=request.user.id, viewed_at__startswith=d,
+        ).count()
+    saves_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, saved_at__isnull=False).count()
+    saves_today = models.Tellcard.objects.filter(
+        user_destination_id=request.user.id, saved_at__startswith=today,
+    ).count()
+    saves_week = {}
+    for index in range(0, 7):
+        d = today - timedelta(days=index + 1)
+        saves_week[d] = models.Tellcard.objects.filter(
+            user_destination_id=request.user.id, saved_at__startswith=d,
+        ).count()
+    users_near = models.UserLocation.objects.filter(
+        ~Q(user_id=request.user.id),
+        point__distance_lte=(point, D(ft=300)),
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ).distance(
+        point,
+    ).order_by(
+        'distance',
+    ).distinct(
+        'user_id'
+    ).count()
+    users_area = models.UserLocation.objects.filter(
+        ~Q(user_id=request.user.id),
+        point__distance_lte=(point, D(mi=10)),
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ).distance(
+        point,
+    ).order_by(
+        'distance',
+    ).distinct(
+        'user_id'
+    ).count()
+    tellzones = [
+        tellzone
+        for tellzone in models.Tellzone.objects.filter(
+            point__distance_lte=(point, D(mi=10)),
+        ).distance(
+            point,
+        ).select_related(
+            'offers',
+        ).order_by(
+            'distance',
+        ).all()
+    ]
+    return Response(
+        data=serializers.HomeResponse(
+            {
+                'views': {
+                    'total': views_total,
+                    'today': views_today,
+                    'week': views_week,
+                },
+                'saves': {
+                    'total': saves_total,
+                    'today': saves_today,
+                    'week': saves_week,
+                },
+                'users': {
+                    'near': users_near,
+                    'area': users_area,
+                },
+                'tellzones': tellzones,
+            },
+            context={
+                'request': request,
+            },
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 class Radar(APIView):
 
     permission_classes = (IsAuthenticated,)
@@ -897,7 +1027,7 @@ class Radar(APIView):
         ).all():
             if is_blocked(request.user.id, user_location.user.id):
                 continue
-            if not user_location.user.id in users:
+            if user_location.user.id not in users:
                 users[user_location.user.id] = (
                     user_location.user,
                     user_location.point,
@@ -923,7 +1053,7 @@ class Radar(APIView):
                 'latitude': point.y + y,
                 'longitude': point.x + x,
             })
-            if not user.id in users:
+            if user.id not in users:
                 users[user.id] = (
                     user,
                     p,
@@ -2322,6 +2452,13 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             - Type: integer
             - Status: mandatory
 
+        + action
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - View
+                - Save
+
         Output
         ======
 
@@ -2368,6 +2505,13 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             - Type: integer
             - Status: mandatory
 
+        + action
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - View
+                - Save
+
         Output
         ======
 
@@ -2392,9 +2536,7 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        models.Tellcard.objects.filter(
-            user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id'],
-        ).delete()
+        serializer.delete()
         return Response(data={}, status=HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
@@ -2420,20 +2562,23 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
             - code: 400
               message: Invalid Input
         '''
-        self.get_object().delete()
+        instance = self.get_object()
+        if instance:
+            instance.saved_at = None
+        instance.save()
         return Response(data={}, status=HTTP_200_OK)
 
     def get_queryset(self):
         if 'type' in self.request.QUERY_PARAMS:
             if self.request.QUERY_PARAMS['type'] == 'Source':
-                return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+                return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-id').all()
             if self.request.QUERY_PARAMS['type'] == 'Destination':
                 return models.Tellcard.objects.filter(
                     user_destination_id=self.request.user.id,
                 ).order_by(
-                    '-timestamp',
+                    '-id',
                 ).all()
-        return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+        return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-id').all()
 
 
 class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):

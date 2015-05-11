@@ -12,6 +12,7 @@ from rest_framework.serializers import (
     CharField,
     ChoiceField,
     DateField,
+    DictField,
     EmailField,
     FloatField,
     IntegerField,
@@ -129,11 +130,12 @@ class Tellzone(ModelSerializer):
         for tellcard in models.Tellcard.objects.filter(
             Q(user_source_id=user_id, user_destination_id__in=user_ids) |
             Q(user_source_id__in=user_ids, user_destination_id=user_id),
+            saved_at__isnull=False,
         ).select_related(
             'user_source',
             'user_destination',
         ).order_by(
-            '-timestamp',
+            '-saved_at',
         ).all():
             if tellcard.user_source.id == user_id:
                 connections.append(UsersProfile(tellcard.user_destination, context=self.context).data)
@@ -1393,6 +1395,44 @@ class UsersOffersResponse(ModelSerializer):
         model = models.UserOffer
 
 
+class HomeRequest(Serializer):
+
+    latitude = FloatField()
+    longitude = FloatField()
+
+
+class HomeResponseViews(Serializer):
+
+    total = IntegerField()
+    today = IntegerField()
+    week = DictField(child=CharField())
+
+
+class HomeResponseSaves(Serializer):
+
+    total = IntegerField()
+    today = IntegerField()
+    week = DictField(child=CharField())
+
+
+class HomeResponseUsers(Serializer):
+
+    near = IntegerField()
+    area = IntegerField()
+
+
+class HomeResponseTellzones(Tellzone):
+    pass
+
+
+class HomeResponse(Serializer):
+
+    views = HomeResponseViews()
+    saves = HomeResponseSaves()
+    users = HomeResponseUsers()
+    tellzones = HomeResponseTellzones(many=True)
+
+
 class RadarGetRequest(Serializer):
 
     latitude = FloatField()
@@ -1474,6 +1514,16 @@ class RadarGetResponseUsers(Serializer):
 
 class RadarGetResponseOffersItemsTellzone(Tellzone):
 
+    hours = SerializerMethodField()
+    point = PointField()
+    distance = SerializerMethodField()
+    tellecasters = SerializerMethodField()
+    connections = SerializerMethodField()
+    views = SerializerMethodField()
+    favorites = SerializerMethodField()
+    is_viewed = SerializerMethodField()
+    is_favorited = SerializerMethodField()
+
     class Meta:
 
         fields = (
@@ -1487,11 +1537,18 @@ class RadarGetResponseOffersItemsTellzone(Tellzone):
             'point',
             'inserted_at',
             'updated_at',
+            'distance',
+            'tellecasters',
+            'connections',
+            'views',
+            'favorites',
+            'is_viewed',
+            'is_favorited',
         )
         model = models.Tellzone
 
 
-class RadarGetResponseOffersItems(ModelSerializer):
+class RadarGetResponseOffersItems(Offer):
 
     tellzone = RadarGetResponseOffersItemsTellzone()
 
@@ -1506,6 +1563,7 @@ class RadarGetResponseOffersItems(ModelSerializer):
             'inserted_at',
             'updated_at',
             'expires_at',
+            'is_saved',
             'tellzone',
         )
         model = models.Offer
@@ -1656,11 +1714,18 @@ class MessagesBulkResponse(Message):
 class TellcardsRequest(ModelSerializer):
 
     user_destination_id = IntegerField()
+    action = ChoiceField(
+        choices=(
+            ('View', 'View',),
+            ('Save', 'Save',),
+        ),
+    )
 
     class Meta:
 
         fields = (
             'user_destination_id',
+            'action',
         )
         model = models.Tellcard
 
@@ -1675,9 +1740,28 @@ class TellcardsRequest(ModelSerializer):
             instance = models.Tellcard.objects.create(
                 user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
             )
-        instance.timestamp = datetime.now()
+        if self.validated_data['action'] == 'View':
+            instance.viewed_at = datetime.now()
+        if self.validated_data['action'] == 'Save':
+            instance.saved_at = datetime.now()
         instance.save()
         return instance
+
+    def delete(self):
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return {}
+        instance = models.Tellcard.objects.filter(
+            user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
+        ).first()
+        if not instance:
+            return {}
+        if self.validated_data['action'] == 'View':
+            instance.viewed_at = None
+        if self.validated_data['action'] == 'Save':
+            instance.saved_at = None
+        instance.save()
+        return {}
 
 
 class TellcardsResponse(ModelSerializer):
@@ -1689,7 +1773,8 @@ class TellcardsResponse(ModelSerializer):
         fields = (
             'id',
             'user',
-            'timestamp',
+            'viewed_at',
+            'saved_at',
         )
         model = models.Tellcard
 
@@ -1756,7 +1841,9 @@ def get_is_tellcard(context, instance):
     user_id = get_user_id(context)
     if not user_id:
         return False
-    if not models.Tellcard.objects.filter(user_source_id=user_id, user_destination_id=instance.id).count():
+    if not models.Tellcard.objects.filter(
+        user_source_id=user_id, user_destination_id=instance.id, saved_at__isnull=False,
+    ).count():
         return False
     return True
 

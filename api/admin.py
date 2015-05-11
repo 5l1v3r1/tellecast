@@ -672,12 +672,15 @@ class Tellcard(ModelAdmin):
     fields = (
         'user_source',
         'user_destination',
+        'viewed_at',
+        'saved_at',
     )
     list_display = (
         'id',
         'user_source',
         'user_destination',
-        'timestamp',
+        'viewed_at',
+        'saved_at',
     )
     list_display_links = (
         'id',
@@ -686,7 +689,8 @@ class Tellcard(ModelAdmin):
         'id',
         'user_source',
         'user_destination',
-        'timestamp',
+        'viewed_at',
+        'saved_at',
     )
     list_select_related = (
         'user_source',
@@ -694,7 +698,7 @@ class Tellcard(ModelAdmin):
     )
     ordering = (
         'user_source',
-        '-timestamp',
+        'id',
     )
     search_fields = ()
 

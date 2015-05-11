@@ -567,13 +567,15 @@ class Tellcard(Model):
 
     user_source = ForeignKey(User, related_name='+')
     user_destination = ForeignKey(User, related_name='+')
-    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+    viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
+    saved_at = DateTimeField(ugettext_lazy('Favorited At'), blank=True, db_index=True, null=True)
 
     class Meta:
         db_table = 'api_tellcards'
         ordering = (
             'user_source',
-            '-timestamp',
+            '-viewed_at',
+            '-saved_at',
         )
         verbose_name = 'Tellcard'
         verbose_name_plural = 'Tellcards'

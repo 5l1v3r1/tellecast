@@ -58,6 +58,7 @@ urlpatterns = patterns(
     url(r'^api/users/(?P<id>[^/]+)/tellzones/delete/$', views.users_tellzones_delete),
     url(r'^api/users/(?P<id>[^/]+)/offers/$', views.users_offers),
     url(r'^api/users/(?P<id>[^/]+)/offers/delete/$', views.users_offers_delete),
+    url(r'^api/home/$', views.home),
     url(r'^api/radar/$', views.Radar.as_view()),
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
