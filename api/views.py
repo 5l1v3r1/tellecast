@@ -2142,16 +2142,17 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
         celery.push_notifications.delay(
             user_id=message.user_destination_id,
             json={
-                'alert': {
-                    'body': message.contents,
-                    'title': 'New message from user',
+                'aps': {
+                    'alert': {
+                        'body': message.contents,
+                        'title': 'New message from user',
+                    },
+                    'badge': str(
+                        models.Message.objects.filter(
+                            user_destination_id=message.user_destination_id, status='Unread',
+                        ).count()
+                    ),
                 },
-                'badge': str(
-                    models.Message.objects.filter(
-                        user_destination_id=message.user_destination_id,
-                        status='Unread',
-                    ).count()
-                ),
                 'type': 'message',
             },
         )
@@ -2216,6 +2217,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             celery.push_notifications.delay(
                 user_id=request.user.id,
                 json={
+                    'aps': {},
                     'type': 'updateMessage',
                 },
             )
@@ -2318,6 +2320,7 @@ def messages_bulk_is_hidden(request):
     celery.push_notifications.delay(
         user_id=request.user.id,
         json={
+            'aps': {},
             'type': 'updateThread',
         },
     )
