@@ -12,6 +12,7 @@ from rest_framework.serializers import (
     CharField,
     ChoiceField,
     DateField,
+    DateTimeField,
     DictField,
     EmailField,
     FloatField,
@@ -1425,12 +1426,154 @@ class HomeResponseTellzones(Tellzone):
     pass
 
 
+class HomeResponseOffersTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Tellzone
+
+
+class HomeResponseOffers(Offer):
+
+    tellzone = HomeResponseOffersTellzone()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'description',
+            'photo',
+            'code',
+            'inserted_at',
+            'updated_at',
+            'expires_at',
+            'is_saved',
+            'tellzone',
+        )
+        model = models.Offer
+
+
+class HomeResponseConnectionsTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Tellzone
+
+
+class HomeResponseConnectionsUserPhotos(UserPhoto):
+    pass
+
+
+class HomeResponseConnectionsUserStatusAttachment(UserStatusAttachment):
+    pass
+
+
+class HomeResponseConnectionsUserStatus(UserStatus):
+
+    attachments = RegisterResponseUserStatusAttachment(
+        help_text='List of User Status Attachments', many=True, required=False,
+    )
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_id',
+            'string',
+            'title',
+            'url',
+            'notes',
+            'attachments',
+        )
+        model = models.UserStatus
+
+
+class HomeResponseConnectionsUser(ModelSerializer):
+
+    photos = HomeResponseConnectionsUserPhotos(help_text='List of User Photos', many=True, required=False)
+    status = HomeResponseConnectionsUserStatus(help_text='User Status', required=False)
+    master_tells = SerializerMethodField()
+    is_tellcard = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo',
+            'first_name',
+            'last_name',
+            'location',
+            'description',
+            'photos',
+            'status',
+            'master_tells',
+            'is_tellcard',
+        )
+        model = models.User
+
+    def get_master_tells(self, instance):
+        return [
+            RegisterResponseMasterTell(master_tell).data
+            for master_tell in instance.master_tells.filter(
+                owned_by_id=instance.id, is_visible=True
+            ).order_by('position').all()[0:5]
+        ]
+
+    def get_is_tellcard(self, instance):
+        return get_is_tellcard(self.context, instance)
+
+
+class HomeResponseConnections(Serializer):
+
+    user = HomeResponseConnectionsUser()
+    point = PointField()
+    tellzone = HomeResponseConnectionsTellzone(required=False)
+    timestamp = DateTimeField()
+
+    class Meta:
+
+        fields = (
+            'user',
+            'point',
+            'tellzone',
+            'timestamp',
+        )
+        model = models.Offer
+
+
 class HomeResponse(Serializer):
 
     views = HomeResponseViews()
     saves = HomeResponseSaves()
     users = HomeResponseUsers()
     tellzones = HomeResponseTellzones(many=True)
+    offers = HomeResponseOffers(many=True)
+    connections = HomeResponseConnections(many=True)
 
 
 class RadarGetRequest(Serializer):
@@ -1513,16 +1656,6 @@ class RadarGetResponseUsers(Serializer):
 
 
 class RadarGetResponseOffersItemsTellzone(Tellzone):
-
-    hours = SerializerMethodField()
-    point = PointField()
-    distance = SerializerMethodField()
-    tellecasters = SerializerMethodField()
-    connections = SerializerMethodField()
-    views = SerializerMethodField()
-    favorites = SerializerMethodField()
-    is_viewed = SerializerMethodField()
-    is_favorited = SerializerMethodField()
 
     class Meta:
 

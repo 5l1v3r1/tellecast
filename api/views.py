@@ -907,6 +907,41 @@ def home(request):
             'distance',
         ).all()
     ]
+    offers = [
+        user_offer.offer
+        for user_offer in models.UserOffer.objects.filter(user_id=request.user.id).order_by('-timestamp').all()
+    ]
+    connections = {}
+    for user_location in models.UserLocation.objects.filter(
+        user_id=request.user.id,
+        timestamp__gt=datetime.now() - timedelta(days=1),
+    ).order_by('timestamp').all():
+        for ul in models.UserLocation.objects.filter(
+            ~Q(user_id=request.user.id),
+            point__distance_lte=(user_location.point, D(ft=300)),
+            timestamp__lt=user_location.timestamp + timedelta(minutes=1),
+            timestamp__gt=user_location.timestamp - timedelta(minutes=1),
+        ).distance(
+            point,
+        ).order_by(
+            'timestamp',
+        ).all():
+            if ul.user_id in connections:
+                continue
+            if models.Tellcard.objects.filter(
+                user_source_id=request.user.id, user_destination_id=ul.user.id, saved_at__isnull=False,
+            ).count():
+                continue
+            if models.Message.objects.filter(
+                user_source_id=request.user.id, user_destination_id=ul.user.id,
+            ).count():
+                continue
+            connections[ul.user.id] = {
+                'user': ul.user,
+                'timestamp': ul.timestamp,
+                'point': ul.point,
+                'tellzone': ul.tellzone,
+            }
     return Response(
         data=serializers.HomeResponse(
             {
@@ -925,6 +960,10 @@ def home(request):
                     'area': users_area,
                 },
                 'tellzones': tellzones,
+                'offers': offers,
+                'connections': sorted(
+                    connections.values(), key=lambda connection: connection['timestamp'], reverse=True,
+                ),
             },
             context={
                 'request': request,
