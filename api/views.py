@@ -2613,14 +2613,16 @@ class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMi
     def get_queryset(self):
         if 'type' in self.request.QUERY_PARAMS:
             if self.request.QUERY_PARAMS['type'] == 'Source':
-                return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-id').all()
+                return models.Tellcard.objects.filter(
+                    user_source_id=self.request.user.id, saved_at__isnull=False,
+                ).order_by('-id').all()
             if self.request.QUERY_PARAMS['type'] == 'Destination':
                 return models.Tellcard.objects.filter(
-                    user_destination_id=self.request.user.id,
-                ).order_by(
-                    '-id',
-                ).all()
-        return models.Tellcard.objects.filter(user_source_id=self.request.user.id).order_by('-id').all()
+                    user_destination_id=self.request.user.id, saved_at__isnull=False,
+                ).order_by('-id').all()
+        return models.Tellcard.objects.filter(
+            user_source_id=self.request.user.id, saved_at__isnull=False,
+        ).order_by('-id').all()
 
 
 class Blocks(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
