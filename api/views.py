@@ -2411,6 +2411,294 @@ def messages_bulk_status(request):
     return Response(data=data, status=HTTP_200_OK)
 
 
+class SharesUsers(GenericViewSet, ListModelMixin, CreateModelMixin):
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 100
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.SharesUsersGet
+
+    def get(self, request, *args, **kwargs):
+        '''
+        SELECT Shares
+
+        <pre>
+        Input
+        =====
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Source (shared by me; default)
+                - Destination (shared by others)
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SharesUsersGet
+        '''
+        type = request.QUERY_PARAMS['type'] if 'type' in request.QUERY_PARAMS else ''
+        if not type or type not in ['Source', 'Destination']:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `type`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(
+                page,
+                context={
+                    'request': request,
+                },
+                many=True,
+            )
+            return self.get_paginated_response(serializer.data)
+        return Response(
+            data=self.get_serializer(
+                queryset,
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        '''
+        INSERT a Share
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        + object_id
+            - Description: ID of the user whose profile is being shared
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.SharesUsersPostRequest
+        response_serializer: api.serializers.SharesUsersPostResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.SharesUsersPostRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.create()
+        return Response(
+            data=serializers.SharesOffersPostResponse({
+                'email': {
+                    'subject': 'Tellecast - Shares/Users - %(id)s' % {
+                        'id': instance.id,
+                    },
+                    'body': 'Tellecast - Shares/Users - %(id)s' % {
+                        'id': instance.id,
+                    },
+                },
+                'sms': 'Tellecast - Shares/Users - %(id)s' % {
+                    'id': instance.id,
+                },
+                'facebook_com': 'tellecast://shares/users/%(id)s' % {
+                    'id': instance.id,
+                },
+                'twitter_com': 'tellecast://shares/users/%(id)s' % {
+                    'id': instance.id,
+                },
+            }).data,
+            status=HTTP_200_OK,
+        )
+
+    def get_queryset(self):
+        if 'type' in self.request.QUERY_PARAMS:
+            if self.request.QUERY_PARAMS['type'] == 'Source':
+                return models.ShareUser.objects.filter(
+                    user_source_id=self.request.user.id,
+                ).order_by('-timestamp').all()
+            if self.request.QUERY_PARAMS['type'] == 'Destination':
+                return models.ShareUser.objects.filter(
+                    user_destination_id=self.request.user.id,
+                ).order_by('-timestamp').all()
+        return models.ShareUser.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+
+
+class SharesOffers(GenericViewSet, ListModelMixin, CreateModelMixin):
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = 100
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.SharesOffersGet
+
+    def get(self, request, *args, **kwargs):
+        '''
+        SELECT Shares
+
+        <pre>
+        Input
+        =====
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Source (shared by me; default)
+                - Destination (shared by others)
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.SharesOffersGet
+        '''
+        type = request.QUERY_PARAMS['type'] if 'type' in request.QUERY_PARAMS else ''
+        if not type or type not in ['Source', 'Destination']:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `type`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(
+                page,
+                context={
+                    'request': request,
+                },
+                many=True,
+            )
+            return self.get_paginated_response(serializer.data)
+        return Response(
+            data=self.get_serializer(
+                queryset,
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        '''
+        INSERT a Share
+
+        <pre>
+        Input
+        =====
+
+        + user_destination_id
+            - Type: integer
+            - Status: mandatory
+
+        + object_id
+            - Description: ID of the offer that is being shared
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.SharesOffersPostRequest
+        response_serializer: api.serializers.SharesOffersPostResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.SharesOffersPostRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.create()
+        return Response(
+            data=serializers.SharesOffersPostResponse({
+                'email': {
+                    'subject': 'Tellecast - Shares/Offers - %(id)s' % {
+                        'id': instance.id,
+                    },
+                    'body': 'Tellecast - Shares/Offers - %(id)s' % {
+                        'id': instance.id,
+                    },
+                },
+                'sms': 'Tellecast - Shares/Offers - %(id)s' % {
+                    'id': instance.id,
+                },
+                'facebook_com': 'tellecast://shares/offers/%(id)s' % {
+                    'id': instance.id,
+                },
+                'twitter_com': 'tellecast://shares/offers/%(id)s' % {
+                    'id': instance.id,
+                },
+            }).data,
+            status=HTTP_200_OK,
+        )
+
+    def get_queryset(self):
+        if 'type' in self.request.QUERY_PARAMS:
+            if self.request.QUERY_PARAMS['type'] == 'Source':
+                return models.ShareOffer.objects.filter(
+                    user_source_id=self.request.user.id,
+                ).order_by('-timestamp').all()
+            if self.request.QUERY_PARAMS['type'] == 'Destination':
+                return models.ShareOffer.objects.filter(
+                    user_destination_id=self.request.user.id,
+                ).order_by('-timestamp').all()
+        return models.ShareOffer.objects.filter(user_source_id=self.request.user.id).order_by('-timestamp').all()
+
+
 class Tellcards(DestroyModelMixin, GenericViewSet, ListModelMixin, UpdateModelMixin):
 
     lookup_field = 'id'

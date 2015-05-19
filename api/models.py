@@ -563,6 +563,40 @@ class MessageAttachment(Model):
         verbose_name_plural = 'Message Attachments'
 
 
+class ShareUser(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, related_name='+')
+    object = ForeignKey(User, related_name='+')
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+
+        db_table = 'api_shares_users'
+        ordering = (
+            '-timestamp',
+        )
+        verbose_name = 'Shares User'
+        verbose_name_plural = 'Shares Users'
+
+
+class ShareOffer(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, related_name='+')
+    object = ForeignKey(Offer, related_name='+')
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+
+        db_table = 'api_shares_offers'
+        ordering = (
+            '-timestamp',
+        )
+        verbose_name = 'Shares Offer'
+        verbose_name_plural = 'Shares Offers'
+
+
 class Tellcard(Model):
 
     user_source = ForeignKey(User, related_name='+')

@@ -1844,6 +1844,192 @@ class MessagesBulkResponse(Message):
     pass
 
 
+class SharesUsersGet(ModelSerializer):
+
+    user = SerializerMethodField()
+    object = UsersProfile()
+
+    class Meta:
+
+        fields = (
+            'user',
+            'object',
+            'timestamp',
+        )
+        model = models.ShareUser
+
+    def get_user(self, instance):
+        request = self.context.get('request', None)
+        if request:
+            if 'type' in request.QUERY_PARAMS:
+                if request.QUERY_PARAMS['type'] == 'Source':
+                    return UsersProfile(instance.user_destination, context=self.context).data
+                if request.QUERY_PARAMS['type'] == 'Destination':
+                    return UsersProfile(instance.user_source, context=self.context).data
+        return UsersProfile(instance.user_destination).data
+
+
+class SharesUsersPostRequest(ModelSerializer):
+
+    user_destination_id = IntegerField()
+    object_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'user_destination_id',
+            'object_id',
+        )
+        model = models.ShareUser
+
+    def create(self):
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return False
+        instance = models.ShareUser.objects.filter(
+            user_source_id=user_id,
+            user_destination_id=self.validated_data['user_destination_id'],
+            object_id=self.validated_data['object_id'],
+        ).first()
+        if not instance:
+            instance = models.ShareUser.objects.create(
+                user_source_id=user_id,
+                user_destination_id=self.validated_data['user_destination_id'],
+                object_id=self.validated_data['object_id'],
+            )
+        return instance
+
+
+class SharesUsersPostResponseEmail(Serializer):
+
+    subject = CharField()
+    body = CharField()
+
+
+class SharesUsersPostResponse(Serializer):
+
+    email = SharesUsersPostResponseEmail()
+    sms = CharField()
+    facebook_com = CharField()
+    twitter_com = CharField()
+
+
+class SharesOffersGetOfferTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'tellecasters',
+            'connections',
+            'views',
+            'favorites',
+            'is_viewed',
+            'is_favorited',
+        )
+        model = models.Tellzone
+
+
+class SharesOffersGetOffer(Offer):
+
+    tellzone = SharesOffersGetOfferTellzone()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'description',
+            'photo',
+            'code',
+            'inserted_at',
+            'updated_at',
+            'expires_at',
+            'is_saved',
+            'tellzone',
+        )
+        model = models.Offer
+
+
+class SharesOffersGet(ModelSerializer):
+
+    user = SerializerMethodField()
+    object = SharesOffersGetOffer()
+
+    class Meta:
+
+        fields = (
+            'user',
+            'object',
+            'timestamp',
+        )
+        model = models.ShareOffer
+
+    def get_user(self, instance):
+        request = self.context.get('request', None)
+        if request:
+            if 'type' in request.QUERY_PARAMS:
+                if request.QUERY_PARAMS['type'] == 'Source':
+                    return UsersProfile(instance.user_destination, context=self.context).data
+                if request.QUERY_PARAMS['type'] == 'Destination':
+                    return UsersProfile(instance.user_source, context=self.context).data
+        return UsersProfile(instance.user_destination).data
+
+
+class SharesOffersPostRequest(ModelSerializer):
+
+    user_destination_id = IntegerField()
+    object_id = IntegerField()
+
+    class Meta:
+
+        fields = (
+            'user_destination_id',
+            'object_id',
+        )
+        model = models.ShareOffer
+
+    def create(self):
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return False
+        instance = models.ShareOffer.objects.filter(
+            user_source_id=user_id,
+            user_destination_id=self.validated_data['user_destination_id'],
+            object_id=self.validated_data['object_id'],
+        ).first()
+        if not instance:
+            instance = models.ShareOffer.objects.create(
+                user_source_id=user_id,
+                user_destination_id=self.validated_data['user_destination_id'],
+                object_id=self.validated_data['object_id'],
+            )
+        return instance
+
+
+class SharesOffersPostResponseEmail(Serializer):
+
+    subject = CharField()
+    body = CharField()
+
+
+class SharesOffersPostResponse(Serializer):
+
+    email = SharesOffersPostResponseEmail()
+    sms = CharField()
+    facebook_com = CharField()
+    twitter_com = CharField()
+
+
 class TellcardsRequest(ModelSerializer):
 
     user_destination_id = IntegerField()

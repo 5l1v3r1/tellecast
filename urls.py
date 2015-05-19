@@ -67,6 +67,20 @@ urlpatterns = patterns(
     url(r'^api/messages/bulk/is_hidden/$', views.messages_bulk_is_hidden),
     url(r'^api/messages/bulk/status/$', views.messages_bulk_status),
     url(
+        r'^api/shares/users/$',
+        views.SharesUsers.as_view({
+            'get': 'get',
+            'post': 'post',
+        }),
+    ),
+    url(
+        r'^api/shares/offers/$',
+        views.SharesOffers.as_view({
+            'get': 'get',
+            'post': 'post',
+        }),
+    ),
+    url(
         r'^api/tellcards/delete/$',
         views.Tellcards.as_view({
             'post': 'delete',

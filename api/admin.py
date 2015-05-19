@@ -667,6 +667,80 @@ class MessageAttachment(ModelAdmin):
 site.register(models.MessageAttachment, MessageAttachment)
 
 
+class ShareUser(ModelAdmin):
+
+    fields = (
+        'user_source',
+        'user_destination',
+        'object',
+    )
+    list_display = (
+        'id',
+        'user_source',
+        'user_destination',
+        'object',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user_source',
+        'user_destination',
+        'object',
+        'timestamp',
+    )
+    list_select_related = (
+        'user_source',
+        'user_destination',
+        'object',
+    )
+    ordering = (
+        '-timestamp',
+    )
+    search_fields = ()
+
+site.register(models.ShareUser, ShareUser)
+
+
+class ShareOffer(ModelAdmin):
+
+    fields = (
+        'user_source',
+        'user_destination',
+        'object',
+    )
+    list_display = (
+        'id',
+        'user_source',
+        'user_destination',
+        'object',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user_source',
+        'user_destination',
+        'object',
+        'timestamp',
+    )
+    list_select_related = (
+        'user_source',
+        'user_destination',
+        'object',
+    )
+    ordering = (
+        '-timestamp',
+    )
+    search_fields = ()
+
+site.register(models.ShareOffer, ShareOffer)
+
+
 class Tellcard(ModelAdmin):
 
     fields = (
