@@ -1406,14 +1406,14 @@ class HomeResponseViews(Serializer):
 
     total = IntegerField()
     today = IntegerField()
-    week = DictField(child=IntField())
+    week = DictField(child=IntegerField())
 
 
 class HomeResponseSaves(Serializer):
 
     total = IntegerField()
     today = IntegerField()
-    week = DictField(child=IntField())
+    week = DictField(child=IntegerField())
 
 
 class HomeResponseUsers(Serializer):
