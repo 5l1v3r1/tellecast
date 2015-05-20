@@ -693,7 +693,7 @@ def get_tellzone(user_id, tellzone):
         return {}
     hours = {}
     try:
-        return loads(tellzone.hours)
+        hours = loads(tellzone.hours)
     except Exception:
         pass
     return {
