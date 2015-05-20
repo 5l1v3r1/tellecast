@@ -974,6 +974,22 @@ class Notifications(GenericViewSet):
                     - updated_at
                     - expires_at
                     - is_saved
+                    + tellzone <- This Tellzone shared an offer with you.
+                        - id
+                        - name
+                        - photo
+                        - location
+                        - phone
+                        - url
+                        - hours
+                        - point
+                        - inserted_at
+                        - updated_at
+                        - offers
+                        - views
+                        - favorites
+                        - is_viewed
+                        - is_favorited
 
         type = G
 
