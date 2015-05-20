@@ -29,6 +29,7 @@ from push_notifications.fields import HexIntegerField
 from push_notifications.gcm import gcm_send_message
 from social.apps.django_app.default.models import UserSocialAuth
 from django_extensions.db.fields import UUIDField
+from ujson import loads
 
 
 class Tellzone(Model):
@@ -687,6 +688,58 @@ class Report(Model):
         verbose_name_plural = 'Reports'
 
 
+def get_tellzone(user_id, tellzone):
+    if not tellzone:
+        return {}
+    hours = {}
+    try:
+        return loads(tellzone.hours)
+    except Exception:
+        pass
+    return {
+        'id': tellzone.id,
+        'name': tellzone.name,
+        'photo': tellzone.photo,
+        'location': tellzone.location,
+        'phone': tellzone.phone,
+        'url': tellzone.url,
+        'hours': hours,
+        'point': {
+            'latitude': tellzone.point.y,
+            'longitude': tellzone.point.x,
+        },
+        'inserted_at': tellzone.inserted_at,
+        'updated_at': tellzone.updated_at,
+        'offers': [get_offer(user_id, offer) for offer in tellzone.offers.order_by('-inserted_at').all()],
+        'views': UserTellzone.objects.filter(tellzone_id=tellzone.id, viewed_at__isnull=False).count(),
+        'favorites': UserTellzone.objects.filter(tellzone_id=tellzone.id, favorited_at__isnull=False).count(),
+        'is_viewed': True if UserTellzone.objects.filter(
+            user_id=user_id,
+            tellzone_id=tellzone.id,
+            viewed_at__isnull=False,
+        ).count() else False,
+        'is_favorited': True if UserTellzone.objects.filter(
+            user_id=user_id,
+            tellzone_id=tellzone.id,
+            favorited_at__isnull=False,
+        ).count() else False,
+    }
+
+
+def get_offer(user_id, offer):
+    return {
+        'id': offer.id,
+        'name': offer.name,
+        'description': offer.description,
+        'photo': offer.photo,
+        'code': offer.code,
+        'inserted_at': offer.inserted_at,
+        'updated_at': offer.updated_at,
+        'expires_at': offer.expires_at,
+        'is_saved': True if UserOffer.objects.filter(user_id=user_id, offer_id=offer.id).count() else False,
+    }
+
+
 @receiver(pre_save, sender=UserPhoto)
 def user_photo_pre_save(instance, **kwargs):
     if not instance.position:
@@ -708,6 +761,12 @@ def user_url_pre_save(instance, **kwargs):
     if not instance.position:
         position = UserURL.objects.filter(user=instance.user).aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(pre_save, sender=Notification)
+def notification_pre_save(instance, **kwargs):
+    if not instance.status:
+        instance.status = 'Unread'
 
 
 @receiver(pre_save, sender=MasterTell)
@@ -739,6 +798,189 @@ def block_post_save(instance, **kwargs):
         Q(user_source_id=instance.user_source.id, user_destination_id=instance.user_destination.id) |
         Q(user_source_id=instance.user_destination.id, user_destination_id=instance.user_source.id),
     ).delete()
+
+
+@receiver(post_save, sender=Tellcard)
+def tellcard_post_save(instance, **kwargs):
+    if 'created' in kwargs and kwargs['created']:
+        Notification.objects.create(
+            user_id=instance.user_destination_id,
+            type='A',
+            contents={
+                'id': instance.user_source.id,
+                'first_name': instance.user_source.first_name,
+                'last_name': instance.user_source.last_name,
+                'photo': instance.user_source.photo,
+            },
+        )
+
+
+@receiver(post_save, sender=ShareUser)
+def share_user_post_save(instance, **kwargs):
+    if 'created' in kwargs and kwargs['created']:
+        Notification.objects.create(
+            user_id=instance.user_destination_id,
+            type='B',
+            contents={
+                'user_source': {
+                    'id': instance.user_source.id,
+                    'first_name': instance.user_source.first_name,
+                    'last_name': instance.user_source.last_name,
+                    'photo': instance.user_source.photo,
+                },
+                'user_destination': {
+                    'id': instance.object.id,
+                    'first_name': instance.object.first_name,
+                    'last_name': instance.object.last_name,
+                    'photo': instance.object.photo,
+                }
+            },
+        )
+
+
+@receiver(post_save, sender=ShareOffer)
+def share_offer_post_save(instance, **kwargs):
+    if 'created' in kwargs and kwargs['created']:
+        offer = get_offer(instance.user_destination_id, instance.object)
+        offer['tellzone'] = get_tellzone(instance.user_destination_id, instance.object.tellzone)
+        Notification.objects.create(
+            user_id=instance.user_destination_id,
+            type='C',
+            contents={
+                'user': {
+                    'id': instance.user_source.id,
+                    'first_name': instance.user_source.first_name,
+                    'last_name': instance.user_source.last_name,
+                    'photo': instance.user_source.photo,
+                },
+                'offer': offer,
+            },
+        )
+
+
+@receiver(post_save, sender=Offer)
+def offer_post_save(instance, **kwargs):
+    if 'created' in kwargs and kwargs['created']:
+        for user_tellzone in UserTellzone.objects.filter(
+            tellzone_id=instance.tellzone.id,
+            favorited_at__isnull=False,
+        ).order_by('id').all():
+            offer = get_offer(user_tellzone.user_id, instance)
+            offer['tellzone'] = get_tellzone(user_tellzone.user_id, instance.tellzone)
+            Notification.objects.create(
+                user_id=user_tellzone.user_id,
+                type='D',
+                contents={
+                    'offer': offer,
+                },
+            )
+
+
+@receiver(post_save, sender=Message)
+def message_post_save(instance, **kwargs):
+    if 'created' in kwargs and kwargs['created']:
+        if instance.type == 'Message':
+            return
+        Notification.objects.create(
+            user_id=instance.user_destination_id,
+            type='G' if instance.type == 'Request' else 'H',
+            contents={
+                'user': {
+                    'id': instance.user_source.id,
+                    'first_name': instance.user_source.first_name,
+                    'last_name': instance.user_source.last_name,
+                    'photo': instance.user_source.photo,
+                },
+                'message': {
+                    'id': instance.id,
+                    'user_source_is_hidden': instance.user_source_is_hidden,
+                    'user_destination_is_hidden': instance.user_destination_is_hidden,
+                    'user_status': {
+                        'id': instance.user_status.id,
+                        'user': {
+                            'id': instance.user_status.user.id,
+                            'first_name': instance.user_status.user.first_name,
+                            'last_name': instance.user_status.user.last_name,
+                            'photo': instance.user_status.user.photo,
+                        },
+                        'string': instance.user_status.string,
+                        'title': instance.user_status.title,
+                        'url': instance.user_status.url,
+                        'notes': instance.user_status.notes,
+                        'attachments': [
+                            {
+                                'id': attachment.id,
+                                'string': attachment.string,
+                                'position': attachment.position,
+                            }
+                            for attachment in instance.user_status.attachments.order_by('position').all()
+                        ]
+                    } if instance.user_status else {},
+                    'master_tell': {
+                        'id': instance.master_tell.id,
+                        'created_by_id': {
+                            'id': instance.master_tell.created_by.id,
+                            'first_name': instance.master_tell.created_by.first_name,
+                            'last_name': instance.master_tell.created_by.last_name,
+                            'photo': instance.master_tell.created_by.photo,
+                        },
+                        'owned_by_id': {
+                            'id': instance.master_tell.owned_by.id,
+                            'first_name': instance.master_tell.owned_by.first_name,
+                            'last_name': instance.master_tell.owned_by.last_name,
+                            'photo': instance.master_tell.owned_by.photo,
+                        },
+                        'is_visible': instance.master_tell.is_visible,
+                        'contents': instance.master_tell.contents,
+                        'position': instance.master_tell.position,
+                        'inserted_at': instance.master_tell.inserted_at,
+                        'updated_at': instance.master_tell.updated_at,
+                        'slave_tells': [
+                            {
+                                'id': slave_tell.id,
+                                'created_by_id': {
+                                    'id': slave_tell.created_by.id,
+                                    'first_name': slave_tell.created_by.first_name,
+                                    'last_name': slave_tell.created_by.last_name,
+                                    'photo': slave_tell.created_by.photo,
+                                },
+                                'owned_by_id': {
+                                    'id': slave_tell.owned_by.id,
+                                    'first_name': slave_tell.owned_by.first_name,
+                                    'last_name': slave_tell.owned_by.last_name,
+                                    'photo': slave_tell.owned_by.photo,
+                                },
+                                'photo': slave_tell.photo,
+                                'first_name': slave_tell.first_name,
+                                'last_name': slave_tell.last_name,
+                                'type': slave_tell.type,
+                                'is_editable': slave_tell.is_editable,
+                                'contents': slave_tell.contents,
+                                'description': slave_tell.description,
+                                'position': slave_tell.position,
+                                'inserted_at': slave_tell.inserted_at,
+                                'updated_at': slave_tell.updated_at,
+                            }
+                            for slave_tell in instance.master_tell.slave_tells.order_by('position').all()
+                        ]
+                    } if instance.master_tell else {},
+                    'type': instance.type,
+                    'contents': instance.contents,
+                    'status': instance.status,
+                    'inserted_at': instance.inserted_at,
+                    'updated_at': instance.updated_at,
+                    'attachments': [
+                        {
+                            'id': attachment.id,
+                            'string': attachment.string,
+                            'position': attachment.position,
+                        }
+                        for attachment in instance.attachments.order_by('position').all()
+                    ],
+                },
+            },
+        )
+
 
 user_logged_in.disconnect(update_last_login)
 

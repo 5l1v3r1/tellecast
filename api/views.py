@@ -896,9 +896,6 @@ class Notifications(GenericViewSet):
                         - inserted_at
                         - updated_at
                         - offers
-                        - distance
-                        - tellecasters
-                        - connections
                         - views
                         - favorites
                         - is_viewed
@@ -929,9 +926,6 @@ class Notifications(GenericViewSet):
                         - inserted_at
                         - updated_at
                         - offers
-                        - distance
-                        - tellecasters
-                        - connections
                         - views
                         - favorites
                         - is_viewed
@@ -962,9 +956,6 @@ class Notifications(GenericViewSet):
                         - inserted_at
                         - updated_at
                         - offers
-                        - distance
-                        - tellecasters
-                        - connections
                         - views
                         - favorites
                         - is_viewed
@@ -994,9 +985,7 @@ class Notifications(GenericViewSet):
                     - photo
                 + message
                     - id
-                    - user_source
                     - user_source_is_hidden
-                    - user_destination
                     - user_destination_is_hidden
                     - user_status
                     - master_tell
@@ -1017,9 +1006,7 @@ class Notifications(GenericViewSet):
                     - photo
                 + message
                     - id
-                    - user_source
                     - user_source_is_hidden
-                    - user_destination
                     - user_destination_is_hidden
                     - user_status
                     - master_tell

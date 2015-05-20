@@ -302,7 +302,6 @@ class Notification(ModelSerializer):
 
         fields = (
             'id',
-            'user',
             'type',
             'contents',
             'status',
