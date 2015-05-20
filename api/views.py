@@ -804,6 +804,321 @@ def users_offers_delete(request, id):
     return Response(data={}, status=HTTP_200_OK)
 
 
+class Notifications(GenericViewSet):
+
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.Notification
+
+    def get(self, request, *args, **kwargs):
+        '''
+        SELECT Notifications
+
+        <pre>
+        Input
+        =====
+
+        + since_id
+            Description: (similar to how it works in all major APIs; Example: twitter.com)
+            Type: integer
+            Status: optional
+
+        + max_id
+            Description: (similar to how it works in all major APIs; Example: twitter.com)
+            Type: integer
+            Status: optional
+
+        + limit
+            Type: integer (default = 50)
+            Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+
+        The contents column will contain a serialized dictionary based on the value of the type column.
+
+        type = A
+
+            + contents
+                + user <- This user saved your Tellcard
+                    - id
+                    - first_name
+                    - last_name
+                    - photo
+
+        type = B
+
+            + contents
+                + user_source <- This user shared a profile with you.
+                    - id
+                    - first_name
+                    - last_name
+                    - photo
+                + user_destination <- This user's profile was shared.
+                    - id
+                    - first_name
+                    - last_name
+                    - photo
+
+        type = C
+
+            + contents
+                + user <- This user shared an offer with you.
+                    - id
+                    - first_name
+                    - last_name
+                    - photo
+                + offer <- This offer was shared.
+                    - id
+                    - name
+                    - description
+                    - photo
+                    - code
+                    - inserted_at
+                    - updated_at
+                    - expires_at
+                    - is_saved
+                    + tellzone
+                        - id
+                        - name
+                        - photo
+                        - location
+                        - phone
+                        - url
+                        - hours
+                        - point
+                        - inserted_at
+                        - updated_at
+                        - offers
+                        - distance
+                        - tellecasters
+                        - connections
+                        - views
+                        - favorites
+                        - is_viewed
+                        - is_favorited
+
+        type = D
+
+            + contents
+                + offer <- This offer was shared.
+                    - id
+                    - name
+                    - description
+                    - photo
+                    - code
+                    - inserted_at
+                    - updated_at
+                    - expires_at
+                    - is_saved
+                    + tellzone <- This Tellzone shared an offer with you.
+                        - id
+                        - name
+                        - photo
+                        - location
+                        - phone
+                        - url
+                        - hours
+                        - point
+                        - inserted_at
+                        - updated_at
+                        - offers
+                        - distance
+                        - tellecasters
+                        - connections
+                        - views
+                        - favorites
+                        - is_viewed
+                        - is_favorited
+
+        type = E
+
+            + contents
+                + offer <- This offer was shared.
+                    - id
+                    - name
+                    - description
+                    - photo
+                    - code
+                    - inserted_at
+                    - updated_at
+                    - expires_at
+                    - is_saved
+                    + tellzone <- This Tellzone shared an offer with you.
+                        - id
+                        - name
+                        - photo
+                        - location
+                        - phone
+                        - url
+                        - hours
+                        - point
+                        - inserted_at
+                        - updated_at
+                        - offers
+                        - distance
+                        - tellecasters
+                        - connections
+                        - views
+                        - favorites
+                        - is_viewed
+                        - is_favorited
+
+        type = F
+
+            + contents
+                + offer <- Tellecast shared this offer with you.
+                    - id
+                    - name
+                    - description
+                    - photo
+                    - code
+                    - inserted_at
+                    - updated_at
+                    - expires_at
+                    - is_saved
+
+        type = G
+
+            + contents
+                + user <- This user sent an invitation to you.
+                    - id
+                    - first_name
+                    - last_name
+                    - photo
+                + message
+                    - id
+                    - user_source
+                    - user_source_is_hidden
+                    - user_destination
+                    - user_destination_is_hidden
+                    - user_status
+                    - master_tell
+                    - type
+                    - contents
+                    - status
+                    - inserted_at
+                    - updated_at
+                    - attachments
+
+        type = H
+
+            + contents
+                + user <- This user replied to your invitation.
+                    - id
+                    - first_name
+                    - last_name
+                    - photo
+                + message
+                    - id
+                    - user_source
+                    - user_source_is_hidden
+                    - user_destination
+                    - user_destination_is_hidden
+                    - user_status
+                    - master_tell
+                    - type
+                    - contents
+                    - status
+                    - inserted_at
+                    - updated_at
+                    - attachments
+        </pre>
+        ---
+        parameters:
+            - name: since_id
+              paramType: query
+              type: integer
+            - name: max_id
+              paramType: query
+              type: integer
+            - name: limit
+              paramType: query
+              type: integer
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.Notification
+        '''
+        notifications = []
+        query = models.Notification.objects.filter(user_id=request.user.id)
+        since_id = 0
+        try:
+            since_id = int(request.query_params.get('since_id', '0'))
+        except Exception:
+            pass
+        if since_id:
+            query = query.filter(id__gt=since_id)
+        max_id = 0
+        try:
+            max_id = int(request.query_params.get('max_id', '0'))
+        except Exception:
+            pass
+        if max_id:
+            query = query.filter(id__lt=max_id)
+        limit = 50
+        try:
+            limit = int(request.query_params.get('limit', '100'))
+        except Exception:
+            pass
+        for notification in query.order_by('-timestamp').all()[:limit]:
+            notifications.append(notification)
+        return Response(
+            data=[serializers.Notification(notification).data for notification in notifications],
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        '''
+        Bulk update `status` attributes of Notifications
+
+        <pre>
+        Input
+        =====
+
+        [
+            {
+                "id": 1,
+                "status": 'Read',
+            },
+            ...,
+            ...,
+            ...,
+            {
+                "id": n,
+                "status": 'Read',
+            }
+        ]
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.Notification
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        data = []
+        for item in request.DATA:
+            try:
+                notification = models.Notification.objects.get(id=item['id'], user_id=request.user.id)
+                notification.status = item['status']
+                notification.save()
+                data.append(serializers.Notification(notification).data)
+            except models.Notification.DoesNotExist:
+                pass
+        return Response(data=data, status=HTTP_200_OK)
+
+
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
 def home(request):

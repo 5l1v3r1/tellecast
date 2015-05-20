@@ -417,6 +417,47 @@ class DeviceAPNS(ModelAdmin):
 site.register(models.DeviceAPNS, DeviceAPNS)
 
 
+class Notification(ModelAdmin):
+
+    fields = (
+        'user',
+        'type',
+        'contents',
+        'status',
+    )
+    list_display = (
+        'id',
+        'user',
+        'type',
+        'contents',
+        'status',
+        'timestamp',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'type',
+        'status',
+        'timestamp',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'type',
+        'contents',
+        'status',
+    )
+
+site.register(models.Notification, Notification)
+
+
 class DeviceGCM(ModelAdmin):
 
     fields = (

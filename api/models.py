@@ -23,6 +23,7 @@ from django.dispatch import receiver
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy
 from itsdangerous import TimestampSigner
+from jsonfield import JSONField
 from push_notifications.apns import apns_send_message
 from push_notifications.fields import HexIntegerField
 from push_notifications.gcm import gcm_send_message
@@ -377,6 +378,45 @@ class UserOffer(Model):
         )
         verbose_name = 'User Offer'
         verbose_name_plural = 'User Offers'
+
+
+class Notification(Model):
+
+    user = ForeignKey(User, related_name='notifications')
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('A', 'A',),
+            ('B', 'B',),
+            ('C', 'C',),
+            ('D', 'D',),
+            ('E', 'E',),
+            ('F', 'F',),
+            ('G', 'G',),
+            ('H', 'H',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    contents = JSONField(ugettext_lazy('Contents'))
+    status = CharField(
+        ugettext_lazy('Status'),
+        choices=(
+            ('Read', 'Read',),
+            ('Unread', 'Unread',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_notifications'
+        ordering = (
+            '-timestamp',
+        )
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
 
 
 class DeviceAPNS(Model):

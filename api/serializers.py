@@ -294,6 +294,26 @@ class UserURL(ModelSerializer):
         model = models.UserURL
 
 
+class Notification(ModelSerializer):
+
+    contents = SerializerMethodField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'type',
+            'contents',
+            'status',
+            'timestamp',
+        )
+        model = models.Notification
+
+    def get_contents(self, instance):
+        return instance.contents
+
+
 class DeviceAPNS(ModelSerializer):
 
     id = IntegerField(required=False)
