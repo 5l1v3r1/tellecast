@@ -1208,11 +1208,11 @@ def home(request):
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             '''
-            SELECT DATE_TRUNC('DATE', viewed_at) AS key, COUNT(id) AS value
+            SELECT viewed_at::DATE AS key, COUNT(id) AS value
             FROM api_tellcards
             WHERE viewed_at::DATE BETWEEN %s AND %s
-            GROUP BY DATE_TRUNC('DATE', viewed_at)
-            ORDER BY DATE_TRUNC('DATE', viewed_at) DESC
+            GROUP BY viewed_at::DATE
+            ORDER BY viewed_at::DATE DESC
             ''',
             (days[6], days[0],)
         )
@@ -1260,11 +1260,11 @@ def home(request):
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             '''
-            SELECT DATE_TRUNC('DATE', saved_at) AS key, COUNT(id) AS value
+            SELECT saved_at::DATE AS key, COUNT(id) AS value
             FROM api_tellcards
             WHERE saved_at::DATE BETWEEN %s AND %s
-            GROUP BY DATE_TRUNC('DATE', saved_at)
-            ORDER BY DATE_TRUNC('DATE', saved_at) DESC
+            GROUP BY saved_at::DATE
+            ORDER BY saved_at::DATE DESC
             ''',
             (days[6], days[0],)
         )
