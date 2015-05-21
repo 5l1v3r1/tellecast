@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from math import atan2, cos, pi, sin, sqrt
 from random import uniform
 
-from arrow import Arrow, get
+from arrow import get
 from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.gis.geos import fromstr

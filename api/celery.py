@@ -10,8 +10,6 @@ from ujson import dumps
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
-from api import models  # noqa
-
 tasks = Celery('api')
 tasks.config_from_object('django.conf:settings')
 tasks.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
@@ -19,6 +17,7 @@ tasks.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @tasks.task
 def push_notifications(user_id, json):
+    from api import models
     for device in models.DeviceAPNS.objects.filter(user_id=user_id).order_by('id').all():
         try:
             device.send_message(dumps(json))

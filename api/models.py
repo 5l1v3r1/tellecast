@@ -769,6 +769,24 @@ def notification_pre_save(instance, **kwargs):
         instance.status = 'Unread'
 
 
+@receiver(post_save, sender=Notification)
+def notification_post_save(instance, **kwargs):
+    from api import celery
+    if 'created' in kwargs and kwargs['created']:
+        celery.push_notifications.delay(
+            user_id=instance.user_id,
+            json={
+                'aps': {
+                    'alert': {
+                        'title': 'New notification',
+                    },
+                    'badge': Notification.objects.filter(user_id=instance.user_id, status='Unread').count(),
+                },
+                'type': 'notification',
+            },
+        )
+
+
 @receiver(pre_save, sender=MasterTell)
 def master_tell_pre_save(instance, **kwargs):
     if not instance.position:
