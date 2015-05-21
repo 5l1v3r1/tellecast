@@ -1210,11 +1210,11 @@ def home(request):
             '''
             SELECT viewed_at::DATE AS key, COUNT(id) AS value
             FROM api_tellcards
-            WHERE viewed_at::DATE BETWEEN %s AND %s
+            WHERE user_id = %s AND viewed_at::DATE BETWEEN %s AND %s
             GROUP BY viewed_at::DATE
             ORDER BY viewed_at::DATE DESC
             ''',
-            (days[6], days[0],)
+            (request.user.id, days[6], days[0],)
         )
         for item in cursor.fetchall():
             views_days[item[0]] = item[1]
@@ -1226,11 +1226,11 @@ def home(request):
             '''
             SELECT DATE_TRUNC('WEEK', viewed_at) AS key, COUNT(id) AS value
             FROM api_tellcards
-            WHERE viewed_at::DATE BETWEEN %s AND %s
+            WHERE user_id = %s AND viewed_at::DATE BETWEEN %s AND %s
             GROUP BY DATE_TRUNC('WEEK', viewed_at)
             ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC
             ''',
-            (weeks[2], weeks[1],)
+            (request.user.id, weeks[2], weeks[1],)
         )
         for item in cursor.fetchall():
             views_weeks[item[0]] = item[1]
@@ -1242,11 +1242,11 @@ def home(request):
             '''
             SELECT DATE_TRUNC('MONTH', viewed_at) AS key, COUNT(id) AS value
             FROM api_tellcards
-            WHERE viewed_at::DATE BETWEEN %s AND %s
+            WHERE user_id = %s AND viewed_at::DATE BETWEEN %s AND %s
             GROUP BY DATE_TRUNC('MONTH', viewed_at)
             ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC
             ''',
-            (months[2], months[1],)
+            (request.user.id, months[2], months[1],)
         )
         for item in cursor.fetchall():
             views_months[item[0]] = item[1]
@@ -1262,11 +1262,11 @@ def home(request):
             '''
             SELECT saved_at::DATE AS key, COUNT(id) AS value
             FROM api_tellcards
-            WHERE saved_at::DATE BETWEEN %s AND %s
+            WHERE user_id = %s AND saved_at::DATE BETWEEN %s AND %s
             GROUP BY saved_at::DATE
             ORDER BY saved_at::DATE DESC
             ''',
-            (days[6], days[0],)
+            (request.user.id, days[6], days[0],)
         )
         for item in cursor.fetchall():
             views_days[item[0]] = item[1]
@@ -1278,11 +1278,11 @@ def home(request):
             '''
             SELECT DATE_TRUNC('WEEK', saved_at) AS key, COUNT(id) AS value
             FROM api_tellcards
-            WHERE saved_at::DATE BETWEEN %s AND %s
+            WHERE user_id = %s AND saved_at::DATE BETWEEN %s AND %s
             GROUP BY DATE_TRUNC('WEEK', saved_at)
             ORDER BY DATE_TRUNC('WEEK', saved_at) DESC
             ''',
-            (weeks[2], weeks[1],)
+            (request.user.id, weeks[2], weeks[1],)
         )
         for item in cursor.fetchall():
             saves_weeks[item[0]] = item[1]
@@ -1294,11 +1294,11 @@ def home(request):
             '''
             SELECT DATE_TRUNC('MONTH', saved_at) AS key, COUNT(id) AS value
             FROM api_tellcards
-            WHERE saved_at::DATE BETWEEN %s AND %s
+            WHERE user_id = %s AND saved_at::DATE BETWEEN %s AND %s
             GROUP BY DATE_TRUNC('MONTH', saved_at)
             ORDER BY DATE_TRUNC('MONTH', saved_at) DESC
             ''',
-            (months[2], months[1],)
+            (request.user.id, months[2], months[1],)
         )
         for item in cursor.fetchall():
             saves_months[item[0]] = item[1]
