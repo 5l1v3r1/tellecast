@@ -1217,7 +1217,7 @@ def home(request):
             (days[6], days[0],)
         )
         for item in cursor.fetchall():
-            views_days[item['key']] = item['value']
+            views_days[item[0]] = item[1]
     views_weeks = {}
     for week in weeks[0]:
         views_weeks[week] = 0
@@ -1233,7 +1233,7 @@ def home(request):
             (weeks[2], weeks[1],)
         )
         for item in cursor.fetchall():
-            views_weeks[item['key']] = item['value']
+            views_weeks[item[0]] = item[1]
     views_months = {}
     for month in months[0]:
         views_months[month] = 0
@@ -1249,7 +1249,7 @@ def home(request):
             (months[2], months[1],)
         )
         for item in cursor.fetchall():
-            views_months[item['key']] = item['value']
+            views_months[item[0]] = item[1]
     saves_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, saved_at__isnull=False).count()
     saves_today = models.Tellcard.objects.filter(
         user_destination_id=request.user.id, saved_at__startswith=today,
@@ -1269,7 +1269,7 @@ def home(request):
             (days[6], days[0],)
         )
         for item in cursor.fetchall():
-            views_days[item['key']] = item['value']
+            views_days[item[0]] = item[1]
     saves_weeks = {}
     for week in weeks[0]:
         saves_weeks[week] = 0
@@ -1285,7 +1285,7 @@ def home(request):
             (weeks[2], weeks[1],)
         )
         for item in cursor.fetchall():
-            saves_weeks[item['key']] = item['value']
+            saves_weeks[item[0]] = item[1]
     saves_months = {}
     for month in months[0]:
         saves_months[month] = 0
@@ -1301,7 +1301,7 @@ def home(request):
             (months[2], months[1],)
         )
         for item in cursor.fetchall():
-            saves_months[item['key']] = item['value']
+            saves_months[item[0]] = item[1]
     users_near = models.UserLocation.objects.filter(
         ~Q(user_id=request.user.id),
         point__distance_lte=(point, D(ft=300)),
