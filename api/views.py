@@ -1269,7 +1269,7 @@ def home(request):
             (request.user.id, days[6], days[0],)
         )
         for item in cursor.fetchall():
-            views_days[item[0]] = item[1]
+            saves_days[item[0]] = item[1]
     saves_weeks = {}
     for week in weeks[0]:
         saves_weeks[week] = 0
