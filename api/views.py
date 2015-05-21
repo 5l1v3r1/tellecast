@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
+from contextlib import closing
 from datetime import date, datetime, timedelta
 from math import atan2, cos, pi, sin, sqrt
 from random import uniform
 
+from arrow import Arrow, get
 from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.gis.geos import fromstr
 from django.contrib.gis.measure import D
+from django.db import connection
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -1125,6 +1128,29 @@ class Notifications(GenericViewSet):
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
 def home(request):
+
+    def get_days(today):
+        return [(today - timedelta(days=index + 1)).isoformat() for index in range(0, 7)]
+
+    def get_weeks(today):
+        dates = [
+            get(today - timedelta(days=today.weekday())).replace(weeks=-1 - index).date()
+            for index in range(0, 8)
+        ]
+        return [
+            [date.isoformat() for date in dates],
+            dates[-1].isoformat(),
+            get(dates[0]).replace(days=-1, weeks=1).date().isoformat(),
+        ]
+
+    def get_months(today):
+        dates = [get(today).replace(day=1, months=-1 - index).date() for index in range(0, 12)]
+        return [
+            [date.isoformat() for date in dates],
+            dates[-1].isoformat(),
+            get(dates[0]).replace(days=-1, months=1).date().isoformat(),
+        ]
+
     '''
     Retrieve the home of a User
 
@@ -1169,26 +1195,113 @@ def home(request):
         'longitude': serializer.validated_data['longitude'],
     })
     today = date.today()
+    days = get_days(today)
+    weeks = get_weeks(today)
+    months = get_months(today)
     views_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, viewed_at__isnull=False).count()
     views_today = models.Tellcard.objects.filter(
         user_destination_id=request.user.id, viewed_at__startswith=today,
     ).count()
-    views_week = {}
-    for index in range(0, 7):
-        d = today - timedelta(days=index + 1)
-        views_week[d] = models.Tellcard.objects.filter(
-            user_destination_id=request.user.id, viewed_at__startswith=d,
-        ).count()
+    views_days = {}
+    for day in days:
+        views_days[day] = 0
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT DATE_TRUNC('DATE', viewed_at) AS key, COUNT(id) AS value
+            FROM api_tellcards
+            WHERE viewed_at::DATE BETWEEN %s AND %s
+            GROUP BY DATE_TRUNC('DATE', viewed_at)
+            ORDER BY DATE_TRUNC('DATE', viewed_at) DESC
+            ''',
+            (days[6], days[0],)
+        )
+        for item in cursor.fetchall():
+            views_days[item['key']] = item['value']
+    views_weeks = {}
+    for week in weeks[0]:
+        views_weeks[week] = 0
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT DATE_TRUNC('WEEK', viewed_at) AS key, COUNT(id) AS value
+            FROM api_tellcards
+            WHERE viewed_at::DATE BETWEEN %s AND %s
+            GROUP BY DATE_TRUNC('WEEK', viewed_at)
+            ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC
+            ''',
+            (weeks[2], weeks[1],)
+        )
+        for item in cursor.fetchall():
+            views_weeks[item['key']] = item['value']
+    views_months = {}
+    for month in months[0]:
+        views_months[month] = 0
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT DATE_TRUNC('MONTH', viewed_at) AS key, COUNT(id) AS value
+            FROM api_tellcards
+            WHERE viewed_at::DATE BETWEEN %s AND %s
+            GROUP BY DATE_TRUNC('MONTH', viewed_at)
+            ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC
+            ''',
+            (months[2], months[1],)
+        )
+        for item in cursor.fetchall():
+            views_months[item['key']] = item['value']
     saves_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, saved_at__isnull=False).count()
     saves_today = models.Tellcard.objects.filter(
         user_destination_id=request.user.id, saved_at__startswith=today,
     ).count()
-    saves_week = {}
-    for index in range(0, 7):
-        d = today - timedelta(days=index + 1)
-        saves_week[d] = models.Tellcard.objects.filter(
-            user_destination_id=request.user.id, saved_at__startswith=d,
-        ).count()
+    saves_days = {}
+    for day in days:
+        saves_days[day] = 0
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT DATE_TRUNC('DATE', saved_at) AS key, COUNT(id) AS value
+            FROM api_tellcards
+            WHERE saved_at::DATE BETWEEN %s AND %s
+            GROUP BY DATE_TRUNC('DATE', saved_at)
+            ORDER BY DATE_TRUNC('DATE', saved_at) DESC
+            ''',
+            (days[6], days[0],)
+        )
+        for item in cursor.fetchall():
+            views_days[item['key']] = item['value']
+    saves_weeks = {}
+    for week in weeks[0]:
+        saves_weeks[week] = 0
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT DATE_TRUNC('WEEK', saved_at) AS key, COUNT(id) AS value
+            FROM api_tellcards
+            WHERE saved_at::DATE BETWEEN %s AND %s
+            GROUP BY DATE_TRUNC('WEEK', saved_at)
+            ORDER BY DATE_TRUNC('WEEK', saved_at) DESC
+            ''',
+            (weeks[2], weeks[1],)
+        )
+        for item in cursor.fetchall():
+            saves_weeks[item['key']] = item['value']
+    saves_months = {}
+    for month in months[0]:
+        saves_months[month] = 0
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT DATE_TRUNC('MONTH', saved_at) AS key, COUNT(id) AS value
+            FROM api_tellcards
+            WHERE saved_at::DATE BETWEEN %s AND %s
+            GROUP BY DATE_TRUNC('MONTH', saved_at)
+            ORDER BY DATE_TRUNC('MONTH', saved_at) DESC
+            ''',
+            (months[2], months[1],)
+        )
+        for item in cursor.fetchall():
+            saves_months[item['key']] = item['value']
     users_near = models.UserLocation.objects.filter(
         ~Q(user_id=request.user.id),
         point__distance_lte=(point, D(ft=300)),
@@ -1266,12 +1379,16 @@ def home(request):
                 'views': {
                     'total': views_total,
                     'today': views_today,
-                    'week': views_week,
+                    'days': views_days,
+                    'weeks': views_weeks,
+                    'months': views_months,
                 },
                 'saves': {
                     'total': saves_total,
                     'today': saves_today,
-                    'week': saves_week,
+                    'days': saves_days,
+                    'weeks': saves_weeks,
+                    'months': saves_months,
                 },
                 'users': {
                     'near': users_near,
