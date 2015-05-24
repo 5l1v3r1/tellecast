@@ -1128,29 +1128,6 @@ class Notifications(GenericViewSet):
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
 def home(request):
-
-    def get_days(today):
-        return [(today - timedelta(days=index + 1)).isoformat() for index in range(0, 7)]
-
-    def get_weeks(today):
-        dates = [
-            get(today - timedelta(days=today.weekday())).replace(weeks=-1 - index).date()
-            for index in range(0, 8)
-        ]
-        return [
-            [date.isoformat() for date in dates],
-            dates[-1].isoformat(),
-            get(dates[0]).replace(days=-1, weeks=1).date().isoformat(),
-        ]
-
-    def get_months(today):
-        dates = [get(today).replace(day=1, months=-1 - index).date() for index in range(0, 12)]
-        return [
-            [date.isoformat() for date in dates],
-            dates[-1].isoformat(),
-            get(dates[0]).replace(days=-1, months=1).date().isoformat(),
-        ]
-
     '''
     Retrieve the home of a User
 
@@ -1188,6 +1165,29 @@ def home(request):
         - code: 400
           message: Invalid Input
     '''
+
+    def get_days(today):
+        return [(today - timedelta(days=index + 1)).isoformat() for index in range(0, 7)]
+
+    def get_weeks(today):
+        dates = [
+            get(today - timedelta(days=today.weekday())).replace(weeks=-1 - index).date()
+            for index in range(0, 8)
+        ]
+        return [
+            [date.isoformat() for date in dates],
+            dates[-1].isoformat(),
+            get(dates[0]).replace(days=-1, weeks=1).date().isoformat(),
+        ]
+
+    def get_months(today):
+        dates = [get(today).replace(day=1, months=-1 - index).date() for index in range(0, 12)]
+        return [
+            [date.isoformat() for date in dates],
+            dates[-1].isoformat(),
+            get(dates[0]).replace(days=-1, months=1).date().isoformat(),
+        ]
+
     serializer = serializers.HomeRequest(data=request.query_params)
     serializer.is_valid(raise_exception=True)
     point = fromstr('POINT(%(longitude)s %(latitude)s)' % {
