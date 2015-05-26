@@ -466,9 +466,17 @@ class DeviceAPNS(Model):
         verbose_name_plural = 'APNS Devices'
 
     def send_message(self, extra):
-        alert = extra['aps']
-        del extra['aps']
-        return apns_send_message(self.registration_id, extra['aps'], extra=extra)
+        alert = None
+        badge = None
+        if 'aps' in extra:
+            if 'alert' in extra['aps']:
+                alert = extra['aps']['alert']
+                del extra['aps']['alert']
+            if 'badge' in extra['aps']:
+                badge = extra['aps']['badge']
+                del extra['aps']['badge']
+            del extra['aps']
+        return apns_send_message(self.registration_id, alert, badge=badge, extra=extra)
 
 
 class DeviceGCM(Model):
