@@ -40,12 +40,6 @@ urlpatterns = patterns(
     url(r'^api/register/$', views.register),
     url(r'^api/authenticate/(?P<backend>[^/]+)/$', views.authenticate),
     url(
-        r'^api/users/$',
-        views.Users.as_view({
-            'get': 'list',
-        }),
-    ),
-    url(
         r'^api/users/(?P<id>[^/]+)/$',
         views.Users.as_view({
             'get': 'retrieve',
