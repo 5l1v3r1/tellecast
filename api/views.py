@@ -2546,7 +2546,7 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 'body': '{{ body }}',
                 'title': 'New message from user',
             },
-            'badge': '{{ total_number_of_unread_messages }}',
+            'badge': {{ total_number_of_unread_messages }},
             'type': 'message',
         }
         </pre>
@@ -2609,11 +2609,9 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                         'body': message.contents,
                         'title': 'New message from user',
                     },
-                    'badge': str(
-                        models.Message.objects.filter(
-                            user_destination_id=message.user_destination_id, status='Unread',
-                        ).count()
-                    ),
+                    'badge': models.Message.objects.filter(
+                        user_destination_id=message.user_destination_id, status='Unread',
+                    ).count(),
                 },
                 'type': 'message',
             },
