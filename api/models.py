@@ -466,7 +466,7 @@ class DeviceAPNS(Model):
         verbose_name_plural = 'APNS Devices'
 
     def send_message(self, extra):
-        return apns_send_message(self.registration_id, extra)
+        return apns_send_message(self.registration_id, None, extra=extra)
 
 
 class DeviceGCM(Model):
