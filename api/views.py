@@ -341,7 +341,6 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
             'notifications_messages': true,
             'notifications_offers': true,
             'notifications_saved_you': true,
-            'notifications_receive_email_notifications': true,
         }
 
     + photos

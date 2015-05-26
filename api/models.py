@@ -783,7 +783,6 @@ def user_post_save(instance, **kwargs):
             'notifications_messages': True,
             'notifications_offers': True,
             'notifications_saved_you': True,
-            'notifications_receive_email_notifications': True,
         }.items():
             UserSetting.objects.create(user_id=instance.id, key=key, value=value)
 

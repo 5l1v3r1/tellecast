@@ -959,7 +959,6 @@ class UsersRequestSettings(Serializer):
     notifications_messages = BooleanField()
     notifications_offers = BooleanField()
     notifications_saved_you = BooleanField()
-    notifications_receive_email_notifications = BooleanField()
 
 
 class UsersRequest(User):
@@ -1218,7 +1217,6 @@ class UsersResponseSettings(Serializer):
     notifications_messages = BooleanField()
     notifications_offers = BooleanField()
     notifications_saved_you = BooleanField()
-    notifications_receive_email_notifications = BooleanField()
 
     def to_representation(self, instance):
         return self.parent.instance.get_settings()
