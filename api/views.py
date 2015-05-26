@@ -478,11 +478,6 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         - Status: optional
     </pre>
     ---
-    list:
-        responseMessages:
-            - code: 400
-              message: Invalid Input
-        serializer: api.serializers.UsersResponse
     retrieve:
         responseMessages:
             - code: 400
