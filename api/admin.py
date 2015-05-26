@@ -81,6 +81,46 @@ class User(ModelAdmin):
 site.register(models.User, User)
 
 
+class UserSetting(ModelAdmin):
+
+    fields = (
+        'user',
+        'key',
+        'value',
+    )
+    list_display = (
+        'id',
+        'user',
+        'key',
+        'value',
+        'inserted_at',
+        'updated_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'key',
+        'value',
+        'inserted_at',
+        'updated_at',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'key',
+        'value',
+    )
+
+site.register(models.UserSetting, UserSetting)
+
+
 class UserPhoto(ModelAdmin):
 
     fields = (

@@ -325,6 +325,25 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
             'longitude': 0.0000000000,
         }
 
+    + settings
+        - Type: dictionary
+        - Status: optional
+
+        Example:
+
+        {
+            'show_last_name': true,
+            'show_profile_photo': true,
+            'show_email': true,
+            'show_phone_number': true,
+            'notifications_invitations': true,
+            'notifications_shared_profiles': true,
+            'notifications_messages': true,
+            'notifications_offers': true,
+            'notifications_saved_you': true,
+            'notifications_receive_email_notifications': true,
+        }
+
     + photos
         - Type: list (a list of Photo objects; see below)
         - Status: optional
@@ -495,31 +514,6 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
     permission_classes = (IsAuthenticated,)
     renderer_classes = (JSONRenderer,)
     serializer_class = serializers.UsersResponse
-
-    def list(self, request, *args, **kwargs):
-        '''
-        SELECT Users
-        ---
-        '''
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(
-                page,
-                context={
-                    'request': request,
-                },
-                many=True,
-            )
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(
-            queryset,
-            context={
-                'request': request,
-            },
-            many=True,
-        )
-        return Response(data=serializer.data, status=HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         '''

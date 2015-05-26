@@ -163,12 +163,20 @@ class User(Model):
             'last_name': self.last_name,
         }
 
+    def get_settings(self):
+        items = {}
+        for setting in self.settings.get_queryset().order_by('id').all():
+            items[setting.key] = True if setting.value == 'True' else False
+        return items
+
     def get_token(self):
         return TimestampSigner(settings.SECRET_KEY).sign(str(self.id))
 
     def has_permission(self, object=None):
         if isinstance(object, User):
             return object.id == self.id
+        if isinstance(object, UserSetting):
+            return object.user.id == self.id
         if isinstance(object, UserStatus):
             return object.user.id == self.id
         if isinstance(object, UserStatusAttachment):
@@ -211,6 +219,28 @@ class User(Model):
         except Exception:
             pass
         return False
+
+
+class UserSetting(Model):
+
+    user = ForeignKey(User, related_name='settings')
+    key = CharField(ugettext_lazy('Key'), db_index=True, max_length=255)
+    value = CharField(ugettext_lazy('Value'), db_index=True, max_length=255)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_users_settings'
+        ordering = (
+            'user',
+            'key',
+        )
+        unique_together = (
+            'user',
+            'key',
+        )
+        verbose_name = ugettext_lazy('user setting')
+        verbose_name_plural = ugettext_lazy('user settings')
 
 
 class UserPhoto(Model):
@@ -738,6 +768,24 @@ def get_offer(user_id, offer):
         'expires_at': offer.expires_at,
         'is_saved': True if UserOffer.objects.filter(user_id=user_id, offer_id=offer.id).count() else False,
     }
+
+
+@receiver(post_save, sender=User)
+def user_post_save(instance, **kwargs):
+    if 'created' in kwargs and kwargs['created']:
+        for key, value in {
+            'show_last_name': True,
+            'show_profile_photo': True,
+            'show_email': True,
+            'show_phone_number': True,
+            'notifications_invitations': True,
+            'notifications_shared_profiles': True,
+            'notifications_messages': True,
+            'notifications_offers': True,
+            'notifications_saved_you': True,
+            'notifications_receive_email_notifications': True,
+        }.items():
+            UserSetting.objects.create(user_id=instance.id, key=key, value=value)
 
 
 @receiver(pre_save, sender=UserPhoto)

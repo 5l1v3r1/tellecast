@@ -948,8 +948,23 @@ class UsersRequestUserURL(UserURL):
     pass
 
 
+class UsersRequestSettings(Serializer):
+
+    show_last_name = BooleanField()
+    show_profile_photo = BooleanField()
+    show_email = BooleanField()
+    show_phone_number = BooleanField()
+    notifications_invitations = BooleanField()
+    notifications_shared_profiles = BooleanField()
+    notifications_messages = BooleanField()
+    notifications_offers = BooleanField()
+    notifications_saved_you = BooleanField()
+    notifications_receive_email_notifications = BooleanField()
+
+
 class UsersRequest(User):
 
+    settings = UsersRequestSettings(required=False)
     photos = RegisterResponseUserPhoto(help_text='List of User Photos', many=True, required=False)
     social_profiles = RegisterResponseUserSocialProfile(
         help_text='List of User Social Profiles', many=True, required=False,
@@ -973,6 +988,7 @@ class UsersRequest(User):
             'phone',
             'phone_status',
             'point',
+            'settings',
             'photos',
             'social_profiles',
             'status',
@@ -1006,11 +1022,23 @@ class UsersRequest(User):
         if 'point' in data:
             instance.point = data['point']
         instance.save()
+        self.update_settings(instance, data)
         self.update_photos(instance, data)
         self.update_social_profiles(instance, data)
         self.update_status(instance, data)
         self.update_status_attachments(instance, data)
         self.update_urls(instance, data)
+        return instance
+
+    def update_settings(self, instance, data):
+        if 'settings' in data:
+            for key, value in data['settings'].items():
+                value = 'True' if value else 'False'
+                user_setting = instance.settings.get_queryset().filter(key=key).first()
+                if not user_setting:
+                    user_setting = models.UserSetting.objects.create(user_id=instance.id, key=key)
+                user_setting.value = value
+                user_setting.save()
         return instance
 
     def update_photos(self, instance, data):
@@ -1179,8 +1207,26 @@ class UsersResponseUserURL(UserURL):
     pass
 
 
+class UsersResponseSettings(Serializer):
+
+    show_last_name = BooleanField()
+    show_profile_photo = BooleanField()
+    show_email = BooleanField()
+    show_phone_number = BooleanField()
+    notifications_invitations = BooleanField()
+    notifications_shared_profiles = BooleanField()
+    notifications_messages = BooleanField()
+    notifications_offers = BooleanField()
+    notifications_saved_you = BooleanField()
+    notifications_receive_email_notifications = BooleanField()
+
+    def to_representation(self, instance):
+        return self.parent.instance.get_settings()
+
+
 class UsersResponse(User):
 
+    settings = UsersResponseSettings(required=False)
     photos = UsersResponseUserPhoto(help_text='List of User Photos', many=True, required=False)
     social_profiles = UsersResponseUserSocialProfile(
         help_text='List of User Social Profiles', many=True, required=False,
@@ -1207,6 +1253,7 @@ class UsersResponse(User):
             'point',
             'inserted_at',
             'updated_at',
+            'settings',
             'photos',
             'social_profiles',
             'status',
