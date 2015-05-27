@@ -6,7 +6,6 @@ from os import environ
 
 from celery import Celery
 from django.conf import settings
-from ujson import dumps
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
