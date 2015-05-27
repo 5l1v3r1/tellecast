@@ -2609,8 +2609,8 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                         'body': message.contents,
                         'title': 'New message from user',
                     },
-                    'badge': models.Message.objects.filter(
-                        user_destination_id=message.user_destination_id, status='Unread',
+                    'badge': models.Notification.objects.filter(
+                        user_id=message.user_destination_id, status='Unread',
                     ).count(),
                 },
                 'type': 'message',
