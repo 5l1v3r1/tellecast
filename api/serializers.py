@@ -22,6 +22,7 @@ from rest_framework.serializers import (
     SerializerMethodField,
     ValidationError,
 )
+from rest_framework.validators import UniqueValidator
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
@@ -318,7 +319,7 @@ class DeviceAPNS(ModelSerializer):
     id = IntegerField(required=False)
     name = CharField()
     device_id = CharField()
-    registration_id = CharField()
+    registration_id = CharField(validators=[UniqueValidator(queryset=models.DeviceAPNS.objects.all())])
 
     class Meta:
 
@@ -336,7 +337,7 @@ class DeviceGCM(ModelSerializer):
     id = IntegerField(required=False)
     name = CharField()
     device_id = CharField()
-    registration_id = CharField()
+    registration_id = CharField(validators=[UniqueValidator(queryset=models.DeviceGCM.objects.all())])
 
     class Meta:
 

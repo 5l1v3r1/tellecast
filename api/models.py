@@ -455,7 +455,7 @@ class DeviceAPNS(Model):
     user = ForeignKey(User, related_name='+')
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
     device_id = UUIDField(db_index=True, max_length=255, name=ugettext_lazy('Device ID'))
-    registration_id = CharField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
+    registration_id = CharField(ugettext_lazy('Registration ID'), db_index=True, max_length=255, unique=True)
 
     class Meta:
         db_table = 'api_devices_apns'
@@ -484,7 +484,7 @@ class DeviceGCM(Model):
     user = ForeignKey(User, related_name='+')
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
     device_id = HexIntegerField(ugettext_lazy('Device ID'), db_index=True, max_length=255)
-    registration_id = TextField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
+    registration_id = TextField(ugettext_lazy('Registration ID'), db_index=True, max_length=255, unique=True)
 
     class Meta:
         db_table = 'api_devices_gcm'
