@@ -953,109 +953,123 @@ def offer_post_save(instance, **kwargs):
 
 @receiver(post_save, sender=Message)
 def message_post_save(instance, **kwargs):
+    from api import celery
     if 'created' in kwargs and kwargs['created']:
-        if instance.type == 'Message':
-            return
-        Notification.objects.create(
-            user_id=instance.user_destination_id,
-            type='G' if instance.type == 'Request' else 'H',
-            contents={
-                'user': {
-                    'id': instance.user_source.id,
-                    'first_name': instance.user_source.first_name,
-                    'last_name': instance.user_source.last_name,
-                    'photo': instance.user_source.photo,
-                },
-                'message': {
-                    'id': instance.id,
-                    'user_source_is_hidden': instance.user_source_is_hidden,
-                    'user_destination_is_hidden': instance.user_destination_is_hidden,
-                    'user_status': {
-                        'id': instance.user_status.id,
-                        'user': {
-                            'id': instance.user_status.user.id,
-                            'first_name': instance.user_status.user.first_name,
-                            'last_name': instance.user_status.user.last_name,
-                            'photo': instance.user_status.user.photo,
-                        },
-                        'string': instance.user_status.string,
-                        'title': instance.user_status.title,
-                        'url': instance.user_status.url,
-                        'notes': instance.user_status.notes,
+        if instance.type != 'Message':
+            Notification.objects.create(
+                user_id=instance.user_destination_id,
+                type='G' if instance.type == 'Request' else 'H',
+                contents={
+                    'user': {
+                        'id': instance.user_source.id,
+                        'first_name': instance.user_source.first_name,
+                        'last_name': instance.user_source.last_name,
+                        'photo': instance.user_source.photo,
+                    },
+                    'message': {
+                        'id': instance.id,
+                        'user_source_is_hidden': instance.user_source_is_hidden,
+                        'user_destination_is_hidden': instance.user_destination_is_hidden,
+                        'user_status': {
+                            'id': instance.user_status.id,
+                            'user': {
+                                'id': instance.user_status.user.id,
+                                'first_name': instance.user_status.user.first_name,
+                                'last_name': instance.user_status.user.last_name,
+                                'photo': instance.user_status.user.photo,
+                            },
+                            'string': instance.user_status.string,
+                            'title': instance.user_status.title,
+                            'url': instance.user_status.url,
+                            'notes': instance.user_status.notes,
+                            'attachments': [
+                                {
+                                    'id': attachment.id,
+                                    'string': attachment.string,
+                                    'position': attachment.position,
+                                }
+                                for attachment in instance.user_status.attachments.order_by('position').all()
+                            ]
+                        } if instance.user_status else {},
+                        'master_tell': {
+                            'id': instance.master_tell.id,
+                            'created_by_id': {
+                                'id': instance.master_tell.created_by.id,
+                                'first_name': instance.master_tell.created_by.first_name,
+                                'last_name': instance.master_tell.created_by.last_name,
+                                'photo': instance.master_tell.created_by.photo,
+                            },
+                            'owned_by_id': {
+                                'id': instance.master_tell.owned_by.id,
+                                'first_name': instance.master_tell.owned_by.first_name,
+                                'last_name': instance.master_tell.owned_by.last_name,
+                                'photo': instance.master_tell.owned_by.photo,
+                            },
+                            'is_visible': instance.master_tell.is_visible,
+                            'contents': instance.master_tell.contents,
+                            'position': instance.master_tell.position,
+                            'inserted_at': instance.master_tell.inserted_at,
+                            'updated_at': instance.master_tell.updated_at,
+                            'slave_tells': [
+                                {
+                                    'id': slave_tell.id,
+                                    'created_by_id': {
+                                        'id': slave_tell.created_by.id,
+                                        'first_name': slave_tell.created_by.first_name,
+                                        'last_name': slave_tell.created_by.last_name,
+                                        'photo': slave_tell.created_by.photo,
+                                    },
+                                    'owned_by_id': {
+                                        'id': slave_tell.owned_by.id,
+                                        'first_name': slave_tell.owned_by.first_name,
+                                        'last_name': slave_tell.owned_by.last_name,
+                                        'photo': slave_tell.owned_by.photo,
+                                    },
+                                    'photo': slave_tell.photo,
+                                    'first_name': slave_tell.first_name,
+                                    'last_name': slave_tell.last_name,
+                                    'type': slave_tell.type,
+                                    'is_editable': slave_tell.is_editable,
+                                    'contents': slave_tell.contents,
+                                    'description': slave_tell.description,
+                                    'position': slave_tell.position,
+                                    'inserted_at': slave_tell.inserted_at,
+                                    'updated_at': slave_tell.updated_at,
+                                }
+                                for slave_tell in instance.master_tell.slave_tells.order_by('position').all()
+                            ]
+                        } if instance.master_tell else {},
+                        'type': instance.type,
+                        'contents': instance.contents,
+                        'status': instance.status,
+                        'inserted_at': instance.inserted_at,
+                        'updated_at': instance.updated_at,
                         'attachments': [
                             {
                                 'id': attachment.id,
                                 'string': attachment.string,
                                 'position': attachment.position,
                             }
-                            for attachment in instance.user_status.attachments.order_by('position').all()
-                        ]
-                    } if instance.user_status else {},
-                    'master_tell': {
-                        'id': instance.master_tell.id,
-                        'created_by_id': {
-                            'id': instance.master_tell.created_by.id,
-                            'first_name': instance.master_tell.created_by.first_name,
-                            'last_name': instance.master_tell.created_by.last_name,
-                            'photo': instance.master_tell.created_by.photo,
-                        },
-                        'owned_by_id': {
-                            'id': instance.master_tell.owned_by.id,
-                            'first_name': instance.master_tell.owned_by.first_name,
-                            'last_name': instance.master_tell.owned_by.last_name,
-                            'photo': instance.master_tell.owned_by.photo,
-                        },
-                        'is_visible': instance.master_tell.is_visible,
-                        'contents': instance.master_tell.contents,
-                        'position': instance.master_tell.position,
-                        'inserted_at': instance.master_tell.inserted_at,
-                        'updated_at': instance.master_tell.updated_at,
-                        'slave_tells': [
-                            {
-                                'id': slave_tell.id,
-                                'created_by_id': {
-                                    'id': slave_tell.created_by.id,
-                                    'first_name': slave_tell.created_by.first_name,
-                                    'last_name': slave_tell.created_by.last_name,
-                                    'photo': slave_tell.created_by.photo,
-                                },
-                                'owned_by_id': {
-                                    'id': slave_tell.owned_by.id,
-                                    'first_name': slave_tell.owned_by.first_name,
-                                    'last_name': slave_tell.owned_by.last_name,
-                                    'photo': slave_tell.owned_by.photo,
-                                },
-                                'photo': slave_tell.photo,
-                                'first_name': slave_tell.first_name,
-                                'last_name': slave_tell.last_name,
-                                'type': slave_tell.type,
-                                'is_editable': slave_tell.is_editable,
-                                'contents': slave_tell.contents,
-                                'description': slave_tell.description,
-                                'position': slave_tell.position,
-                                'inserted_at': slave_tell.inserted_at,
-                                'updated_at': slave_tell.updated_at,
-                            }
-                            for slave_tell in instance.master_tell.slave_tells.order_by('position').all()
-                        ]
-                    } if instance.master_tell else {},
-                    'type': instance.type,
-                    'contents': instance.contents,
-                    'status': instance.status,
-                    'inserted_at': instance.inserted_at,
-                    'updated_at': instance.updated_at,
-                    'attachments': [
-                        {
-                            'id': attachment.id,
-                            'string': attachment.string,
-                            'position': attachment.position,
-                        }
-                        for attachment in instance.attachments.order_by('position').all()
-                    ],
+                            for attachment in instance.attachments.order_by('position').all()
+                        ],
+                    },
                 },
+            )
+        celery.push_notifications.delay(
+            user_id=instance.user_destination_id,
+            json={
+                'aps': {
+                    'alert': {
+                        'body': instance.contents,
+                        'title': 'New message from user',
+                    },
+                    'badge': Notification.objects.filter(
+                        user_id=instance.user_destination_id, status='Unread',
+                    ).count(),
+                },
+                'type': 'message',
             },
         )
-
 
 user_logged_in.disconnect(update_last_login)
 

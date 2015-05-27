@@ -2600,23 +2600,10 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 if message.user_destination_id == request.user.id:
                     if message.type in ['Response - Blocked']:
                         return Response(status=HTTP_403_FORBIDDEN)
-        message = serializer.save(user_source=request.user)
-        celery.push_notifications.delay(
-            user_id=message.user_destination_id,
-            json={
-                'aps': {
-                    'alert': {
-                        'body': message.contents,
-                        'title': 'New message from user',
-                    },
-                    'badge': models.Notification.objects.filter(
-                        user_id=message.user_destination_id, status='Unread',
-                    ).count(),
-                },
-                'type': 'message',
-            },
+        return Response(
+            data=serializers.MessagesPostResponse(serializer.save(user_source=request.user)).data,
+            status=HTTP_201_CREATED,
         )
-        return Response(data=serializers.MessagesPostResponse(message).data, status=HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
         '''
