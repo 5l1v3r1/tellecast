@@ -417,46 +417,6 @@ class UserOffer(ModelAdmin):
 site.register(models.UserOffer, UserOffer)
 
 
-class DeviceAPNS(ModelAdmin):
-
-    fields = (
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_display = (
-        'id',
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'name',
-        'device_id',
-        'registration_id',
-    )
-
-site.register(models.DeviceAPNS, DeviceAPNS)
-
-
 class Notification(ModelAdmin):
 
     fields = (
@@ -496,6 +456,45 @@ class Notification(ModelAdmin):
     )
 
 site.register(models.Notification, Notification)
+
+
+class DeviceAPNS(ModelAdmin):
+
+    fields = (
+        'user',
+        'name',
+        'registration_id',
+    )
+    list_display = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'user',
+        'name',
+        'device_id',
+        'registration_id',
+    )
+    list_select_related = (
+        'user',
+    )
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'name',
+        'device_id',
+        'registration_id',
+    )
+
+site.register(models.DeviceAPNS, DeviceAPNS)
 
 
 class DeviceGCM(ModelAdmin):
