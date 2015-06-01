@@ -1353,36 +1353,52 @@ def home(request):
         ).all()
     ]
     connections = {}
-    for user_location in models.UserLocation.objects.filter(
-        user_id=request.user.id,
-        timestamp__gt=datetime.now() - timedelta(days=1),
-    ).order_by('timestamp').all():
-        for ul in models.UserLocation.objects.filter(
-            ~Q(user_id=request.user.id),
-            point__distance_lte=(user_location.point, D(ft=300)),
-            timestamp__lt=user_location.timestamp + timedelta(minutes=1),
-            timestamp__gt=user_location.timestamp - timedelta(minutes=1),
-        ).distance(
-            point,
-        ).order_by(
-            'timestamp',
-        ).all():
-            if ul.user_id in connections:
-                continue
-            if models.Tellcard.objects.filter(
-                user_source_id=request.user.id, user_destination_id=ul.user.id, saved_at__isnull=False,
-            ).count():
-                continue
-            if models.Message.objects.filter(
-                user_source_id=request.user.id, user_destination_id=ul.user.id,
-            ).count():
-                continue
-            connections[ul.user.id] = {
-                'user': ul.user,
-                'timestamp': ul.timestamp,
-                'point': ul.point,
-                'tellzone': ul.tellzone,
-            }
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT
+                api_users_locations_2.user_id,
+                api_users_locations_2.timestamp,
+                api_users_locations_2.point,
+                api_users_locations_2.tellzone_id
+            FROM api_users_locations api_users_locations_1
+            INNER JOIN api_users_locations api_users_locations_2 ON
+                api_users_locations_1.user_id != api_users_locations_2.user_id
+                AND
+                ST_DWithin(api_users_locations_1.point, api_users_locations_2.point, 91.44)
+                AND
+                api_users_locations_1.timestamp BETWEEN
+                    api_users_locations_2.timestamp - INTERVAL '1 minute'
+                    AND
+                    api_users_locations_2.timestamp + INTERVAL '1 minute'
+            LEFT OUTER JOIN api_tellcards ON
+                api_tellcards.user_source_id = api_users_locations_1.user_id
+                AND
+                api_tellcards.user_destination_id = api_users_locations_2.user_id
+            LEFT OUTER JOIN api_messages ON
+                api_messages.user_source_id = api_users_locations_1.user_id
+                AND
+                api_messages.user_destination_id = api_users_locations_2.user_id
+            WHERE
+                api_users_locations_1.user_id = 1
+                AND
+                api_users_locations_1.timestamp > NOW() - INTERVAL '1 day'
+                AND
+                api_tellcards.id IS NULL
+                AND
+                api_messages.id IS NULL
+            GROUP BY api_users_locations_2.id
+            ''',
+            (request.user.id,)
+        )
+        for record in cursor.fetchall():
+            if record[0] not in connections:
+                connections[record[0]] = {
+                    'user': models.User.objects.filter(id=record[0]).first(),
+                    'timestamp': record[1],
+                    'point': record[2],
+                    'tellzone': models.Tellzone.objects.filter(id=record[3]).first(),
+                }
     return Response(
         data=serializers.HomeResponse(
             {
