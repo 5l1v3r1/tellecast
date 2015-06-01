@@ -364,7 +364,7 @@ class UserLocation(Model):
 
     class Meta:
 
-        db_table = 'api_locations'
+        db_table = 'api_users_locations'
         ordering = (
             'user',
             '-timestamp',
