@@ -31,6 +31,21 @@ from ujson import dumps, loads
 from api import models
 
 
+def to_representation(self, value):
+    if self.format is None:
+        return value
+    if self.format.lower() == 'iso-8601':
+        value = value.isoformat()
+        if value.endswith('+00:00'):
+            value = value[:-6] + 'Z'
+        if len(value) == 19:
+            value = value + '.000000'
+        return value
+    return value.strftime(self.format)
+
+DateTimeField.to_representation = to_representation
+
+
 class Offer(ModelSerializer):
 
     is_saved = SerializerMethodField()
