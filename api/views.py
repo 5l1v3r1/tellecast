@@ -1346,7 +1346,11 @@ def home(request):
     ]
     offers = [
         user_offer.offer
-        for user_offer in models.UserOffer.objects.filter(user_id=request.user.id).order_by('-timestamp').all()
+        for user_offer in models.UserOffer.objects.filter(
+            user_id=request.user.id, saved_at__isnull=False,
+        ).order_by(
+            '-saved_at',
+        ).all()
     ]
     connections = {}
     for user_location in models.UserLocation.objects.filter(
