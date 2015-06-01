@@ -397,7 +397,8 @@ class UserOffer(Model):
 
     user = ForeignKey(User, related_name='offers')
     offer = ForeignKey(Offer, related_name='users')
-    timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
+    saved_at = DateTimeField(ugettext_lazy('Saved At'), blank=True, db_index=True, null=True)
+    redeemed_at = DateTimeField(ugettext_lazy('Redeemed At'), blank=True, db_index=True, null=True)
 
     class Meta:
 
@@ -405,7 +406,7 @@ class UserOffer(Model):
         ordering = (
             'user',
             'offer',
-            '-timestamp',
+            '-id',
         )
         verbose_name = 'User Offer'
         verbose_name_plural = 'User Offers'
@@ -776,7 +777,12 @@ def get_offer(user_id, offer):
         'inserted_at': offer.inserted_at,
         'updated_at': offer.updated_at,
         'expires_at': offer.expires_at,
-        'is_saved': True if UserOffer.objects.filter(user_id=user_id, offer_id=offer.id).count() else False,
+        'is_saved': True if UserOffer.objects.filter(
+            user_id=user_id, offer_id=offer.id, saved_at__isnull=False,
+        ).count() else False,
+        'is_redeemed': True if UserOffer.objects.filter(
+            user_id=user_id, offer_id=offer.id, redeemed_at__isnull=False,
+        ).count() else False,
     }
 
 

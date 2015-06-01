@@ -706,7 +706,7 @@ def users_tellzones_delete(request, id):
 @permission_classes((IsAuthenticated,))
 def users_offers(request, id):
     '''
-    Save/Unsave an Offer
+    Save/Unsave/Redeem/Forfeit an Offer
 
     <pre>
     Input
@@ -715,6 +715,13 @@ def users_offers(request, id):
     + offer_id
         - Type: integer
         - Status: mandatory
+
+    + action
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Save
+            - Redeem
 
     Output
     ======
@@ -756,7 +763,7 @@ def users_offers(request, id):
 @permission_classes((IsAuthenticated,))
 def users_offers_delete(request, id):
     '''
-    Unsave an Offer
+    Unsave/Forfeit an Offer
 
     <pre>
     Input
@@ -765,6 +772,13 @@ def users_offers_delete(request, id):
     + offer_id
         - Type: integer
         - Status: mandatory
+
+    + action
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Save
+            - Redeem
 
     Output
     ======
@@ -875,6 +889,7 @@ class Notifications(GenericViewSet):
                     - updated_at
                     - expires_at
                     - is_saved
+                    - is_redeemed
                     + tellzone
                         - id
                         - name
@@ -905,6 +920,7 @@ class Notifications(GenericViewSet):
                     - updated_at
                     - expires_at
                     - is_saved
+                    - is_redeemed
                     + tellzone <- This Tellzone shared an offer with you.
                         - id
                         - name
@@ -935,6 +951,7 @@ class Notifications(GenericViewSet):
                     - updated_at
                     - expires_at
                     - is_saved
+                    - is_redeemed
                     + tellzone <- This Tellzone shared an offer with you.
                         - id
                         - name
@@ -965,6 +982,7 @@ class Notifications(GenericViewSet):
                     - updated_at
                     - expires_at
                     - is_saved
+                    - is_redeemed
                     + tellzone <- This Tellzone shared an offer with you.
                         - id
                         - name

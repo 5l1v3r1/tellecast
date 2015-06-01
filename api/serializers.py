@@ -34,6 +34,7 @@ from api import models
 class Offer(ModelSerializer):
 
     is_saved = SerializerMethodField()
+    is_redeemed = SerializerMethodField()
 
     class Meta:
 
@@ -47,6 +48,7 @@ class Offer(ModelSerializer):
             'updated_at',
             'expires_at',
             'is_saved',
+            'is_redeemed',
         )
         model = models.Offer
 
@@ -54,7 +56,17 @@ class Offer(ModelSerializer):
         user_id = get_user_id(self.context)
         if not user_id:
             return False
-        if not models.UserOffer.objects.filter(user_id=user_id, offer_id=instance.id).count():
+        if not models.UserOffer.objects.filter(user_id=user_id, offer_id=instance.id, saved_at__isnull=False).count():
+            return False
+        return True
+
+    def get_is_redeemed(self, instance):
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return False
+        if not models.UserOffer.objects.filter(
+            user_id=user_id, offer_id=instance.id, redeemed_at__isnull=False,
+        ).count():
             return False
         return True
 
@@ -1416,11 +1428,18 @@ class UsersTellzonesResponse(ModelSerializer):
 class UsersOffersRequest(ModelSerializer):
 
     offer_id = IntegerField()
+    action = ChoiceField(
+        choices=(
+            ('Save', 'Save',),
+            ('Redeem', 'Redeem',),
+        ),
+    )
 
     class Meta:
 
         fields = (
             'offer_id',
+            'action',
         )
         model = models.UserOffer
 
@@ -1431,6 +1450,10 @@ class UsersOffersRequest(ModelSerializer):
         user_offer = models.UserOffer.objects.filter(user_id=user_id, offer_id=self.validated_data['offer_id']).first()
         if not user_offer:
             user_offer = models.UserOffer.objects.create(user_id=user_id, offer_id=self.validated_data['offer_id'])
+        if self.validated_data['action'] == 'Save':
+            user_offer.saved_at = datetime.now()
+        if self.validated_data['action'] == 'Redeem':
+            user_offer.redeemed_at = datetime.now()
         user_offer.save()
         return user_offer
 
@@ -1441,7 +1464,11 @@ class UsersOffersRequest(ModelSerializer):
         user_offer = models.UserOffer.objects.filter(user_id=user_id, offer_id=self.validated_data['offer_id']).first()
         if not user_offer:
             return {}
-        user_offer.delete()
+        if self.validated_data['action'] == 'Save':
+            user_offer.saved_at = None
+        if self.validated_data['action'] == 'Redeem':
+            user_offer.redeemed_at = None
+        user_offer.save()
         return {}
 
 
@@ -1456,7 +1483,8 @@ class UsersOffersResponse(ModelSerializer):
             'id',
             'user_id',
             'offer_id',
-            'timestamp',
+            'saved_at',
+            'redeemed_at',
         )
         model = models.UserOffer
 
@@ -1530,6 +1558,7 @@ class HomeResponseOffers(Offer):
             'updated_at',
             'expires_at',
             'is_saved',
+            'is_redeemed',
             'tellzone',
         )
         model = models.Offer
@@ -1632,7 +1661,7 @@ class HomeResponseConnections(Serializer):
             'tellzone',
             'timestamp',
         )
-        model = models.Offer
+        model = models.UserLocation
 
 
 class HomeResponse(Serializer):
@@ -1766,6 +1795,7 @@ class RadarGetResponseOffersItems(Offer):
             'updated_at',
             'expires_at',
             'is_saved',
+            'is_redeemed',
             'tellzone',
         )
         model = models.Offer
@@ -2024,6 +2054,7 @@ class SharesOffersGetOffer(Offer):
             'updated_at',
             'expires_at',
             'is_saved',
+            'is_redeemed',
             'tellzone',
         )
         model = models.Offer

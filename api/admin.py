@@ -337,8 +337,7 @@ class UserLocation(ModelAdmin):
         'user',
     )
     ordering = (
-        'user',
-        '-timestamp',
+        'id',
     )
     search_fields = (
         'bearing',
@@ -394,7 +393,8 @@ class UserOffer(ModelAdmin):
         'id',
         'user',
         'offer',
-        'timestamp',
+        'saved_at',
+        'redeemed_at',
     )
     list_display_links = (
         'id',
@@ -403,7 +403,8 @@ class UserOffer(ModelAdmin):
         'id',
         'user',
         'offer',
-        'timestamp',
+        'saved_at',
+        'redeemed_at',
     )
     list_select_related = (
         'user',
@@ -697,7 +698,7 @@ class Message(ModelAdmin):
         'master_tell',
     )
     ordering = (
-        '-inserted_at',
+        'id',
     )
     search_fields = (
         'contents',
@@ -777,7 +778,7 @@ class ShareUser(ModelAdmin):
         'object',
     )
     ordering = (
-        '-timestamp',
+        'id',
     )
     search_fields = ()
 
@@ -814,7 +815,7 @@ class ShareOffer(ModelAdmin):
         'object',
     )
     ordering = (
-        '-timestamp',
+        'id',
     )
     search_fields = ()
 
@@ -851,7 +852,6 @@ class Tellcard(ModelAdmin):
         'user_destination',
     )
     ordering = (
-        'user_source',
         'id',
     )
     search_fields = ()
@@ -885,8 +885,7 @@ class Block(ModelAdmin):
         'user_destination',
     )
     ordering = (
-        'user_source',
-        '-timestamp',
+        'id',
     )
     search_fields = ()
 
@@ -919,8 +918,7 @@ class Report(ModelAdmin):
         'user_destination',
     )
     ordering = (
-        'user_source',
-        '-timestamp',
+        'id',
     )
     search_fields = ()
 
