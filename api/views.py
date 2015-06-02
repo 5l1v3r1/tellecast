@@ -1517,12 +1517,14 @@ class Radar(APIView):
             cursor.execute(
                 '''
                 SELECT
-                    api_locations.user_id, api_locations.point, ST_Distance(ST_GeomFromText(%s, 4326), point) * 0.3048
-                FROM api_locations
+                    api_users_locations.user_id,
+                    api_users_locations.point,
+                    ST_Distance(ST_GeomFromText(%s, 4326), point) * 0.3048
+                FROM api_users_locations
                 LEFT OUTER JOIN api_blocks ON
-                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_locations.user_id)
+                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
                     OR
-                    (api_blocks.user_source_id = api_locations.user_id AND api_blocks.user_destination_id = %s)
+                    (api_blocks.user_source_id = api_users_locations.user_id AND api_blocks.user_destination_id = %s)
                 WHERE
                     user_id != %s
                     AND
@@ -1530,10 +1532,10 @@ class Radar(APIView):
                     AND
                     is_casting IS TRUE
                     AND
-                    api_locations.timestamp > NOW() - INTERVAL '1 minute'
+                    api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                     AND
                     api_blocks.id IS NULL
-                ORDER BY api_locations.timestamp DESC
+                ORDER BY api_users_locations.timestamp DESC
                 ''',
                 (
                     'POINT({x} {y})'.format(x=point.x, y=point.y),
