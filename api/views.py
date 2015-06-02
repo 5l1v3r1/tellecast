@@ -1513,53 +1513,84 @@ class Radar(APIView):
             'longitude': serializer.validated_data['longitude'],
         })
         users = {}
-        for user_location in models.UserLocation.objects.filter(
-            ~Q(user_id=request.user.id),
-            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
-            is_casting=True,
-            timestamp__gt=datetime.now() - timedelta(minutes=1),
-        ).distance(
-            point,
-        ).select_related(
-            'user',
-        ).order_by(
-            '-timestamp',
-        ).all():
-            if is_blocked(request.user.id, user_location.user.id):
-                continue
-            if user_location.user.id not in users:
-                users[user_location.user.id] = (
-                    user_location.user,
-                    user_location.point,
-                    self.get_degrees(point, user_location.point),
-                    self.get_radius(user_location.distance),
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT
+                    api_locations.user_id, api_locations.point, ST_Distance(ST_GeomFromText(%s, 4326), point) * 0.3048
+                FROM api_locations
+                LEFT OUTER JOIN api_blocks ON
+                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_locations.user_id)
+                    OR
+                    (api_blocks.user_source_id = api_locations.user_id AND api_blocks.user_destination_id = %s)
+                WHERE
+                    user_id != %s
+                    AND
+                    ST_DWithin(ST_GeomFromText(%s, 4326), point, %s)
+                    AND
+                    is_casting IS TRUE
+                    AND
+                    api_locations.timestamp > NOW() - INTERVAL '1 minute'
+                    AND
+                    api_blocks.id IS NULL
+                ORDER BY api_locations.timestamp DESC
+                ''',
+                (
+                    'POINT({x} {y})'.format(x=point.x, y=point.y),
+                    request.user.id,
+                    request.user.id,
+                    request.user.id,
+                    'POINT({x} {y})'.format(x=point.x, y=point.y),
+                    serializer.validated_data['radius'] * 0.3048,
                 )
-        for user in models.User.objects.filter(
-            email__in=[
-                'bradotts@gmail.com',
-                'callmejerms@aol.com',
-                'fl@fernandoleal.me',
-                'kevin@tellecast.com',
-                'mbatchelder13@yahoo.com',
-            ],
-        ).order_by('id').all():
-            if is_blocked(request.user.id, user.id):
-                continue
-            w = ((serializer.validated_data['radius'] * 0.3048) / 111300) * sqrt(uniform(0.0, 1.0))
-            t = 2 * pi * uniform(0.0, 1.0)
-            x = w * cos(t)
-            y = w * sin(t)
-            p = fromstr('POINT(%(longitude)s %(latitude)s)' % {
-                'latitude': point.y + y,
-                'longitude': point.x + x,
-            })
-            if user.id not in users:
-                users[user.id] = (
-                    user,
-                    p,
-                    self.get_degrees(point, p),
-                    vincenty((point.x, point.y), (p.x, p.y)).ft,
-                )
+            )
+            for record in cursor.fetchall():
+                if record[0] not in users:
+                    users[record[0]] = (
+                        models.User.filter(id=record[0]).first(),
+                        record[1],
+                        self.get_degrees(point, record[1]),
+                        self.get_radius(record[2]),
+                    )
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT api_users.id
+                FROM api_users
+                LEFT OUTER JOIN api_blocks ON
+                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users.id)
+                    OR
+                    (api_blocks.user_source_id = api_users.id AND api_blocks.user_destination_id = %s)
+                WHERE
+                    api_users.email = ANY('{
+                        bradotts@gmail.com,
+                        callmejerms@aol.com,
+                        fl@fernandoleal.me,
+                        kevin@tellecast.com,
+                        mbatchelder13@yahoo.com
+                    }'::text[])
+                    AND
+                    api_blocks.id IS NULL
+                ORDER BY api_users.id ASC
+                ''',
+                (request.user.id, request.user.id,)
+            )
+            for record in cursor.fetchall():
+                w = ((serializer.validated_data['radius'] * 0.3048) / 111300) * sqrt(uniform(0.0, 1.0))
+                t = 2 * pi * uniform(0.0, 1.0)
+                x = w * cos(t)
+                y = w * sin(t)
+                p = fromstr('POINT(%(longitude)s %(latitude)s)' % {
+                    'latitude': point.y + y,
+                    'longitude': point.x + x,
+                })
+                if record[0] not in users:
+                    users[record[0]] = (
+                        models.User.objects.filter(id=record[0]).first(),
+                        p,
+                        self.get_degrees(point, p),
+                        vincenty((point.x, point.y), (p.x, p.y)).ft,
+                    )
         offers = []
         for tellzone in models.Tellzone.objects.filter(
             point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
