@@ -32,6 +32,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from social.apps.django_app.default.models import DjangoStorage
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
+from ujson import loads
 
 from api import celery, models, serializers
 from api.algorithms.clusters import get_clusters
@@ -1518,7 +1519,7 @@ class Radar(APIView):
                 '''
                 SELECT
                     api_users_locations.user_id,
-                    api_users_locations.point,
+                    ST_AsGeoJSON(api_users_locations.point),
                     ST_Distance(ST_GeomFromText(%s, 4326), point) * 0.3048
                 FROM api_users_locations
                 LEFT OUTER JOIN api_blocks ON
@@ -1548,11 +1549,16 @@ class Radar(APIView):
             )
             for record in cursor.fetchall():
                 if record[0] not in users:
+                    p = loads(record[1])
+                    p = fromstr('POINT(%(longitude)s %(latitude)s)' % {
+                        'latitude': p['coordinates'][1],
+                        'longitude': p['coordinates'][0],
+                    })
                     users[record[0]] = (
-                        models.User.filter(id=record[0]).first(),
-                        record[1],
-                        self.get_degrees(point, record[1]),
-                        self.get_radius(record[2]),
+                        models.User.objects.filter(id=record[0]).first(),
+                        p,
+                        self.get_degrees(point, p),
+                        record[2],
                     )
         with closing(connection.cursor()) as cursor:
             cursor.execute(
