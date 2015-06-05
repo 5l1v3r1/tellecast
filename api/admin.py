@@ -330,19 +330,9 @@ class UserLocation(ModelAdmin):
         'id',
     )
     list_filter = (
-        'id',
         'user',
-        'point',
-        'accuracies_horizontal',
-        'accuracies_vertical',
-        'tellzone',
-        'bearing',
-        'is_casting',
     )
-    list_select_related = (
-        'user',
-        'tellzone',
-    )
+    list_select_related = ()
     ordering = (
         'id',
     )
