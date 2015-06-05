@@ -620,6 +620,7 @@ class UsersTellzones(GenericViewSet):
         ======
 
         (see below; "Response Class" -> "Model Schema")
+        </pre>
         ---
         responseMessages:
             - code: 400
@@ -813,6 +814,7 @@ class UsersOffers(GenericViewSet):
         ======
 
         (see below; "Response Class" -> "Model Schema")
+        </pre>
         ---
         responseMessages:
             - code: 400
