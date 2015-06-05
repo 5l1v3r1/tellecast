@@ -1989,7 +1989,9 @@ class SharesUsersGet(ModelSerializer):
         if request:
             if 'type' in request.QUERY_PARAMS:
                 if request.QUERY_PARAMS['type'] == 'Source':
-                    return UsersProfile(instance.user_destination, context=self.context).data
+                    if instance.user_destination:
+                        return UsersProfile(instance.user_destination, context=self.context).data
+                    return {}
                 if request.QUERY_PARAMS['type'] == 'Destination':
                     return UsersProfile(instance.user_source, context=self.context).data
         return UsersProfile(instance.user_destination).data
@@ -1997,7 +1999,7 @@ class SharesUsersGet(ModelSerializer):
 
 class SharesUsersPostRequest(ModelSerializer):
 
-    user_destination_id = IntegerField()
+    user_destination_id = IntegerField(default=None, required=False)
     object_id = IntegerField()
 
     class Meta:
@@ -2106,7 +2108,9 @@ class SharesOffersGet(ModelSerializer):
         if request:
             if 'type' in request.QUERY_PARAMS:
                 if request.QUERY_PARAMS['type'] == 'Source':
-                    return UsersProfile(instance.user_destination, context=self.context).data
+                    if instance.user_destination:
+                        return UsersProfile(instance.user_destination, context=self.context).data
+                    return {}
                 if request.QUERY_PARAMS['type'] == 'Destination':
                     return UsersProfile(instance.user_source, context=self.context).data
         return UsersProfile(instance.user_destination).data
@@ -2114,7 +2118,7 @@ class SharesOffersGet(ModelSerializer):
 
 class SharesOffersPostRequest(ModelSerializer):
 
-    user_destination_id = IntegerField()
+    user_destination_id = IntegerField(default=None, required=False)
     object_id = IntegerField()
 
     class Meta:

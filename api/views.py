@@ -3031,7 +3031,7 @@ class SharesUsers(GenericViewSet, ListModelMixin, CreateModelMixin):
 
         + user_destination_id
             - Type: integer
-            - Status: mandatory
+            - Status: optional
 
         + object_id
             - Description: ID of the user whose profile is being shared
@@ -3175,7 +3175,7 @@ class SharesOffers(GenericViewSet, ListModelMixin, CreateModelMixin):
 
         + user_destination_id
             - Type: integer
-            - Status: mandatory
+            - Status: optional
 
         + object_id
             - Description: ID of the offer that is being shared

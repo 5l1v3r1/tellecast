@@ -651,7 +651,7 @@ class MessageAttachment(Model):
 class ShareUser(Model):
 
     user_source = ForeignKey(User, related_name='+')
-    user_destination = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, blank=True, related_name='+', null=True)
     object = ForeignKey(User, related_name='+')
     timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
 
@@ -668,7 +668,7 @@ class ShareUser(Model):
 class ShareOffer(Model):
 
     user_source = ForeignKey(User, related_name='+')
-    user_destination = ForeignKey(User, related_name='+')
+    user_destination = ForeignKey(User, blank=True, related_name='+', null=True)
     object = ForeignKey(Offer, related_name='+')
     timestamp = DateTimeField(ugettext_lazy('Timestamp'), auto_now_add=True, default=now, db_index=True)
 
@@ -902,44 +902,46 @@ def tellcard_post_save(instance, **kwargs):
 @receiver(post_save, sender=ShareUser)
 def share_user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
-        Notification.objects.create(
-            user_id=instance.user_destination_id,
-            type='B',
-            contents={
-                'user_source': {
-                    'id': instance.user_source.id,
-                    'first_name': instance.user_source.first_name,
-                    'last_name': instance.user_source.last_name,
-                    'photo': instance.user_source.photo,
+        if instance.user_destination_id:
+            Notification.objects.create(
+                user_id=instance.user_destination_id,
+                type='B',
+                contents={
+                    'user_source': {
+                        'id': instance.user_source.id,
+                        'first_name': instance.user_source.first_name,
+                        'last_name': instance.user_source.last_name,
+                        'photo': instance.user_source.photo,
+                    },
+                    'user_destination': {
+                        'id': instance.object.id,
+                        'first_name': instance.object.first_name,
+                        'last_name': instance.object.last_name,
+                        'photo': instance.object.photo,
+                    },
                 },
-                'user_destination': {
-                    'id': instance.object.id,
-                    'first_name': instance.object.first_name,
-                    'last_name': instance.object.last_name,
-                    'photo': instance.object.photo,
-                }
-            },
-        )
+            )
 
 
 @receiver(post_save, sender=ShareOffer)
 def share_offer_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
-        offer = get_offer(instance.user_destination_id, instance.object)
-        offer['tellzone'] = get_tellzone(instance.user_destination_id, instance.object.tellzone)
-        Notification.objects.create(
-            user_id=instance.user_destination_id,
-            type='C',
-            contents={
-                'user': {
-                    'id': instance.user_source.id,
-                    'first_name': instance.user_source.first_name,
-                    'last_name': instance.user_source.last_name,
-                    'photo': instance.user_source.photo,
+        if instance.user_destination_id:
+            offer = get_offer(instance.user_destination_id, instance.object)
+            offer['tellzone'] = get_tellzone(instance.user_destination_id, instance.object.tellzone)
+            Notification.objects.create(
+                user_id=instance.user_destination_id,
+                type='C',
+                contents={
+                    'user': {
+                        'id': instance.user_source.id,
+                        'first_name': instance.user_source.first_name,
+                        'last_name': instance.user_source.last_name,
+                        'photo': instance.user_source.photo,
+                    },
+                    'offer': offer,
                 },
-                'offer': offer,
-            },
-        )
+            )
 
 
 @receiver(post_save, sender=Offer)
