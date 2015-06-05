@@ -1370,6 +1370,32 @@ class UsersProfile(RegisterResponse):
         return get_is_tellcard(self.context, instance)
 
 
+class UsersTellzonesGet(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'offers',
+            'tellecasters',
+            'connections',
+            'views',
+            'favorites',
+            'is_viewed',
+            'is_favorited',
+        )
+        model = models.Tellzone
+
+
 class UsersTellzonesRequest(ModelSerializer):
 
     tellzone_id = IntegerField()
@@ -1438,6 +1464,47 @@ class UsersTellzonesResponse(ModelSerializer):
             'favorited_at',
         )
         model = models.UserTellzone
+
+
+class UsersOffersGetTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Tellzone
+
+
+class UsersOffersGet(Offer):
+
+    tellzone = UsersOffersGetTellzone()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'description',
+            'photo',
+            'code',
+            'inserted_at',
+            'updated_at',
+            'expires_at',
+            'is_saved',
+            'is_redeemed',
+            'tellzone',
+        )
+        model = models.Offer
 
 
 class UsersOffersRequest(ModelSerializer):

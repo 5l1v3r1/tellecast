@@ -596,59 +596,145 @@ def users_profile(request, id):
     )
 
 
-@api_view(('POST', 'DELETE',))
-@permission_classes((IsAuthenticated,))
-def users_tellzones(request, id):
-    '''
-    View/Favorite/Unview/Unfavorite a Tellzone
+class UsersTellzones(GenericViewSet):
 
-    <pre>
-    Input
-    =====
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.Tellzone
 
-    + tellzone_id
-        - Type: integer
-        - Status: mandatory
+    def get(self, request, *args, **kwargs):
+        '''
+        SELECT favorited tellzones
 
-    + action
-        - Type: string
-        - Status: mandatory
-        - Choices:
-            - View
-            - Favorite
+        <pre>
+        Input
+        =====
 
-    Output
-    ======
+        + N/A
 
-    + POST: (see below; "Response Class" -> "Model Schema")
+        Output
+        ======
 
-    + DELETE: N/A
-    </pre>
-    ---
-    omit_parameters:
-        - form
-    parameters:
-        - name: body
-          paramType: body
-          pytype: api.serializers.UsersTellzonesRequest
-    response_serializer: api.serializers.UsersTellzonesResponse
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    '''
-    serializer = serializers.UsersTellzonesRequest(
-        context={
-            'request': request,
-        },
-        data=request.DATA,
-    )
-    if not serializer.is_valid():
-        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
-    if request.method == 'POST':
+        (see below; "Response Class" -> "Model Schema")
+        ---
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UsersTellzonesGet
+        '''
+        return Response(
+            data=[
+                serializers.UsersTellzonesGet(
+                    user_tellzone.tellzone,
+                    context={
+                        'request': request,
+                    },
+                ).data
+                for user_tellzone in models.UserTellzone.objects.filter(
+                    user_id=request.user.id, favorited_at__isnull=False,
+                ).order_by(
+                    '-id',
+                ).all()
+            ],
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request, id):
+        '''
+        View/Favorite a Tellzone
+
+        <pre>
+        Input
+        =====
+
+        + tellzone_id
+            - Type: integer
+            - Status: mandatory
+
+        + action
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - View
+                - Favorite
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UsersTellzonesRequest
+        response_serializer: api.serializers.UsersTellzonesResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.UsersTellzonesRequest(
+            context={
+                'request': request,
+            },
+            data=request.DATA,
+        )
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
         return Response(
             data=serializers.UsersTellzonesResponse(serializer.create_or_update()).data, status=HTTP_201_CREATED,
         )
-    if request.method == 'DELETE':
+
+    def delete(self, request, id):
+        '''
+        Unview/Unfavorite a Tellzone
+
+        <pre>
+        Input
+        =====
+
+        + tellzone_id
+            - Type: integer
+            - Status: mandatory
+
+        + action
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - View
+                - Favorite
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UsersTellzonesRequest
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.UsersTellzonesRequest(
+            context={
+                'request': request,
+            },
+            data=request.DATA,
+        )
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
         serializer.delete()
         return Response(data={}, status=HTTP_200_OK)
 
@@ -703,59 +789,145 @@ def users_tellzones_delete(request, id):
     return Response(data={}, status=HTTP_200_OK)
 
 
-@api_view(('POST', 'DELETE',))
-@permission_classes((IsAuthenticated,))
-def users_offers(request, id):
-    '''
-    Save/Unsave/Redeem/Forfeit an Offer
+class UsersOffers(GenericViewSet):
 
-    <pre>
-    Input
-    =====
+    lookup_field = 'id'
+    page_kwarg = 'page'
+    paginate_by = None
+    paginate_by_param = 'per_page'
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (JSONRenderer,)
+    serializer_class = serializers.UsersOffersGet
 
-    + offer_id
-        - Type: integer
-        - Status: mandatory
+    def get(self, request, *args, **kwargs):
+        '''
+        SELECT saved offers
 
-    + action
-        - Type: string
-        - Status: mandatory
-        - Choices:
-            - Save
-            - Redeem
+        <pre>
+        Input
+        =====
 
-    Output
-    ======
+        + N/A
 
-    + POST: (see below; "Response Class" -> "Model Schema")
+        Output
+        ======
 
-    + DELETE: N/A
-    </pre>
-    ---
-    omit_parameters:
-        - form
-    parameters:
-        - name: body
-          paramType: body
-          pytype: api.serializers.UsersOffersRequest
-    response_serializer: api.serializers.UsersOffersResponse
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    '''
-    serializer = serializers.UsersOffersRequest(
-        context={
-            'request': request,
-        },
-        data=request.DATA,
-    )
-    if not serializer.is_valid():
-        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
-    if request.method == 'POST':
+        (see below; "Response Class" -> "Model Schema")
+        ---
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        serializer: api.serializers.UsersOffersGet
+        '''
+        return Response(
+            data=[
+                serializers.UsersOffersGet(
+                    user_offer.offer,
+                    context={
+                        'request': request,
+                    },
+                ).data
+                for user_offer in models.UserOffer.objects.filter(
+                    user_id=request.user.id, saved_at__isnull=False,
+                ).order_by(
+                    '-id',
+                ).all()
+            ],
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request, id):
+        '''
+        Save/Redeem an Offer
+
+        <pre>
+        Input
+        =====
+
+        + offer_id
+            - Type: integer
+            - Status: mandatory
+
+        + action
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Save
+                - Redeem
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UsersOffersRequest
+        response_serializer: api.serializers.UsersOffersResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.UsersOffersRequest(
+            context={
+                'request': request,
+            },
+            data=request.DATA,
+        )
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
         return Response(
             data=serializers.UsersOffersResponse(serializer.create_or_update()).data, status=HTTP_201_CREATED,
         )
-    if request.method == 'DELETE':
+
+    def delete(self, request, id):
+        '''
+        Unsave/Forfeit an Offer
+
+        <pre>
+        Input
+        =====
+
+        + offer_id
+            - Type: integer
+            - Status: mandatory
+
+        + action
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Save
+                - Redeem
+
+        Output
+        ======
+
+        + N/A
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.UsersOffersRequest
+        response_serializer: api.serializers.UsersOffersResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.UsersOffersRequest(
+            context={
+                'request': request,
+            },
+            data=request.DATA,
+        )
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
         serializer.delete()
         return Response(data={}, status=HTTP_200_OK)
 
