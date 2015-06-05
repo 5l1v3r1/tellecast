@@ -1508,6 +1508,14 @@ class HomeRequest(Serializer):
 
     latitude = FloatField()
     longitude = FloatField()
+    dummy = ChoiceField(
+        choices=(
+            ('No', 'No',),
+            ('Yes', 'Yes',),
+        ),
+        default='No',
+        required=False,
+    )
 
 
 class HomeResponseViews(Serializer):

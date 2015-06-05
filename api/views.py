@@ -3,7 +3,7 @@
 from contextlib import closing
 from datetime import date, datetime, timedelta
 from math import atan2, cos, pi, sin, sqrt
-from random import uniform
+from random import randint, uniform
 
 from arrow import get
 from django.conf import settings
@@ -1150,6 +1150,13 @@ def home(request):
         - Type: float
         - Status: mandatory
 
+    + dummy
+        - Type: string
+        - Status: optional
+        - Choices:
+            - Yes
+            - No
+
     Output
     ======
 
@@ -1167,6 +1174,10 @@ def home(request):
           paramType: query
           required: true
           type: number
+        - name: dummy
+          paramType: query
+          required: false
+          type: string
     response_serializer: api.serializers.HomeResponse
     responseMessages:
         - code: 400
@@ -1205,201 +1216,241 @@ def home(request):
     days = get_days(today)
     weeks = get_weeks(today)
     months = get_months(today)
-    views_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, viewed_at__isnull=False).count()
-    views_today = models.Tellcard.objects.filter(
-        user_destination_id=request.user.id, viewed_at__startswith=today,
-    ).count()
-    views_days = {}
-    for day in days:
-        views_days[day] = 0
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT viewed_at::DATE AS key, COUNT(id) AS value
-            FROM api_tellcards
-            WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
-            GROUP BY viewed_at::DATE
-            ORDER BY viewed_at::DATE DESC
-            ''',
-            (request.user.id, days[6], days[0],)
-        )
-        for item in cursor.fetchall():
-            views_days[item[0]] = item[1]
-    views_weeks = {}
-    for week in weeks[0]:
-        views_weeks[week] = 0
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT DATE_TRUNC('WEEK', viewed_at) AS key, COUNT(id) AS value
-            FROM api_tellcards
-            WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
-            GROUP BY DATE_TRUNC('WEEK', viewed_at)
-            ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC
-            ''',
-            (request.user.id, weeks[2], weeks[1],)
-        )
-        for item in cursor.fetchall():
-            views_weeks[item[0]] = item[1]
-    views_months = {}
-    for month in months[0]:
-        views_months[month] = 0
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT DATE_TRUNC('MONTH', viewed_at) AS key, COUNT(id) AS value
-            FROM api_tellcards
-            WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
-            GROUP BY DATE_TRUNC('MONTH', viewed_at)
-            ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC
-            ''',
-            (request.user.id, months[2], months[1],)
-        )
-        for item in cursor.fetchall():
-            views_months[item[0]] = item[1]
-    saves_total = models.Tellcard.objects.filter(user_destination_id=request.user.id, saved_at__isnull=False).count()
-    saves_today = models.Tellcard.objects.filter(
-        user_destination_id=request.user.id, saved_at__startswith=today,
-    ).count()
-    saves_days = {}
-    for day in days:
-        saves_days[day] = 0
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT saved_at::DATE AS key, COUNT(id) AS value
-            FROM api_tellcards
-            WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
-            GROUP BY saved_at::DATE
-            ORDER BY saved_at::DATE DESC
-            ''',
-            (request.user.id, days[6], days[0],)
-        )
-        for item in cursor.fetchall():
-            saves_days[item[0]] = item[1]
-    saves_weeks = {}
-    for week in weeks[0]:
-        saves_weeks[week] = 0
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT DATE_TRUNC('WEEK', saved_at) AS key, COUNT(id) AS value
-            FROM api_tellcards
-            WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
-            GROUP BY DATE_TRUNC('WEEK', saved_at)
-            ORDER BY DATE_TRUNC('WEEK', saved_at) DESC
-            ''',
-            (request.user.id, weeks[2], weeks[1],)
-        )
-        for item in cursor.fetchall():
-            saves_weeks[item[0]] = item[1]
-    saves_months = {}
-    for month in months[0]:
-        saves_months[month] = 0
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT DATE_TRUNC('MONTH', saved_at) AS key, COUNT(id) AS value
-            FROM api_tellcards
-            WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
-            GROUP BY DATE_TRUNC('MONTH', saved_at)
-            ORDER BY DATE_TRUNC('MONTH', saved_at) DESC
-            ''',
-            (request.user.id, months[2], months[1],)
-        )
-        for item in cursor.fetchall():
-            saves_months[item[0]] = item[1]
-    users_near = models.UserLocation.objects.filter(
-        ~Q(user_id=request.user.id),
-        point__distance_lte=(point, D(ft=300)),
-        is_casting=True,
-        timestamp__gt=datetime.now() - timedelta(minutes=1),
-    ).distance(
-        point,
-    ).order_by(
-        'distance',
-    ).distinct(
-        'user_id'
-    ).count()
-    users_area = models.UserLocation.objects.filter(
-        ~Q(user_id=request.user.id),
-        point__distance_lte=(point, D(mi=10)),
-        is_casting=True,
-        timestamp__gt=datetime.now() - timedelta(minutes=1),
-    ).distance(
-        point,
-    ).order_by(
-        'distance',
-    ).distinct(
-        'user_id'
-    ).count()
-    tellzones = [
-        tellzone
-        for tellzone in models.Tellzone.objects.filter(
-            point__distance_lte=(point, D(mi=10)),
+    if serializer.validated_data['dummy']:
+        views_today = randint(1, 150)
+        views_days = {}
+        for day in days:
+            views_days[day] = randint(1, 150)
+        views_weeks = {}
+        for week in weeks[0]:
+            views_weeks[week] = randint(1, 150)
+        views_months = {}
+        for month in months[0]:
+            views_months[month] = randint(1, 150)
+        views_total = views_today + sum(views_days.values()) + sum(views_weeks.values()) + sum(views_months.values())
+        saves_today = randint(1, 50)
+        saves_days = {}
+        for day in days:
+            saves_days[day] = randint(1, 50)
+        saves_weeks = {}
+        for week in weeks[0]:
+            saves_weeks[week] = randint(1, 50)
+        saves_months = {}
+        for month in months[0]:
+            saves_months[month] = randint(1, 50)
+        saves_total = saves_today + sum(saves_days.values()) + sum(saves_weeks.values()) + sum(saves_months.values())
+        users_near = randint(1, 50)
+        users_area = users_near + randint(1, 150)
+        tellzones = [tellzone for tellzone in models.Tellzone.objects.distance(point).order_by('?')[0:5]]
+        offers = [offer for offer in models.Offer.objects.order_by('?')[0:5]]
+        connections = {}
+        for user in models.User.objects.exclude(id=request.user.id).order_by('?')[0:5]:
+            connections[user.id] = {
+                'user': user,
+                'timestamp': datetime.now() - timedelta(days=randint(1, 31)),
+                'point': user.point,
+                'tellzone': models.Tellzone.objects.order_by('?').first(),
+            }
+    else:
+        views_total = models.Tellcard.objects.filter(
+            user_destination_id=request.user.id, viewed_at__isnull=False,
+        ).count()
+        views_today = models.Tellcard.objects.filter(
+            user_destination_id=request.user.id, viewed_at__startswith=today,
+        ).count()
+        views_days = {}
+        for day in days:
+            views_days[day] = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT viewed_at::DATE AS key, COUNT(id) AS value
+                FROM api_tellcards
+                WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
+                GROUP BY viewed_at::DATE
+                ORDER BY viewed_at::DATE DESC
+                ''',
+                (request.user.id, days[6], days[0],)
+            )
+            for item in cursor.fetchall():
+                views_days[item[0]] = item[1]
+        views_weeks = {}
+        for week in weeks[0]:
+            views_weeks[week] = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT DATE_TRUNC('WEEK', viewed_at) AS key, COUNT(id) AS value
+                FROM api_tellcards
+                WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
+                GROUP BY DATE_TRUNC('WEEK', viewed_at)
+                ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC
+                ''',
+                (request.user.id, weeks[2], weeks[1],)
+            )
+            for item in cursor.fetchall():
+                views_weeks[item[0]] = item[1]
+        views_months = {}
+        for month in months[0]:
+            views_months[month] = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT DATE_TRUNC('MONTH', viewed_at) AS key, COUNT(id) AS value
+                FROM api_tellcards
+                WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
+                GROUP BY DATE_TRUNC('MONTH', viewed_at)
+                ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC
+                ''',
+                (request.user.id, months[2], months[1],)
+            )
+            for item in cursor.fetchall():
+                views_months[item[0]] = item[1]
+        saves_total = models.Tellcard.objects.filter(
+            user_destination_id=request.user.id, saved_at__isnull=False,
+        ).count()
+        saves_today = models.Tellcard.objects.filter(
+            user_destination_id=request.user.id, saved_at__startswith=today,
+        ).count()
+        saves_days = {}
+        for day in days:
+            saves_days[day] = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT saved_at::DATE AS key, COUNT(id) AS value
+                FROM api_tellcards
+                WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
+                GROUP BY saved_at::DATE
+                ORDER BY saved_at::DATE DESC
+                ''',
+                (request.user.id, days[6], days[0],)
+            )
+            for item in cursor.fetchall():
+                saves_days[item[0]] = item[1]
+        saves_weeks = {}
+        for week in weeks[0]:
+            saves_weeks[week] = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT DATE_TRUNC('WEEK', saved_at) AS key, COUNT(id) AS value
+                FROM api_tellcards
+                WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
+                GROUP BY DATE_TRUNC('WEEK', saved_at)
+                ORDER BY DATE_TRUNC('WEEK', saved_at) DESC
+                ''',
+                (request.user.id, weeks[2], weeks[1],)
+            )
+            for item in cursor.fetchall():
+                saves_weeks[item[0]] = item[1]
+        saves_months = {}
+        for month in months[0]:
+            saves_months[month] = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT DATE_TRUNC('MONTH', saved_at) AS key, COUNT(id) AS value
+                FROM api_tellcards
+                WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
+                GROUP BY DATE_TRUNC('MONTH', saved_at)
+                ORDER BY DATE_TRUNC('MONTH', saved_at) DESC
+                ''',
+                (request.user.id, months[2], months[1],)
+            )
+            for item in cursor.fetchall():
+                saves_months[item[0]] = item[1]
+        users_near = models.UserLocation.objects.filter(
+            ~Q(user_id=request.user.id),
+            point__distance_lte=(point, D(ft=300)),
+            is_casting=True,
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
         ).distance(
             point,
-        ).select_related(
-            'offers',
         ).order_by(
             'distance',
-        ).all()
-    ]
-    offers = [
-        user_offer.offer
-        for user_offer in models.UserOffer.objects.filter(
-            user_id=request.user.id, saved_at__isnull=False,
+        ).distinct(
+            'user_id'
+        ).count()
+        users_area = models.UserLocation.objects.filter(
+            ~Q(user_id=request.user.id),
+            point__distance_lte=(point, D(mi=10)),
+            is_casting=True,
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
+        ).distance(
+            point,
         ).order_by(
-            '-saved_at',
-        ).all()
-    ]
-    connections = {}
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT
-                api_users_locations_2.user_id,
-                api_users_locations_2.timestamp,
-                api_users_locations_2.point,
-                api_users_locations_2.tellzone_id
-            FROM api_users_locations api_users_locations_1
-            INNER JOIN api_users_locations api_users_locations_2 ON
-                api_users_locations_1.user_id != api_users_locations_2.user_id
-                AND
-                ST_DWithin(api_users_locations_1.point, api_users_locations_2.point, 91.44)
-                AND
-                api_users_locations_1.timestamp BETWEEN
-                    api_users_locations_2.timestamp - INTERVAL '1 minute'
+            'distance',
+        ).distinct(
+            'user_id'
+        ).count()
+        tellzones = [
+            tellzone
+            for tellzone in models.Tellzone.objects.filter(
+                point__distance_lte=(point, D(mi=10)),
+            ).distance(
+                point,
+            ).select_related(
+                'offers',
+            ).order_by(
+                'distance',
+            ).all()
+        ]
+        offers = [
+            user_offer.offer
+            for user_offer in models.UserOffer.objects.filter(
+                user_id=request.user.id, saved_at__isnull=False,
+            ).order_by(
+                '-saved_at',
+            ).all()
+        ]
+        connections = {}
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT
+                    api_users_locations_2.user_id,
+                    api_users_locations_2.timestamp,
+                    api_users_locations_2.point,
+                    api_users_locations_2.tellzone_id
+                FROM api_users_locations api_users_locations_1
+                INNER JOIN api_users_locations api_users_locations_2 ON
+                    api_users_locations_1.user_id != api_users_locations_2.user_id
                     AND
-                    api_users_locations_2.timestamp + INTERVAL '1 minute'
-            LEFT OUTER JOIN api_tellcards ON
-                api_tellcards.user_source_id = api_users_locations_1.user_id
-                AND
-                api_tellcards.user_destination_id = api_users_locations_2.user_id
-            LEFT OUTER JOIN api_messages ON
-                api_messages.user_source_id = api_users_locations_1.user_id
-                AND
-                api_messages.user_destination_id = api_users_locations_2.user_id
-            WHERE
-                api_users_locations_1.user_id = 1
-                AND
-                api_users_locations_1.timestamp > NOW() - INTERVAL '1 day'
-                AND
-                api_tellcards.id IS NULL
-                AND
-                api_messages.id IS NULL
-            GROUP BY api_users_locations_2.id
-            ''',
-            (request.user.id,)
-        )
-        for record in cursor.fetchall():
-            if record[0] not in connections:
-                connections[record[0]] = {
-                    'user': models.User.objects.filter(id=record[0]).first(),
-                    'timestamp': record[1],
-                    'point': record[2],
-                    'tellzone': models.Tellzone.objects.filter(id=record[3]).first(),
-                }
+                    ST_DWithin(api_users_locations_1.point, api_users_locations_2.point, 91.44)
+                    AND
+                    api_users_locations_1.timestamp BETWEEN
+                        api_users_locations_2.timestamp - INTERVAL '1 minute'
+                        AND
+                        api_users_locations_2.timestamp + INTERVAL '1 minute'
+                LEFT OUTER JOIN api_tellcards ON
+                    api_tellcards.user_source_id = api_users_locations_1.user_id
+                    AND
+                    api_tellcards.user_destination_id = api_users_locations_2.user_id
+                LEFT OUTER JOIN api_messages ON
+                    api_messages.user_source_id = api_users_locations_1.user_id
+                    AND
+                    api_messages.user_destination_id = api_users_locations_2.user_id
+                WHERE
+                    api_users_locations_1.user_id = 1
+                    AND
+                    api_users_locations_1.timestamp > NOW() - INTERVAL '1 day'
+                    AND
+                    api_tellcards.id IS NULL
+                    AND
+                    api_messages.id IS NULL
+                GROUP BY api_users_locations_2.id
+                ''',
+                (request.user.id,)
+            )
+            for record in cursor.fetchall():
+                if record[0] not in connections:
+                    connections[record[0]] = {
+                        'user': models.User.objects.filter(id=record[0]).first(),
+                        'timestamp': record[1],
+                        'point': record[2],
+                        'tellzone': models.Tellzone.objects.filter(id=record[3]).first(),
+                    }
     return Response(
         data=serializers.HomeResponse(
             {
