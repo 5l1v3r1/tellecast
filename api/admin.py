@@ -309,6 +309,8 @@ class UserLocation(ModelAdmin):
     fields = (
         'user',
         'point',
+        'accuracies_horizontal',
+        'accuracies_vertical',
         'tellzone',
         'bearing',
         'is_casting',
@@ -317,6 +319,8 @@ class UserLocation(ModelAdmin):
         'id',
         'user',
         'point',
+        'accuracies_horizontal',
+        'accuracies_vertical',
         'tellzone',
         'bearing',
         'is_casting',
@@ -329,12 +333,15 @@ class UserLocation(ModelAdmin):
         'id',
         'user',
         'point',
+        'accuracies_horizontal',
+        'accuracies_vertical',
         'tellzone',
         'bearing',
         'is_casting',
     )
     list_select_related = (
         'user',
+        'tellzone',
     )
     ordering = (
         'id',
@@ -388,6 +395,8 @@ class UserOffer(ModelAdmin):
     fields = (
         'user',
         'offer',
+        'saved_at',
+        'redeemed_at',
     )
     list_display = (
         'id',

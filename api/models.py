@@ -7,6 +7,7 @@ from django.db.models import (
     DateField,
     DateTimeField,
     EmailField,
+    FloatField,
     ForeignKey,
     IntegerField,
     Max,
@@ -355,6 +356,8 @@ class UserLocation(Model):
 
     user = ForeignKey(User, related_name='locations')
     point = PointField(ugettext_lazy('Point'), db_index=True)
+    accuracies_horizontal = FloatField(ugettext_lazy('Accuracies :: Horizontal'), blank=True, db_index=True, null=True)
+    accuracies_vertical = FloatField(ugettext_lazy('Accuracies :: Vertical'), blank=True, db_index=True, null=True)
     tellzone = ForeignKey(Tellzone, blank=True, default=None, null=True, related_name='+')
     bearing = IntegerField(ugettext_lazy('Bearing'), db_index=True)
     is_casting = BooleanField(ugettext_lazy('Is Casting?'), db_index=True, default=True)

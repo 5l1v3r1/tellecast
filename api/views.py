@@ -1703,6 +1703,14 @@ class Radar(APIView):
                 'longitude': 0.0000000000,
             }
 
+        + accuracies_horizontal
+            - Type: float
+            - Status: optional
+
+        + accuracies_vertical
+            - Type: float
+            - Status: optional
+
         + tellzone_id
             - Type: integer
             - Status: optional

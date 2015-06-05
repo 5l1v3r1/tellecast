@@ -1840,6 +1840,8 @@ class RadarGetResponse(Serializer):
 class RadarPostRequest(ModelSerializer):
 
     point = PointField()
+    accuracies_horizontal = FloatField(required=False)
+    accuracies_vertical = FloatField(required=False)
     tellzone_id = IntegerField(allow_null=True, required=False)
     bearing = IntegerField()
     is_casting = BooleanField(required=False)
@@ -1848,6 +1850,8 @@ class RadarPostRequest(ModelSerializer):
 
         fields = (
             'point',
+            'accuracies_horizontal',
+            'accuracies_vertical',
             'tellzone_id',
             'bearing',
             'is_casting',
