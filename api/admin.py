@@ -1044,6 +1044,49 @@ class Offer(ModelAdmin):
 
 site.register(models.Offer, Offer)
 
+
+class Ad(ModelAdmin):
+
+    fields = (
+        'slot',
+        'type',
+        'source',
+        'target',
+    )
+    list_display = (
+        'id',
+        'slot',
+        'type',
+        'source',
+        'target',
+        'inserted_at',
+        'updated_at',
+    )
+    list_display_links = (
+        'id',
+    )
+    list_filter = (
+        'id',
+        'slot',
+        'type',
+        'source',
+        'target',
+        'inserted_at',
+        'updated_at',
+    )
+    list_select_related = ()
+    ordering = (
+        'id',
+    )
+    search_fields = (
+        'slot',
+        'type',
+        'source',
+        'target',
+    )
+
+site.register(models.Ad, Ad)
+
 site.unregister(Administrator)
 
 delattr(AdministratorAdmin, 'form')

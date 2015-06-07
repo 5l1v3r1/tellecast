@@ -732,6 +732,56 @@ class Report(Model):
         verbose_name_plural = 'Reports'
 
 
+class Ad(Model):
+
+    slot = CharField(
+        ugettext_lazy('Slot'),
+        choices=(
+            ('Example #1', 'Example #1',),
+            ('Example #2', 'Example #2',),
+            ('Example #3', 'Example #3',),
+        ),
+        db_index=True,
+        default='Example #1',
+        help_text=ugettext_lazy('(...to be finalized...)'),
+        max_length=255,
+    )
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('Photo', 'Photo',),
+            ('Video', 'Video',),
+        ),
+        db_index=True,
+        default='Photo',
+        max_length=255,
+    )
+    source = CharField(
+        ugettext_lazy('Source'),
+        db_index=True,
+        help_text=ugettext_lazy('...URL of the Photo/Video'),
+        max_length=255,
+    )
+    target = CharField(
+        ugettext_lazy('Target'),
+        db_index=True,
+        help_text=ugettext_lazy(
+            '...only applicable if Type is Photo. Examples: http://..., https://..., tellecast://...',
+        ),
+        max_length=255,
+    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
+
+    class Meta:
+        db_table = 'api_ads'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'Ad'
+        verbose_name_plural = 'Ads'
+
+
 def get_tellzone(user_id, tellzone):
     if not tellzone:
         return {}

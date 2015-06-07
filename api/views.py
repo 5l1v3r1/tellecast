@@ -3874,6 +3874,23 @@ def tellzones(request):
     return Response(data=data, status=HTTP_200_OK)
 
 
+@api_view(('GET',))
+@permission_classes(())
+def ads(request):
+    '''
+    SELECT ads
+    ---
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    serializer: api.serializers.Ad
+    '''
+    return Response(
+        data=[serializers.Ad(ad).data for ad in models.Ad.objects.order_by('-id').all()],
+        status=HTTP_200_OK,
+    )
+
+
 def handler400(request):
     return JsonResponse(
         data={

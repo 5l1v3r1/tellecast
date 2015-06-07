@@ -512,6 +512,22 @@ class Block(ModelSerializer):
         model = models.Block
 
 
+class Ad(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'slot',
+            'type',
+            'source',
+            'target',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Ad
+
+
 class Null(Serializer):
     pass
 

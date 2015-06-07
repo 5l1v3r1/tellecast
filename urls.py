@@ -136,6 +136,7 @@ urlpatterns = patterns(
         }),
     ),
     url(r'^api/tellzones/$', views.tellzones),
+    url(r'^api/ads/$', views.ads),
     url(r'^api/', include(router.urls)),
 )
 
