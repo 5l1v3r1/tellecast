@@ -1841,6 +1841,22 @@ class Radar(APIView):
                     self.get_degrees(point, tellzone.point),
                     self.get_radius(tellzone.distance),
                 ))
+        if not offers:
+            for offer in models.Offer.objects.order_by('?')[0:5]:
+                w = ((serializer.validated_data['radius'] * 0.3048) / 111300) * sqrt(uniform(0.0, 1.0))
+                t = 2 * pi * uniform(0.0, 1.0)
+                x = w * cos(t)
+                y = w * sin(t)
+                p = fromstr('POINT(%(longitude)s %(latitude)s)' % {
+                    'latitude': point.y + y,
+                    'longitude': point.x + x,
+                })
+                offers.append((
+                    offer,
+                    p,
+                    self.get_degrees(point, p),
+                    vincenty((point.x, point.y), (p.x, p.y)).ft,
+                ))
         eps = (
             (serializer.validated_data['widths_group'] * serializer.validated_data['radius']) /
             serializer.validated_data['widths_radar']
