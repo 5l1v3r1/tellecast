@@ -1390,7 +1390,7 @@ def home(request):
     days = get_days(today)
     weeks = get_weeks(today)
     months = get_months(today)
-    if serializer.validated_data['dummy']:
+    if serializer.validated_data['dummy'] == 'Yes':
         views_today = randint(1, 150)
         views_days = {}
         for day in days:
