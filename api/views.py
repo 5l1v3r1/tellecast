@@ -9,7 +9,7 @@ from arrow import get
 from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.gis.geos import fromstr
-from django.contrib.gis.measure import D
+from django.contrib.gis.measure import D, Distance
 from django.db import connection
 from django.db.models import Q
 from django.http import JsonResponse
@@ -1851,11 +1851,13 @@ class Radar(APIView):
                     'latitude': point.y + y,
                     'longitude': point.x + x,
                 })
+                distance = vincenty((point.x, point.y), (p.x, p.y)).ft
+                offer.tellzone.distance = Distance(ft=distance)
                 offers.append((
                     offer,
                     p,
                     self.get_degrees(point, p),
-                    vincenty((point.x, point.y), (p.x, p.y)).ft,
+                    distance,
                 ))
         eps = (
             (serializer.validated_data['widths_group'] * serializer.validated_data['radius']) /
