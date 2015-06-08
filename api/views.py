@@ -2923,10 +2923,16 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
             ).first()
             if message:
                 if message.user_source_id == request.user.id:
-                    if message.type in ['Request']:
+                    if message.type in [
+                        'Request',
+                        'Response - Blocked',
+                    ]:
                         return Response(status=HTTP_403_FORBIDDEN)
                 if message.user_destination_id == request.user.id:
-                    if message.type in ['Response - Blocked']:
+                    if message.type in [
+                        'Request',
+                        'Response - Blocked',
+                    ]:
                         return Response(status=HTTP_403_FORBIDDEN)
         return Response(
             data=serializers.MessagesPostResponse(serializer.save(user_source=request.user)).data,
