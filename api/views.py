@@ -2899,6 +2899,13 @@ class Messages(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelMix
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
+        if request.user.id == serializer.validated_data['user_destination_id']:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `user_destination_id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
         if not models.Message.objects.filter(
             Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id']) |
             Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
