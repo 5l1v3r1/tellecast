@@ -23,9 +23,7 @@ from rest_framework.mixins import (
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
-from rest_framework.status import (
-    HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN,
-)
+from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -243,7 +241,7 @@ def authenticate(request, backend):
             data={
                 'error': ugettext_lazy('Invalid `user`'),
             },
-            status=HTTP_401_UNAUTHORIZED,
+            status=HTTP_403_FORBIDDEN,
         )
     login(request, user)
     return Response(data=serializers.AuthenticateResponse(user).data, status=HTTP_200_OK)
