@@ -15,7 +15,6 @@ class User(ModelAdmin):
 
     fields = (
         'email',
-        'email_status',
         'photo',
         'first_name',
         'last_name',
@@ -24,7 +23,6 @@ class User(ModelAdmin):
         'location',
         'description',
         'phone',
-        'phone_status',
         'point',
     )
     list_display = (

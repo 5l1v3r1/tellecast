@@ -97,16 +97,6 @@ class Offer(Model):
 class User(Model):
 
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
-    email_status = CharField(
-        ugettext_lazy('Email Status'),
-        choices=(
-            ('Private', 'Private',),
-            ('Public', 'Public',),
-        ),
-        db_index=True,
-        default='Private',
-        max_length=255,
-    )
     photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
     first_name = CharField(ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255, null=True)
     last_name = CharField(ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255, null=True)
@@ -125,16 +115,6 @@ class User(Model):
     location = CharField(ugettext_lazy('Location'), blank=True, db_index=True, max_length=255, null=True)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
-    phone_status = CharField(
-        ugettext_lazy('Phone Status'),
-        choices=(
-            ('Private', 'Private',),
-            ('Public', 'Public',),
-        ),
-        db_index=True,
-        default='Private',
-        max_length=255,
-    )
     point = PointField(ugettext_lazy('Point'), blank=True, db_index=True, null=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, default=now, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, default=now, db_index=True)
@@ -844,14 +824,14 @@ def user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         for key, value in {
             'show_last_name': True,
-            'show_profile_photo': True,
+            'show_photo': True,
             'show_email': True,
-            'show_phone_number': True,
+            'show_phone': True,
             'notifications_invitations': True,
-            'notifications_shared_profiles': True,
             'notifications_messages': True,
             'notifications_offers': True,
             'notifications_saved_you': True,
+            'notifications_shared_profiles': True,
         }.items():
             UserSetting.objects.create(user_id=instance.id, key=key, value=value)
 

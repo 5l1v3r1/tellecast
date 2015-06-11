@@ -209,7 +209,6 @@ class User(ModelSerializer):
     location = CharField(required=False)
     description = CharField(required=False)
     phone = CharField(required=False)
-    phone_status = CharField(required=False)
     point = PointField(required=False)
 
     class Meta:
@@ -217,7 +216,6 @@ class User(ModelSerializer):
         fields = (
             'id',
             'email',
-            'email_status',
             'photo',
             'first_name',
             'last_name',
@@ -226,7 +224,6 @@ class User(ModelSerializer):
             'location',
             'description',
             'phone',
-            'phone_status',
             'point',
             'inserted_at',
             'updated_at',
@@ -697,12 +694,6 @@ class RegisterRequestMasterTell(ModelSerializer):
 class RegisterRequest(Serializer):
 
     email = EmailField()
-    email_status = ChoiceField(
-        choices=(
-            ('Private', 'Private',),
-            ('Public', 'Public',),
-        ),
-    )
     photo = CharField(required=False)
     first_name = CharField(required=False)
     last_name = CharField(required=False)
@@ -718,13 +709,6 @@ class RegisterRequest(Serializer):
     location = CharField(required=False)
     description = CharField(required=False)
     phone = CharField(required=False)
-    phone_status = ChoiceField(
-        choices=(
-            ('Private', 'Private',),
-            ('Public', 'Public',),
-        ),
-        required=False,
-    )
     point = PointField(required=False)
     photos = RegisterRequestUserPhoto(help_text='List of User Photos', many=True, required=False)
     social_profiles = RegisterRequestUserSocialProfile(
@@ -737,7 +721,6 @@ class RegisterRequest(Serializer):
     def create(self, data):
         user = models.User.objects.create(
             email=data['email'],
-            email_status=data['email_status'],
             photo=data['photo'] if 'photo' in data else None,
             first_name=data['first_name'] if 'first_name' in data else None,
             last_name=data['last_name'] if 'last_name' in data else None,
@@ -748,9 +731,6 @@ class RegisterRequest(Serializer):
             phone=data['phone'] if 'phone' in data else None,
             point=data['point'] if 'point' in data else None,
         )
-        if 'phone_status' in data:
-            user.phone_status = data['phone_status']
-            user.save()
         if 'status' in data:
             attachments = []
             if 'attachments' in data['status']:
@@ -936,7 +916,6 @@ class RegisterResponse(User):
         fields = (
             'id',
             'email',
-            'email_status',
             'photo',
             'first_name',
             'last_name',
@@ -945,7 +924,6 @@ class RegisterResponse(User):
             'location',
             'description',
             'phone',
-            'phone_status',
             'point',
             'inserted_at',
             'updated_at',
@@ -976,7 +954,6 @@ class AuthenticateResponse(User):
         fields = (
             'id',
             'email',
-            'email_status',
             'photo',
             'first_name',
             'last_name',
@@ -985,7 +962,6 @@ class AuthenticateResponse(User):
             'location',
             'description',
             'phone',
-            'phone_status',
             'point',
             'inserted_at',
             'updated_at',
@@ -1036,14 +1012,14 @@ class UsersRequestUserURL(UserURL):
 class UsersRequestSettings(Serializer):
 
     show_last_name = BooleanField()
-    show_profile_photo = BooleanField()
+    show_photo = BooleanField()
     show_email = BooleanField()
-    show_phone_number = BooleanField()
+    show_phone = BooleanField()
     notifications_invitations = BooleanField()
-    notifications_shared_profiles = BooleanField()
     notifications_messages = BooleanField()
     notifications_offers = BooleanField()
     notifications_saved_you = BooleanField()
+    notifications_shared_profiles = BooleanField()
 
 
 class UsersRequest(User):
@@ -1061,7 +1037,6 @@ class UsersRequest(User):
         fields = (
             'id',
             'email',
-            'email_status',
             'photo',
             'first_name',
             'last_name',
@@ -1070,7 +1045,6 @@ class UsersRequest(User):
             'location',
             'description',
             'phone',
-            'phone_status',
             'point',
             'settings',
             'photos',
@@ -1083,8 +1057,6 @@ class UsersRequest(User):
     def update(self, instance, data):
         if 'email' in data:
             instance.email = data['email']
-        if 'email_status' in data:
-            instance.email_status = data['email_status']
         if 'photo' in data:
             instance.photo = data['photo']
         if 'first_name' in data:
@@ -1101,8 +1073,6 @@ class UsersRequest(User):
             instance.description = data['description']
         if 'phone' in data:
             instance.phone = data['phone']
-        if 'phone_status' in data:
-            instance.phone_status = data['phone_status']
         if 'point' in data:
             instance.point = data['point']
         instance.save()
@@ -1294,14 +1264,14 @@ class UsersResponseUserURL(UserURL):
 class UsersResponseSettings(Serializer):
 
     show_last_name = BooleanField()
-    show_profile_photo = BooleanField()
+    show_photo = BooleanField()
     show_email = BooleanField()
-    show_phone_number = BooleanField()
+    show_phone = BooleanField()
     notifications_invitations = BooleanField()
-    notifications_shared_profiles = BooleanField()
     notifications_messages = BooleanField()
     notifications_offers = BooleanField()
     notifications_saved_you = BooleanField()
+    notifications_shared_profiles = BooleanField()
 
     def to_representation(self, instance):
         return self.parent.instance.get_settings()
@@ -1323,7 +1293,6 @@ class UsersResponse(User):
         fields = (
             'id',
             'email',
-            'email_status',
             'photo',
             'first_name',
             'last_name',
@@ -1332,7 +1301,6 @@ class UsersResponse(User):
             'location',
             'description',
             'phone',
-            'phone_status',
             'point',
             'inserted_at',
             'updated_at',
@@ -1360,7 +1328,6 @@ class UsersProfile(RegisterResponse):
         fields = (
             'id',
             'email',
-            'email_status',
             'photo',
             'first_name',
             'last_name',
@@ -1369,7 +1336,6 @@ class UsersProfile(RegisterResponse):
             'location',
             'description',
             'phone',
-            'phone_status',
             'inserted_at',
             'updated_at',
             'photos',

@@ -52,13 +52,6 @@ def register(request):
         - Type: string
         - Status: mandatory
 
-    + email_status
-        - Type: string
-        - Status: mandatory
-        - Choices:
-            - Private
-            - Public
-
     + photo
         - Type: string
         - Status: optional
@@ -93,13 +86,6 @@ def register(request):
     + phone
         - Type: string
         - Status: optional
-
-    + phone_status
-        - Type: string
-        - Status: optional
-        - Choices:
-            - Private
-            - Public
 
     + point
         - Type: dictionary (of floats)
@@ -266,13 +252,6 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         - Type: string
         - Status: mandatory
 
-    + email_status
-        - Type: string
-        - Status: mandatory
-        - Choices:
-            - Private
-            - Public
-
     + photo
         - Type: string
         - Status: optional
@@ -308,13 +287,6 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         - Type: string
         - Status: optional
 
-    + phone_status
-        - Type: string
-        - Status: optional
-        - Choices:
-            - Private
-            - Public
-
     + point
         - Type: dictionary (of floats)
         - Status: optional
@@ -334,14 +306,14 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
 
         {
             'show_last_name': true,
-            'show_profile_photo': true,
+            'show_photo': true,
             'show_email': true,
-            'show_phone_number': true,
+            'show_phone': true,
             'notifications_invitations': true,
-            'notifications_shared_profiles': true,
             'notifications_messages': true,
             'notifications_offers': true,
             'notifications_saved_you': true,
+            'notifications_shared_profiles': true,
         }
 
     + photos

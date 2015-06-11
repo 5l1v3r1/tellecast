@@ -210,7 +210,6 @@ SOCIAL_AUTH_PIPELINE = (
 )
 SOCIAL_AUTH_PROTECTED_USER_FIELDS = (
     'email',
-    'email_status',
     'photo',
     'first_name',
     'last_name',
@@ -219,7 +218,6 @@ SOCIAL_AUTH_PROTECTED_USER_FIELDS = (
     'location',
     'description',
     'phone',
-    'phone_status',
 )
 SOCIAL_AUTH_TWITTER_KEY = '...'
 SOCIAL_AUTH_TWITTER_SECRET = '...'
