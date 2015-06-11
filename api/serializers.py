@@ -2273,6 +2273,7 @@ class TellcardsRequest(ModelSerializer):
         user_id = get_user_id(self.context)
         if not user_id:
             return False
+        update_fields = []
         instance = models.Tellcard.objects.filter(
             user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
         ).first()
@@ -2281,10 +2282,12 @@ class TellcardsRequest(ModelSerializer):
                 user_source_id=user_id, user_destination_id=self.validated_data['user_destination_id'],
             )
         if self.validated_data['action'] == 'View':
+            update_fields.append('viewed_at')
             instance.viewed_at = datetime.now()
         if self.validated_data['action'] == 'Save':
+            update_fields.append('saved_at')
             instance.saved_at = datetime.now()
-        instance.save()
+        instance.save(update_fields=update_fields)
         return instance
 
     def delete(self):

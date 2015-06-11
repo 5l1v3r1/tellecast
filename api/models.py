@@ -438,7 +438,7 @@ class DeviceAPNS(Model):
 
     user = ForeignKey(User, related_name='+')
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
-    device_id = UUIDField(db_index=True, max_length=255, name=ugettext_lazy('Device ID'))
+    device_id = UUIDField(ugettext_lazy('Device ID'), db_index=True, max_length=255, name=ugettext_lazy('Device ID'))
     registration_id = CharField(ugettext_lazy('Registration ID'), db_index=True, max_length=255)
 
     class Meta:
@@ -667,7 +667,7 @@ class Tellcard(Model):
     user_source = ForeignKey(User, related_name='+')
     user_destination = ForeignKey(User, related_name='+')
     viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
-    saved_at = DateTimeField(ugettext_lazy('Favorited At'), blank=True, db_index=True, null=True)
+    saved_at = DateTimeField(ugettext_lazy('Saved At'), blank=True, db_index=True, null=True)
 
     class Meta:
         db_table = 'api_tellcards'
@@ -916,17 +916,21 @@ def block_post_save(instance, **kwargs):
 
 @receiver(post_save, sender=Tellcard)
 def tellcard_post_save(instance, **kwargs):
-    if 'created' in kwargs and kwargs['created']:
-        Notification.objects.create(
-            user_id=instance.user_destination_id,
-            type='A',
-            contents={
-                'id': instance.user_source.id,
-                'first_name': instance.user_source.first_name,
-                'last_name': instance.user_source.last_name,
-                'photo': instance.user_source.photo,
-            },
-        )
+    if instance.saved_at:
+        if (
+            ('created' in kwargs and kwargs['created']) or
+            ('update_fields' in kwargs and 'saved_at' in kwargs['update_fields'])
+        ):
+            Notification.objects.create(
+                user_id=instance.user_destination_id,
+                type='A',
+                contents={
+                    'id': instance.user_source.id,
+                    'first_name': instance.user_source.first_name,
+                    'last_name': instance.user_source.last_name,
+                    'photo': instance.user_source.photo,
+                },
+            )
 
 
 @receiver(post_save, sender=ShareUser)
