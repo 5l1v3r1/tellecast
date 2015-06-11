@@ -825,8 +825,8 @@ def user_post_save(instance, **kwargs):
         for key, value in {
             'show_last_name': True,
             'show_photo': True,
-            'show_email': True,
-            'show_phone': True,
+            'show_email': False,
+            'show_phone': False,
             'notifications_invitations': True,
             'notifications_messages': True,
             'notifications_offers': True,

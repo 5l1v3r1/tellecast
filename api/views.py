@@ -307,8 +307,8 @@ class Users(DestroyModelMixin, GenericViewSet, ListModelMixin, RetrieveModelMixi
         {
             'show_last_name': true,
             'show_photo': true,
-            'show_email': true,
-            'show_phone': true,
+            'show_email': false,
+            'show_phone': false,
             'notifications_invitations': true,
             'notifications_messages': true,
             'notifications_offers': true,
