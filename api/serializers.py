@@ -22,7 +22,6 @@ from rest_framework.serializers import (
     SerializerMethodField,
     ValidationError,
 )
-from rest_framework.validators import UniqueValidator
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
@@ -346,7 +345,7 @@ class DeviceAPNS(ModelSerializer):
     id = IntegerField(required=False)
     name = CharField()
     device_id = CharField()
-    registration_id = CharField(validators=[UniqueValidator(queryset=models.DeviceAPNS.objects.all())])
+    registration_id = CharField()
 
     class Meta:
 
@@ -358,13 +357,34 @@ class DeviceAPNS(ModelSerializer):
         )
         model = models.DeviceAPNS
 
+    def create_or_update(self):
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return {}
+        device = models.DeviceAPNS.objects.filter(
+            user_id=user_id,
+            device_id=self.validated_data['device_id'],
+        ).first()
+        if not device:
+            device = models.DeviceAPNS.objects.create(
+                user_id=user_id,
+                name=self.validated_data['name'],
+                device_id=self.validated_data['device_id'],
+                registration_id=self.validated_data['registration_id'],
+            )
+        device.name = self.validated_data['name']
+        device.device_id = self.validated_data['device_id']
+        device.registration_id = self.validated_data['registration_id']
+        device.save()
+        return device
+
 
 class DeviceGCM(ModelSerializer):
 
     id = IntegerField(required=False)
     name = CharField()
     device_id = CharField()
-    registration_id = CharField(validators=[UniqueValidator(queryset=models.DeviceGCM.objects.all())])
+    registration_id = CharField()
 
     class Meta:
 
@@ -375,6 +395,27 @@ class DeviceGCM(ModelSerializer):
             'registration_id',
         )
         model = models.DeviceGCM
+
+    def create_or_update(self):
+        user_id = get_user_id(self.context)
+        if not user_id:
+            return {}
+        device = models.DeviceGCM.objects.filter(
+            user_id=user_id,
+            registration_id=self.validated_data['registration_id'],
+        ).first()
+        if not device:
+            device = models.DeviceGCM.objects.create(
+                user_id=user_id,
+                name=self.validated_data['name'],
+                device_id=self.validated_data['device_id'],
+                registration_id=self.validated_data['registration_id'],
+            )
+        device.name = self.validated_data['name']
+        device.device_id = self.validated_data['device_id']
+        device.registration_id = self.validated_data['registration_id']
+        device.save()
+        return device
 
 
 class MasterTell(ModelSerializer):

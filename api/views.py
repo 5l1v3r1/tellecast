@@ -2053,13 +2053,12 @@ class DevicesAPNS(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModel
 
     def create(self, request, *args, **kwargs):
         '''
-        INSERT an APNS Device
+        INSERT/UPDATE an APNS Device
         ---
         '''
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
-        return Response(data=serializer.data, status=HTTP_201_CREATED)
+        return Response(data=self.get_serializer(serializer.create_or_update()).data, status=HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -2169,13 +2168,12 @@ class DevicesGCM(CreateModelMixin, DestroyModelMixin, GenericViewSet, ListModelM
 
     def create(self, request, *args, **kwargs):
         '''
-        INSERT a GCM Device
+        INSERT/UPDATE a GCM Device
         ---
         '''
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
-        return Response(data=serializer.data, status=HTTP_201_CREATED)
+        return Response(data=self.get_serializer(serializer.create_or_update()).data, status=HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         '''
