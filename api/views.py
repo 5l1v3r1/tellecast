@@ -1717,7 +1717,10 @@ class Radar(APIView):
                 SELECT
                     api_users_locations.user_id,
                     ST_AsGeoJSON(api_users_locations.point),
-                    ST_Distance(ST_GeomFromText(%s, 4326), point) * 0.3048
+                    ST_Distance(
+                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                        ST_Transform(api_users_locations.point, 2163)
+                    ) * 0.3048
                 FROM api_users_locations
                 LEFT OUTER JOIN api_blocks ON
                     (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
@@ -1726,7 +1729,11 @@ class Radar(APIView):
                 WHERE
                     user_id != %s
                     AND
-                    ST_DWithin(ST_GeomFromText(%s, 4326), point, %s)
+                    ST_DWithin(
+                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                        ST_Transform(api_users_locations.point, 2163),
+                        %s
+                    )
                     AND
                     is_casting IS TRUE
                     AND
