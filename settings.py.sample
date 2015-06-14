@@ -47,7 +47,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 1099511627776
 INSTALLED_APPS = (
     'api',
     'debug_toolbar',
-    'djcelery',
     'suit',
     'django.contrib.admin',
     'django.contrib.admindocs',
@@ -69,9 +68,19 @@ LOGGING = {
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse',
-        }
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'filters': [
+                'require_debug_true',
+            ],
+            'level': 'DEBUG',
+        },
         'mail_admins': {
             'class': 'django.utils.log.AdminEmailHandler',
             'filters': (
@@ -81,6 +90,12 @@ LOGGING = {
         }
     },
     'loggers': {
+        'django.db.backends': {
+            'handlers': [
+                'console',
+            ],
+            'level': 'DEBUG',
+        },
         'django.request': {
             'handlers': (
                 'mail_admins',
@@ -95,11 +110,12 @@ MANAGERS = ADMINS
 MEDIA_ROOT = join(dirname(__file__), 'media')
 MEDIA_URL = '/media/'
 MIDDLEWARE_CLASSES = (
-    'api.middleware.ExceptionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'api.middleware.Exception',
+    'api.middleware.Session',
     'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
 PUSH_NOTIFICATIONS_SETTINGS = {
@@ -122,10 +138,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
-    'MAX_PAGINATE_BY': 100,
     'PAGE_SIZE': 100,
-    'PAGINATE_BY': 50,
-    'PAGINATE_BY_PARAM': 'per_page',
 }
 ROLLBAR = {
     'access_token': '...',

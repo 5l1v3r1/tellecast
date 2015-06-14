@@ -10,450 +10,115 @@ from social.apps.django_app.default.models import UserSocialAuth
 
 from api import models
 
+site.unregister(Administrator)
+site.unregister(UserSocialAuth)
 
-class User(ModelAdmin):
+delattr(AdministratorAdmin, 'form')
+
+AdministratorAdmin.fieldsets = ()
+AdministratorAdmin.fields = (
+    'username',
+    'email',
+    'first_name',
+    'last_name',
+    'is_active',
+    'is_staff',
+    'is_superuser',
+)
+AdministratorAdmin.list_display = (
+    'id',
+    'username',
+    'email',
+    'first_name',
+    'last_name',
+    'is_active',
+    'is_staff',
+    'is_superuser',
+    'last_login',
+)
+AdministratorAdmin.list_filter = (
+    'username',
+    'email',
+    'first_name',
+    'last_name',
+    'is_active',
+    'is_staff',
+    'is_superuser',
+    'last_login',
+)
+AdministratorAdmin.search_fields = ()
+
+UserSocialAuthOption.fields = (
+    'uid',
+    'user',
+    'provider',
+    'extra_data',
+)
+UserSocialAuthOption.list_display = (
+    'id',
+    'uid',
+    'user',
+    'provider',
+)
+UserSocialAuthOption.list_filter = (
+    'user',
+    'provider',
+)
+UserSocialAuthOption.search_fields = (
+    'uid',
+)
+
+site.register(Administrator, AdministratorAdmin)
+site.register(UserSocialAuth, UserSocialAuthOption)
+
+
+class Ad(ModelAdmin):
 
     fields = (
-        'email',
-        'photo',
-        'first_name',
-        'last_name',
-        'date_of_birth',
-        'gender',
-        'location',
-        'description',
-        'phone',
-        'point',
+        'slot',
+        'type',
+        'source',
+        'target',
     )
     list_display = (
         'id',
-        'email',
-        'first_name',
-        'last_name',
-        'master_tells_',
-        'slave_tells_',
+        'slot',
+        'type',
+        'source',
+        'target',
         'inserted_at',
         'updated_at',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
-        'email',
-        'first_name',
-        'last_name',
+        'slot',
+        'type',
         'inserted_at',
         'updated_at',
     )
-    list_select_related = (
-        'social',
-    )
-    ordering = (
-        'id',
-    )
     search_fields = (
-        'email',
-        'photo',
-        'first_name',
-        'last_name',
-        'date_of_birth',
-        'gender',
-        'location',
-        'description',
-        'phone',
+        'source',
+        'target',
     )
 
-    def master_tells_(self, instance):
-        return instance.master_tells.get_queryset().count()
 
-    master_tells_.allow_tags = True
-    master_tells_.short_description = 'Master Tells'
-
-    def slave_tells_(self, instance):
-        return instance.slave_tells.get_queryset().count()
-
-    slave_tells_.allow_tags = True
-    slave_tells_.short_description = 'Slave Tells'
-
-site.register(models.User, User)
-
-
-class UserSetting(ModelAdmin):
+class Block(ModelAdmin):
 
     fields = (
-        'user',
-        'key',
-        'value',
+        'user_source',
+        'user_destination',
     )
     list_display = (
         'id',
-        'user',
-        'key',
-        'value',
-        'inserted_at',
-        'updated_at',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'key',
-        'value',
-        'inserted_at',
-        'updated_at',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'key',
-        'value',
-    )
-
-site.register(models.UserSetting, UserSetting)
-
-
-class UserPhoto(ModelAdmin):
-
-    fields = (
-        'user',
-        'string',
-        'position',
-    )
-    list_display = (
-        'id',
-        'user',
-        'string',
-        'position',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'string',
-        'position',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'string',
-    )
-
-site.register(models.UserPhoto, UserPhoto)
-
-
-class UserSocialProfile(ModelAdmin):
-
-    fields = (
-        'user',
-        'netloc',
-        'url',
-    )
-    list_display = (
-        'id',
-        'user',
-        'netloc',
-        'url',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'netloc',
-        'url',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'netloc',
-        'url',
-    )
-
-site.register(models.UserSocialProfile, UserSocialProfile)
-
-
-class UserStatus(ModelAdmin):
-
-    fields = (
-        'user',
-        'string',
-        'title',
-        'url',
-        'notes',
-    )
-    list_display = (
-        'id',
-        'user',
-        'string',
-        'title',
-        'url',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'string',
-        'title',
-        'url',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'string',
-        'title',
-        'url',
-        'notes',
-    )
-
-site.register(models.UserStatus, UserStatus)
-
-
-class UserStatusAttachment(ModelAdmin):
-
-    fields = (
-        'user_status',
-        'string',
-        'position',
-    )
-    list_display = (
-        'id',
-        'user_status',
-        'string',
-        'position',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user_status',
-        'string',
-        'position',
-    )
-    list_select_related = (
-        'user_status',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'string',
-    )
-
-site.register(models.UserStatusAttachment, UserStatusAttachment)
-
-
-class UserURL(ModelAdmin):
-
-    fields = (
-        'user',
-        'string',
-        'position',
-    )
-    list_display = (
-        'id',
-        'user',
-        'string',
-        'position',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'string',
-        'position',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'string',
-    )
-
-site.register(models.UserURL, UserURL)
-
-
-class UserLocation(ModelAdmin):
-
-    fields = (
-        'user',
-        'point',
-        'accuracies_horizontal',
-        'accuracies_vertical',
-        'tellzone',
-        'bearing',
-        'is_casting',
-    )
-    list_display = (
-        'id',
-        'user',
-        'point',
-        'accuracies_horizontal',
-        'accuracies_vertical',
-        'tellzone',
-        'bearing',
-        'is_casting',
+        'user_source',
+        'user_destination',
         'timestamp',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'user',
-    )
-    list_select_related = ()
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'bearing',
-    )
-
-site.register(models.UserLocation, UserLocation)
-
-
-class UserTellzone(ModelAdmin):
-
-    fields = (
-        'user',
-        'tellzone',
-        'viewed_at',
-        'favorited_at',
-    )
-    list_display = (
-        'id',
-        'user',
-        'tellzone',
-        'viewed_at',
-        'favorited_at',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'tellzone',
-        'viewed_at',
-        'favorited_at',
-    )
-    list_select_related = (
-        'user',
-        'tellzone',
-    )
-    ordering = (
-        'id',
+        'user_source',
+        'user_destination',
+        'timestamp',
     )
     search_fields = ()
-
-site.register(models.UserTellzone, UserTellzone)
-
-
-class UserOffer(ModelAdmin):
-
-    fields = (
-        'user',
-        'offer',
-        'saved_at',
-        'redeemed_at',
-    )
-    list_display = (
-        'id',
-        'user',
-        'offer',
-        'saved_at',
-        'redeemed_at',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'offer',
-        'saved_at',
-        'redeemed_at',
-    )
-    list_select_related = (
-        'user',
-        'offer',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = ()
-
-site.register(models.UserOffer, UserOffer)
-
-
-class Notification(ModelAdmin):
-
-    fields = (
-        'user',
-        'type',
-        'contents',
-        'status',
-    )
-    list_display = (
-        'id',
-        'user',
-        'type',
-        'contents',
-        'status',
-        'timestamp',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user',
-        'type',
-        'status',
-        'timestamp',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'type',
-        'contents',
-        'status',
-    )
-
-site.register(models.Notification, Notification)
 
 
 class DeviceAPNS(ModelAdmin):
@@ -461,6 +126,7 @@ class DeviceAPNS(ModelAdmin):
     fields = (
         'user',
         'name',
+        'device_id',
         'registration_id',
     )
     list_display = (
@@ -470,29 +136,14 @@ class DeviceAPNS(ModelAdmin):
         'device_id',
         'registration_id',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
     )
     search_fields = (
         'name',
         'device_id',
         'registration_id',
     )
-
-site.register(models.DeviceAPNS, DeviceAPNS)
 
 
 class DeviceGCM(ModelAdmin):
@@ -510,21 +161,8 @@ class DeviceGCM(ModelAdmin):
         'device_id',
         'registration_id',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'user',
-        'name',
-        'device_id',
-        'registration_id',
-    )
-    list_select_related = (
-        'user',
-    )
-    ordering = (
-        'id',
     )
     search_fields = (
         'name',
@@ -532,46 +170,32 @@ class DeviceGCM(ModelAdmin):
         'registration_id',
     )
 
-site.register(models.DeviceGCM, DeviceGCM)
-
 
 class MasterTell(ModelAdmin):
 
     fields = (
         'created_by',
         'owned_by',
-        'is_visible',
         'contents',
         'position',
+        'is_visible',
     )
     list_display = (
         'id',
         'created_by',
         'owned_by',
-        'is_visible',
         'position',
+        'is_visible',
         'slave_tells_',
         'inserted_at',
         'updated_at',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'created_by',
         'owned_by',
         'is_visible',
-        'position',
         'inserted_at',
         'updated_at',
-    )
-    list_select_related = (
-        'created_by',
-        'owned_by',
-    )
-    ordering = (
-        'id',
     )
     search_fields = (
         'contents',
@@ -582,67 +206,6 @@ class MasterTell(ModelAdmin):
 
     slave_tells_.allow_tags = True
     slave_tells_.short_description = 'Slave Tells'
-
-site.register(models.MasterTell, MasterTell)
-
-
-class SlaveTell(ModelAdmin):
-
-    fields = (
-        'master_tell',
-        'created_by',
-        'owned_by',
-        'photo',
-        'first_name',
-        'last_name',
-        'type',
-        'is_editable',
-        'contents',
-        'description',
-        'position',
-    )
-    list_display = (
-        'id',
-        'master_tell',
-        'created_by',
-        'owned_by',
-        'type',
-        'is_editable',
-        'position',
-        'inserted_at',
-        'updated_at',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'master_tell',
-        'created_by',
-        'owned_by',
-        'type',
-        'is_editable',
-        'position',
-        'inserted_at',
-        'updated_at',
-    )
-    list_select_related = (
-        'master_tell',
-        'created_by',
-        'owned_by',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = (
-        'photo',
-        'first_name',
-        'last_name',
-        'contents',
-        'description',
-    )
-
-site.register(models.SlaveTell, SlaveTell)
 
 
 class Message(ModelAdmin):
@@ -672,11 +235,7 @@ class Message(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'user_source',
         'user_source_is_hidden',
         'user_destination',
@@ -688,15 +247,6 @@ class Message(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
-    list_select_related = (
-        'user_source',
-        'user_destination',
-        'user_status',
-        'master_tell',
-    )
-    ordering = (
-        'id',
-    )
     search_fields = (
         'contents',
     )
@@ -706,8 +256,6 @@ class Message(ModelAdmin):
 
     attachments_.allow_tags = True
     attachments_.short_description = 'Slave Tells'
-
-site.register(models.Message, Message)
 
 
 class MessageAttachment(ModelAdmin):
@@ -723,26 +271,58 @@ class MessageAttachment(ModelAdmin):
         'string',
         'position',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'message',
-        'string',
-        'position',
-    )
-    list_select_related = (
-        'message',
-    )
-    ordering = (
-        'id',
     )
     search_fields = (
         'string',
     )
 
-site.register(models.MessageAttachment, MessageAttachment)
+
+class Notification(ModelAdmin):
+
+    fields = (
+        'user',
+        'type',
+        'contents',
+        'status',
+    )
+    list_display = (
+        'id',
+        'user',
+        'type',
+        'status',
+        'timestamp',
+    )
+    list_filter = (
+        'user',
+        'type',
+        'status',
+        'timestamp',
+    )
+    search_fields = (
+        'contents',
+    )
+
+
+class Report(ModelAdmin):
+
+    fields = (
+        'user_source',
+        'user_destination',
+    )
+    list_display = (
+        'id',
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+    list_filter = (
+        'user_source',
+        'user_destination',
+        'timestamp',
+    )
+    search_fields = ()
 
 
 class ShareUser(ModelAdmin):
@@ -759,64 +339,57 @@ class ShareUser(ModelAdmin):
         'object',
         'timestamp',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'user_source',
         'user_destination',
         'object',
         'timestamp',
     )
-    list_select_related = (
-        'user_source',
-        'user_destination',
-        'object',
-    )
-    ordering = (
-        'id',
-    )
     search_fields = ()
 
-site.register(models.ShareUser, ShareUser)
 
-
-class ShareOffer(ModelAdmin):
+class SlaveTell(ModelAdmin):
 
     fields = (
-        'user_source',
-        'user_destination',
-        'object',
+        'master_tell',
+        'created_by',
+        'owned_by',
+        'photo',
+        'first_name',
+        'last_name',
+        'type',
+        'contents',
+        'description',
+        'position',
+        'is_editable',
     )
     list_display = (
         'id',
-        'user_source',
-        'user_destination',
-        'object',
-        'timestamp',
-    )
-    list_display_links = (
-        'id',
+        'master_tell',
+        'created_by',
+        'owned_by',
+        'type',
+        'position',
+        'is_editable',
+        'inserted_at',
+        'updated_at',
     )
     list_filter = (
-        'id',
-        'user_source',
-        'user_destination',
-        'object',
-        'timestamp',
+        'master_tell',
+        'created_by',
+        'owned_by',
+        'type',
+        'is_editable',
+        'inserted_at',
+        'updated_at',
     )
-    list_select_related = (
-        'user_source',
-        'user_destination',
-        'object',
+    search_fields = (
+        'photo',
+        'first_name',
+        'last_name',
+        'contents',
+        'description',
     )
-    ordering = (
-        'id',
-    )
-    search_fields = ()
-
-site.register(models.ShareOffer, ShareOffer)
 
 
 class Tellcard(ModelAdmin):
@@ -834,92 +407,13 @@ class Tellcard(ModelAdmin):
         'viewed_at',
         'saved_at',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
         'user_source',
         'user_destination',
         'viewed_at',
         'saved_at',
     )
-    list_select_related = (
-        'user_source',
-        'user_destination',
-    )
-    ordering = (
-        'id',
-    )
     search_fields = ()
-
-site.register(models.Tellcard, Tellcard)
-
-
-class Block(ModelAdmin):
-
-    fields = (
-        'user_source',
-        'user_destination',
-    )
-    list_display = (
-        'id',
-        'user_source',
-        'user_destination',
-        'timestamp',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user_source',
-        'user_destination',
-        'timestamp',
-    )
-    list_select_related = (
-        'user_source',
-        'user_destination',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = ()
-
-site.register(models.Block, Block)
-
-
-class Report(ModelAdmin):
-
-    fields = (
-        'user_source',
-        'user_destination',
-    )
-    list_display = (
-        'id',
-        'user_source',
-        'user_destination',
-        'timestamp',
-    )
-    list_display_links = (
-        'id',
-    )
-    list_filter = (
-        'id',
-        'user_source',
-        'user_destination',
-        'timestamp',
-    )
-    list_select_related = (
-        'user_source',
-        'user_destination',
-    )
-    ordering = (
-        'id',
-    )
-    search_fields = ()
-
-site.register(models.Report, Report)
 
 
 class Tellzone(ModelAdmin):
@@ -940,29 +434,13 @@ class Tellzone(ModelAdmin):
         'phone',
         'url',
         'point',
-        'offers_',
         'users_',
         'inserted_at',
         'updated_at',
     )
-    list_display_links = (
-        'id',
-    )
     list_filter = (
-        'id',
-        'name',
-        'location',
-        'phone',
-        'url',
         'inserted_at',
         'updated_at',
-    )
-    list_select_related = (
-        'offers',
-        'users',
-    )
-    ordering = (
-        'id',
     )
     search_fields = (
         'name',
@@ -973,207 +451,285 @@ class Tellzone(ModelAdmin):
         'hours',
     )
 
-    def offers_(self, instance):
-        return instance.offers.get_queryset().count()
-
-    offers_.allow_tags = True
-    offers_.short_description = 'Offers'
-
     def users_(self, instance):
         return instance.users.get_queryset().count()
 
     users_.allow_tags = True
     users_.short_description = 'Users'
 
-site.register(models.Tellzone, Tellzone)
 
-
-class Offer(ModelAdmin):
+class User(ModelAdmin):
 
     fields = (
-        'tellzone',
-        'name',
-        'description',
+        'email',
         'photo',
-        'code',
-        'expires_at',
+        'first_name',
+        'last_name',
+        'date_of_birth',
+        'gender',
+        'location',
+        'description',
+        'phone',
+        'point',
+        'is_signed_in',
     )
     list_display = (
         'id',
-        'tellzone',
-        'name',
-        'code',
-        'users_',
+        'email',
+        'first_name',
+        'last_name',
+        'master_tells_',
+        'slave_tells_',
+        'is_signed_in',
         'inserted_at',
         'updated_at',
-        'expires_at',
-    )
-    list_display_links = (
-        'id',
     )
     list_filter = (
-        'id',
-        'tellzone',
-        'name',
-        'code',
+        'is_signed_in',
         'inserted_at',
         'updated_at',
-        'expires_at',
-    )
-    list_select_related = (
-        'tellzone',
-        'users',
-    )
-    ordering = (
-        'id',
     )
     search_fields = (
-        'name',
-        'description',
+        'email',
         'photo',
-        'code',
+        'first_name',
+        'last_name',
+        'date_of_birth',
+        'gender',
+        'location',
+        'description',
+        'phone',
     )
 
-    def users_(self, instance):
-        return instance.users.get_queryset().count()
+    def master_tells_(self, instance):
+        return instance.master_tells.get_queryset().count()
 
-    users_.allow_tags = True
-    users_.short_description = 'Users'
+    master_tells_.allow_tags = True
+    master_tells_.short_description = 'Master Tells'
 
-site.register(models.Offer, Offer)
+    def slave_tells_(self, instance):
+        return instance.slave_tells.get_queryset().count()
+
+    slave_tells_.allow_tags = True
+    slave_tells_.short_description = 'Slave Tells'
 
 
-class Ad(ModelAdmin):
+class UserLocation(ModelAdmin):
 
     fields = (
-        'slot',
-        'type',
-        'source',
-        'target',
+        'user',
+        'tellzone',
+        'point',
+        'accuracies_horizontal',
+        'accuracies_vertical',
+        'bearing',
+        'is_casting',
     )
     list_display = (
         'id',
-        'slot',
-        'type',
-        'source',
-        'target',
-        'inserted_at',
-        'updated_at',
-    )
-    list_display_links = (
-        'id',
+        'user',
+        'tellzone',
+        'point',
+        'accuracies_horizontal',
+        'accuracies_vertical',
+        'bearing',
+        'is_casting',
+        'timestamp',
     )
     list_filter = (
+        'user',
+        'tellzone',
+        'is_casting',
+        'timestamp',
+    )
+    search_fields = ()
+
+
+class UserPhoto(ModelAdmin):
+
+    fields = (
+        'user',
+        'string',
+        'position',
+    )
+    list_display = (
         'id',
-        'slot',
-        'type',
-        'source',
-        'target',
+        'user',
+        'string',
+        'position',
+    )
+    list_filter = (
+        'user',
+    )
+    search_fields = (
+        'string',
+    )
+
+
+class UserSetting(ModelAdmin):
+
+    fields = (
+        'user',
+        'key',
+        'value',
+    )
+    list_display = (
+        'id',
+        'user',
+        'key',
+        'value',
         'inserted_at',
         'updated_at',
     )
-    list_select_related = ()
-    ordering = (
-        'id',
+    list_filter = (
+        'user',
+        'key',
+        'inserted_at',
+        'updated_at',
     )
     search_fields = (
-        'slot',
-        'type',
-        'source',
-        'target',
+        'value',
     )
 
-site.register(models.Ad, Ad)
 
-site.unregister(Administrator)
+class UserSocialProfile(ModelAdmin):
 
-delattr(AdministratorAdmin, 'form')
+    fields = (
+        'user',
+        'netloc',
+        'url',
+    )
+    list_display = (
+        'id',
+        'user',
+        'netloc',
+        'url',
+    )
+    list_filter = (
+        'user',
+        'netloc',
+    )
+    search_fields = (
+        'url',
+    )
 
-AdministratorAdmin.fieldsets = ()
-AdministratorAdmin.fields = (
-    'username',
-    'email',
-    'first_name',
-    'last_name',
-    'is_active',
-    'is_staff',
-    'is_superuser',
-)
-AdministratorAdmin.list_display = (
-    'id',
-    'username',
-    'email',
-    'first_name',
-    'last_name',
-    'is_active',
-    'is_staff',
-    'is_superuser',
-    'last_login',
-)
-AdministratorAdmin.list_display_links = (
-    'id',
-)
-AdministratorAdmin.list_filter = (
-    'id',
-    'username',
-    'email',
-    'first_name',
-    'last_name',
-    'is_active',
-    'is_staff',
-    'is_superuser',
-    'last_login',
-)
-AdministratorAdmin.ordering = (
-    'id',
-)
-AdministratorAdmin.search_fields = (
-    'username',
-    'email',
-    'first_name',
-    'last_name',
-)
 
-site.register(Administrator, AdministratorAdmin)
+class UserStatus(ModelAdmin):
 
-site.unregister(UserSocialAuth)
+    fields = (
+        'user',
+        'string',
+        'title',
+        'url',
+        'notes',
+    )
+    list_display = (
+        'id',
+        'user',
+        'string',
+        'title',
+        'url',
+    )
+    list_filter = (
+        'user',
+    )
+    search_fields = (
+        'string',
+        'title',
+        'url',
+        'notes',
+    )
 
-UserSocialAuthOption.fields = (
-    'uid',
-    'user',
-    'provider',
-    'extra_data',
-)
-UserSocialAuthOption.list_display = (
-    'id',
-    'uid',
-    'user',
-    'provider',
-)
-UserSocialAuthOption.list_display_links = (
-    'id',
-)
-UserSocialAuthOption.list_filter = (
-    'id',
-    'uid',
-    'user',
-    'provider',
-)
-UserSocialAuthOption.list_select_related = (
-    'user',
-)
-UserSocialAuthOption.ordering = (
-    'id',
-)
-UserSocialAuthOption.search_fields = (
-    'uid',
-    'user',
-    'provider',
-    'extra_data',
-)
 
-site.register(UserSocialAuth, UserSocialAuthOption)
+class UserStatusAttachment(ModelAdmin):
+
+    fields = (
+        'user_status',
+        'string',
+        'position',
+    )
+    list_display = (
+        'id',
+        'user_status',
+        'string',
+        'position',
+    )
+    list_filter = (
+        'user_status',
+    )
+    search_fields = (
+        'string',
+    )
+
+
+class UserTellzone(ModelAdmin):
+
+    fields = (
+        'user',
+        'tellzone',
+        'viewed_at',
+        'favorited_at',
+    )
+    list_display = (
+        'id',
+        'user',
+        'tellzone',
+        'viewed_at',
+        'favorited_at',
+    )
+    list_filter = (
+        'user',
+        'tellzone',
+        'viewed_at',
+        'favorited_at',
+    )
+    search_fields = ()
+
+
+class UserURL(ModelAdmin):
+
+    fields = (
+        'user',
+        'string',
+        'position',
+    )
+    list_display = (
+        'id',
+        'user',
+        'string',
+        'position',
+    )
+    list_filter = (
+        'user',
+    )
+    search_fields = (
+        'string',
+    )
+
 
 apps.get_app_config('api').verbose_name = ugettext_lazy('API')
 apps.get_app_config('auth').verbose_name = ugettext_lazy('Django')
 apps.get_app_config('default').verbose_name = ugettext_lazy('Social')
+
+site.register(models.Ad, Ad)
+site.register(models.Block, Block)
+site.register(models.DeviceAPNS, DeviceAPNS)
+site.register(models.DeviceGCM, DeviceGCM)
+site.register(models.MasterTell, MasterTell)
+site.register(models.Message, Message)
+site.register(models.MessageAttachment, MessageAttachment)
+site.register(models.Notification, Notification)
+site.register(models.Report, Report)
+site.register(models.ShareUser, ShareUser)
+site.register(models.SlaveTell, SlaveTell)
+site.register(models.Tellcard, Tellcard)
+site.register(models.Tellzone, Tellzone)
+site.register(models.User, User)
+site.register(models.UserLocation, UserLocation)
+site.register(models.UserPhoto, UserPhoto)
+site.register(models.UserSetting, UserSetting)
+site.register(models.UserSocialProfile, UserSocialProfile)
+site.register(models.UserStatus, UserStatus)
+site.register(models.UserStatusAttachment, UserStatusAttachment)
+site.register(models.UserTellzone, UserTellzone)
+site.register(models.UserURL, UserURL)

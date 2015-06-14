@@ -20,11 +20,11 @@ class Authentication(BaseAuthentication):
         token = sub(r'^Token ', '', token)
         user = None
         try:
-            user = models.User.objects.get(id=token.split('.')[0])
+            user = models.User.objects.get_queryset().filter(id=token.split('.')[0]).first()
         except Exception:
-            raise AuthenticationFailed(ugettext_lazy('Invalid Token'))
+            raise AuthenticationFailed(ugettext_lazy('Invalid Token - #1'))
         if not user:
-            raise AuthenticationFailed(ugettext_lazy('Invalid Token'))
+            raise AuthenticationFailed(ugettext_lazy('Invalid Token - #2'))
         if not user.is_valid(token):
-            raise AuthenticationFailed(ugettext_lazy('Invalid Token'))
+            raise AuthenticationFailed(ugettext_lazy('Invalid Token - #3'))
         return (user, None)
