@@ -143,21 +143,21 @@ class Command(BaseCommand):
             k = self.bucket.get_key(n)
             if k:
                 log(2, 'Success (#1)')
-            else:
-                destination = None
-                try:
-                    destination = self.get_thumbnail(source, name, type, item['width'])
-                except Exception:
-                    print_exc()
-                    report_exc_info()
-                if destination:
-                    k = Key(self.bucket)
-                    k.key = n
-                    k.set_contents_from_filename(destination)
-                    remove(destination)
-                    log(2, 'Success (#2)')
-                else:
-                    log(2, 'Failure')
+                continue
+            destination = None
+            try:
+                destination = self.get_thumbnail(source, name, type, item['width'])
+            except Exception:
+                print_exc()
+                report_exc_info()
+            if not destination:
+                log(2, 'Failure')
+                continue
+            k = Key(self.bucket)
+            k.key = n
+            k.set_contents_from_filename(destination)
+            remove(destination)
+            log(2, 'Success (#2)')
         remove(source)
 
     def get_thumbnail(self, source, name, type, width):
