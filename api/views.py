@@ -555,8 +555,8 @@ class MasterTells(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -564,7 +564,7 @@ class MasterTells(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer = serializers.MasterTellsRequest(
-            object,
+            instance,
             context={
                 'request': request,
             },
@@ -623,8 +623,8 @@ class MasterTells(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -632,7 +632,7 @@ class MasterTells(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer = serializers.MasterTellsRequest(
-            object,
+            instance,
             context={
                 'request': request,
             },
@@ -674,18 +674,18 @@ class MasterTells(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
-        object.delete()
+        instance.delete()
         return Response(data=serializers.Null().data, status=HTTP_200_OK)
 
-    def get_object(self, id):
+    def get_instance(self, id):
         return self.get_queryset().filter(id=id).first()
 
     def get_queryset(self):
@@ -1069,8 +1069,8 @@ class Messages(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -1078,7 +1078,7 @@ class Messages(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer = serializers.MessagesPatchRequest(
-            object,
+            instance,
             context={
                 'request': request,
             },
@@ -1132,18 +1132,18 @@ class Messages(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
-        object.delete()
+        instance.delete()
         return Response(data=serializers.Null().data, status=HTTP_200_OK)
 
-    def get_object(self, id):
+    def get_instance(self, id):
         return models.Message.objects.get_queryset().filter(
             Q(user_source_id=self.request.user.id) | Q(user_destination_id=self.request.user.id),
             id=id,
@@ -1978,8 +1978,8 @@ class SlaveTells(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -1987,7 +1987,7 @@ class SlaveTells(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer = serializers.SlaveTellsRequest(
-            object,
+            instance,
             context={
                 'request': request,
             },
@@ -2089,8 +2089,8 @@ class SlaveTells(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -2098,7 +2098,7 @@ class SlaveTells(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer = serializers.SlaveTellsRequest(
-            object,
+            instance,
             context={
                 'request': request,
             },
@@ -2141,18 +2141,18 @@ class SlaveTells(ViewSet):
               message: Invalid Input
         '''
 
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
-        object.delete()
+        instance.delete()
         return Response(data=serializers.Null().data, status=HTTP_200_OK)
 
-    def get_object(self, id):
+    def get_instance(self, id):
         return self.get_queryset().filter(id=id).first()
 
     def get_queryset(self):
@@ -2366,8 +2366,8 @@ class Users(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -2376,7 +2376,7 @@ class Users(ViewSet):
             )
         return Response(
             data=serializers.UsersResponse(
-                object,
+                instance,
                 context={
                     'request': request,
                 },
@@ -2614,8 +2614,8 @@ class Users(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -2623,7 +2623,7 @@ class Users(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer = serializers.UsersRequest(
-            object,
+            instance,
             context={
                 'request': request,
             },
@@ -2664,18 +2664,18 @@ class Users(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        object = self.get_object(id)
-        if not object:
+        instance = self.get_instance(id)
+        if not instance:
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
-        object.delete()
+        instance.delete()
         return Response(data=serializers.Null().data, status=HTTP_200_OK)
 
-    def get_object(self, id):
+    def get_instance(self, id):
         return models.User.objects.get_queryset().exclude(~Q(id__in=[id])).filter(id=self.request.user.id).first()
 
 

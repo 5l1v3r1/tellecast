@@ -556,47 +556,47 @@ class User(Model):
             return 6
         return 0
 
-    def has_permission(self, object=None):
-        if isinstance(object, User):
-            return object.id == self.id
-        if isinstance(object, UserLocation):
-            return object.user_id == self.id
-        if isinstance(object, UserPhoto):
-            return object.user_id == self.id
-        if isinstance(object, UserSetting):
-            return object.user_id == self.id
-        if isinstance(object, UserSocialProfile):
-            return object.user_id == self.id
-        if isinstance(object, UserStatus):
-            return object.user_id == self.id
-        if isinstance(object, UserStatusAttachment):
-            return self.has_permission(self, object=object.user_status)
-        if isinstance(object, UserTellzone):
-            return object.user_id == self.id
-        if isinstance(object, UserURL):
-            return object.user_id == self.id
-        if isinstance(object, Block):
-            return object.user_source_id == self.id
-        if isinstance(object, DeviceAPNS):
-            return object.user_id == self.id
-        if isinstance(object, DeviceGCM):
-            return object.user_id == self.id
-        if isinstance(object, MasterTell):
-            return object.owned_by_id == self.id
-        if isinstance(object, Message):
-            return object.user_source_id == self.id
-        if isinstance(object, MessageAttachment):
-            return self.has_permission(self, object=object.message)
-        if isinstance(object, Notification):
-            return object.user_id == self.id
-        if isinstance(object, Report):
-            return object.user_source_id == self.id
-        if isinstance(object, ShareUser):
-            return object.user_source_id == self.id
-        if isinstance(object, SlaveTell):
-            return object.owned_by_id == self.id
-        if isinstance(object, Tellcard):
-            return object.user_source_id == self.id
+    def has_permission(self, instance=None):
+        if isinstance(instance, User):
+            return instance.id == self.id
+        if isinstance(instance, UserLocation):
+            return instance.user_id == self.id
+        if isinstance(instance, UserPhoto):
+            return instance.user_id == self.id
+        if isinstance(instance, UserSetting):
+            return instance.user_id == self.id
+        if isinstance(instance, UserSocialProfile):
+            return instance.user_id == self.id
+        if isinstance(instance, UserStatus):
+            return instance.user_id == self.id
+        if isinstance(instance, UserStatusAttachment):
+            return self.has_permission(self, instance=instance.user_status)
+        if isinstance(instance, UserTellzone):
+            return instance.user_id == self.id
+        if isinstance(instance, UserURL):
+            return instance.user_id == self.id
+        if isinstance(instance, Block):
+            return instance.user_source_id == self.id
+        if isinstance(instance, DeviceAPNS):
+            return instance.user_id == self.id
+        if isinstance(instance, DeviceGCM):
+            return instance.user_id == self.id
+        if isinstance(instance, MasterTell):
+            return instance.owned_by_id == self.id
+        if isinstance(instance, Message):
+            return instance.user_source_id == self.id
+        if isinstance(instance, MessageAttachment):
+            return self.has_permission(self, instance=instance.message)
+        if isinstance(instance, Notification):
+            return instance.user_id == self.id
+        if isinstance(instance, Report):
+            return instance.user_source_id == self.id
+        if isinstance(instance, ShareUser):
+            return instance.user_source_id == self.id
+        if isinstance(instance, SlaveTell):
+            return instance.owned_by_id == self.id
+        if isinstance(instance, Tellcard):
+            return instance.user_source_id == self.id
 
     def is_authenticated(self):
         return True
