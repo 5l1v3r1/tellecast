@@ -57,6 +57,58 @@ class Null(Serializer):
     pass
 
 
+class Ad(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'slot',
+            'type',
+            'source',
+            'target',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Ad
+
+
+class DeviceAPNS(ModelSerializer):
+
+    device_id = CharField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceAPNS
+
+    def insert_or_update(self):
+        return models.DeviceAPNS.insert_or_update(get_user_id(self.context), self.validated_data)
+
+
+class DeviceGCM(ModelSerializer):
+
+    device_id = CharField()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceGCM
+
+    def insert_or_update(self):
+        return models.DeviceGCM.insert_or_update(get_user_id(self.context), self.validated_data)
+
+
 class Notification(ModelSerializer):
 
     class Meta:
@@ -422,6 +474,96 @@ class UsersProfile(User):
         model = models.User
 
 
+class BlockUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
+class Block(ModelSerializer):
+
+    user_destination_id = IntegerField()
+    user = BlockUser(source='user_destination')
+    report = BooleanField(default=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_destination_id',
+            'user',
+            'timestamp',
+            'report',
+        )
+        model = models.Block
+
+    def insert_or_update(self):
+        return models.Block.insert_or_update(
+            get_user_id(self.context), self.validated_data['user_destination_id'], self.validated_data['report'],
+        )
+
+    def delete(self):
+        return models.Block.delete(get_user_id(self.context), self.validated_data['user_destination_id'])
+
+
+class DevicesAPNSRequest(DeviceAPNS):
+
+    class Meta:
+
+        fields = (
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceAPNS
+
+
+class DevicesAPNSResponse(DeviceAPNS):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceAPNS
+
+
+class DevicesGCMRequest(DeviceGCM):
+
+    class Meta:
+
+        fields = (
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceGCM
+
+
+class DevicesGCMResponse(DeviceGCM):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'device_id',
+            'registration_id',
+        )
+        model = models.DeviceGCM
+
+
 class MessageUser(User):
 
     class Meta:
@@ -694,20 +836,8 @@ class Tellzone(ModelSerializer):
         return dictionary
 
 
-class Ads(ModelSerializer):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'slot',
-            'type',
-            'source',
-            'target',
-            'inserted_at',
-            'updated_at',
-        )
-        model = models.Ad
+class Ads(Ad):
+    pass
 
 
 class AuthenticateRequest(Serializer):
@@ -738,37 +868,18 @@ class AuthenticateResponse(User):
         model = models.User
 
 
-class BlocksRequest(Serializer):
-
-    user_destination_id = IntegerField()
-    report = BooleanField(default=False, required=False)
-
-    def insert_or_update(self):
-        return models.Block.insert_or_update(
-            get_user_id(self.context), self.validated_data['user_destination_id'], self.validated_data['report'],
-        )
-
-    def delete(self):
-        return models.Block.delete(get_user_id(self.context), self.validated_data['user_destination_id'])
-
-
-class BlocksResponseUser(User):
+class BlocksRequest(Block):
 
     class Meta:
 
         fields = (
-            'id',
-            'photo',
-            'first_name',
-            'last_name',
-            'location',
+            'user_destination_id',
+            'report',
         )
-        model = models.User
+        model = models.Block
 
 
-class BlocksResponse(ModelSerializer):
-
-    user = BlocksResponseUser(source='user_destination')
+class BlocksResponse(Block):
 
     class Meta:
 
@@ -778,70 +889,6 @@ class BlocksResponse(ModelSerializer):
             'timestamp',
         )
         model = models.Block
-
-
-class DevicesAPNSRequest(ModelSerializer):
-
-    device_id = CharField()
-
-    class Meta:
-
-        fields = (
-            'name',
-            'device_id',
-            'registration_id',
-        )
-        model = models.DeviceAPNS
-
-    def insert_or_update(self):
-        return models.DeviceAPNS.insert_or_update(get_user_id(self.context), self.validated_data)
-
-
-class DevicesAPNSResponse(ModelSerializer):
-
-    device_id = CharField()
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-            'device_id',
-            'registration_id',
-        )
-        model = models.DeviceAPNS
-
-
-class DevicesGCMRequest(ModelSerializer):
-
-    device_id = CharField()
-
-    class Meta:
-
-        fields = (
-            'name',
-            'device_id',
-            'registration_id',
-        )
-        model = models.DeviceGCM
-
-    def insert_or_update(self):
-        return models.DeviceGCM.insert_or_update(get_user_id(self.context), self.validated_data)
-
-
-class DevicesGCMResponse(ModelSerializer):
-
-    device_id = CharField()
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-            'device_id',
-            'registration_id',
-        )
-        model = models.DeviceGCM
 
 
 class HomeRequest(Serializer):
@@ -1126,7 +1173,7 @@ class RadarPostRequest(UserLocation):
     pass
 
 
-class RadarPostResponse(ModelSerializer):
+class RadarPostResponse(Tellzone):
 
     class Meta:
 
@@ -1366,7 +1413,7 @@ class RegisterResponse(User):
         model = models.User
 
 
-class SharesUsersGet(ModelSerializer):
+class SharesUsersGet(ShareUser):
 
     class Meta:
 
@@ -1378,7 +1425,7 @@ class SharesUsersGet(ModelSerializer):
         model = models.ShareUser
 
 
-class SharesUsersPostRequest(ModelSerializer):
+class SharesUsersPostRequest(ShareUser):
 
     class Meta:
 
@@ -1436,7 +1483,7 @@ class TellcardsRequest(Tellcard):
         model = models.Tellcard
 
 
-class TellcardsResponse(ModelSerializer):
+class TellcardsResponse(Tellcard):
 
     class Meta:
 
