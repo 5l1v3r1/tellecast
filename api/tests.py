@@ -1,34 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from django.contrib.gis.geos import fromstr
 from django.test import TransactionTestCase
-from mixer.backend.django import mixer
 from rest_framework.test import APIClient
 
-from api import models
-
-mixer.register(
-    'api.Tellzone',
-    hours={
-        'Mon': '09:00 AM to 05:00 PM',
-        'Tue': '09:00 AM to 05:00 PM',
-        'Wed': '09:00 AM to 05:00 PM',
-        'Thu': '09:00 AM to 05:00 PM',
-        'Fri': '09:00 AM to 05:00 PM',
-        'Sat': '09:00 AM to 05:00 PM',
-        'Sun': '09:00 AM to 05:00 PM',
-    },
-    point=fromstr('POINT(1.00 1.00)'),
-)
+from api import middleware, models
 
 
 class Ads(TransactionTestCase):
 
     def setUp(self):
-        self.user = mixer.blend('api.User')
+        self.user = middleware.mixer.blend('api.User')
 
         self.count = 10
-        mixer.cycle(self.count).blend('api.Ad')
+        middleware.mixer.cycle(self.count).blend('api.Ad')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
@@ -42,8 +26,8 @@ class Ads(TransactionTestCase):
 class Blocks(TransactionTestCase):
 
     def setUp(self):
-        self.user_1 = mixer.blend('api.User')
-        self.user_2 = mixer.blend('api.User')
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.user_2 = middleware.mixer.blend('api.User')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
@@ -88,7 +72,7 @@ class Blocks(TransactionTestCase):
 class DevicesAPNS(TransactionTestCase):
 
     def setUp(self):
-        self.user = mixer.blend('api.User')
+        self.user = middleware.mixer.blend('api.User')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
@@ -166,7 +150,7 @@ class DevicesAPNS(TransactionTestCase):
 class DevicesGCM(TransactionTestCase):
 
     def setUp(self):
-        self.user = mixer.blend('api.User')
+        self.user = middleware.mixer.blend('api.User')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
@@ -244,10 +228,10 @@ class DevicesGCM(TransactionTestCase):
 class Home(TransactionTestCase):
 
     def setUp(self):
-        self.user = mixer.blend('api.User')
+        self.user = middleware.mixer.blend('api.User')
 
-        mixer.cycle(5).blend('api.User')
-        mixer.cycle(5).blend('api.Tellzone')
+        middleware.mixer.cycle(5).blend('api.User')
+        middleware.mixer.cycle(5).blend('api.Tellzone')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
@@ -329,7 +313,7 @@ class Users(TransactionTestCase):
         self.client = APIClient()
 
     def test_a_deauthenticate(self):
-        self.user = mixer.blend('api.User')
+        self.user = middleware.mixer.blend('api.User')
 
         assert self.user.is_signed_in is False
 
