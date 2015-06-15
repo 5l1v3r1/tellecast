@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import OrderedDict
+from traceback import print_exc
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy
@@ -20,6 +21,7 @@ from rest_framework.serializers import (
     Serializer,
     ValidationError,
 )
+from rollbar import report_exc_info
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
@@ -170,6 +172,8 @@ class SlaveTell(ModelSerializer):
     master_tell_id = IntegerField()
     created_by_id = IntegerField()
     owned_by_id = IntegerField()
+    is_editable = BooleanField(default=True)
+    position = IntegerField(required=False)
 
     class Meta:
 
@@ -1036,7 +1040,7 @@ class RegisterRequestUserSocialProfile(Serializer):
     def validate(self, data):
         if data['netloc'] in ['facebook.com', 'linkedin.com']:
             if 'access_token' not in data or not data['access_token']:
-                raise ValidationError(ugettext_lazy('Invalid `access_token`'))
+                raise ValidationError(ugettext_lazy('Invalid `access_token` - #1'))
         return data
 
 
@@ -1101,6 +1105,8 @@ class RegisterRequestSlaveTell(SlaveTell):
 
 class RegisterRequestMasterTell(MasterTell):
 
+    slave_tells = RegisterRequestSlaveTell(help_text='List of Slave Tells', many=True, required=False)
+
     class Meta:
 
         fields = (
@@ -1112,7 +1118,7 @@ class RegisterRequestMasterTell(MasterTell):
         model = models.MasterTell
 
 
-class RegisterRequest(Serializer):
+class RegisterRequest(User):
 
     email = EmailField()
     photo = CharField(required=False)
@@ -1141,6 +1147,27 @@ class RegisterRequest(Serializer):
     urls = RegisterRequestUserURL(help_text='List of User URLs', many=True, required=False)
     master_tells = RegisterRequestMasterTell(help_text='List of Master Tells', many=True, required=False)
 
+    class Meta:
+
+        fields = (
+            'email',
+            'photo',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'point',
+            'photos',
+            'social_profiles',
+            'status',
+            'urls',
+            'master_tells',
+        )
+        model = models.User
+
     def is_valid_(self, data):
         if 'social_profiles' not in data:
             return False
@@ -1158,7 +1185,8 @@ class RegisterRequest(Serializer):
                         social_profile['access_token']
                     )
                 except Exception:
-                    pass
+                    print_exc()
+                    report_exc_info()
                 uid = response['id'] if response and 'id' in response else ''
                 if not uid:
                     return False
@@ -1175,7 +1203,8 @@ class RegisterRequest(Serializer):
                         social_profile['access_token']
                     )
                 except Exception:
-                    pass
+                    print_exc()
+                    report_exc_info()
                 uid = response['id'] if response and 'id' in response else ''
                 if not uid:
                     return False

@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 from os import environ
+from traceback import print_exc
 
 from celery import Celery
 from django.conf import settings
@@ -37,9 +38,11 @@ def push_notifications(user_id, json):
         try:
             device.send_message(json)
         except Exception:
+            print_exc()
             report_exc_info()
     for device in models.DeviceGCM.objects.get_queryset().filter(user_id=user_id):
         try:
             device.send_message(json)
         except Exception:
+            print_exc()
             report_exc_info()

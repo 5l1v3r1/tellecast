@@ -2935,7 +2935,7 @@ def authenticate(request, backend):
             },
             status=HTTP_401_UNAUTHORIZED,
         )
-    login(request, user)
+    request.user = user
     request.user.sign_in()
     return Response(
         data=serializers.AuthenticateResponse(
@@ -3866,10 +3866,10 @@ def register(request):
         data=request.DATA,
     )
     serializer.is_valid(raise_exception=True)
-    if not serializer.is_valid_(serializer.data):
+    if not serializer.is_valid_(request.DATA):
         return Response(
             data={
-                'error': ugettext_lazy('Invalid `access_token`'),
+                'error': ugettext_lazy('Invalid `access_token` - #2'),
             },
             status=HTTP_400_BAD_REQUEST,
         )

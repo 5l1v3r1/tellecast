@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from traceback import print_exc
+
 from django.http import JsonResponse
 from rollbar import report_exc_info
 
@@ -7,7 +9,6 @@ from rollbar import report_exc_info
 class Exception(object):
 
     def process_exception(self, request, exception):
-        from traceback import print_exc
         print_exc()
         report_exc_info()
         return JsonResponse(

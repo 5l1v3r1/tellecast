@@ -2,6 +2,7 @@
 
 from os import remove
 from tempfile import mkstemp
+from traceback import print_exc
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -147,6 +148,7 @@ class Command(BaseCommand):
                 try:
                     destination = self.get_thumbnail(source, name, type, item['width'])
                 except Exception:
+                    print_exc()
                     report_exc_info()
                 if destination:
                     k = Key(self.bucket)
