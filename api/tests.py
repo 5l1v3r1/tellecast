@@ -276,7 +276,56 @@ class Home(TransactionTestCase):
 
 
 class MasterTells(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/master-tells/', format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        dictionary = {
+            'contents': '1',
+        }
+
+        response = self.client.post('/api/master-tells/', dictionary, format='json')
+        assert response.data['created_by_id'] == self.user.id
+        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['position'] == 1
+        assert response.data['is_visible'] is True
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        response = self.client.get('/api/master-tells/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        dictionary = {
+            'contents': '2',
+        }
+
+        response = self.client.put('/api/master-tells/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['id'] == id
+        assert response.data['created_by_id'] == self.user.id
+        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['position'] == 1
+        assert response.data['is_visible'] is True
+        assert response.status_code == 200
+
+        response = self.client.delete('/api/master-tells/{id}/'.format(id=id), format='json')
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/master-tells/', format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
 
 
 class Messages(TransactionTestCase):
@@ -296,7 +345,72 @@ class Shares(TransactionTestCase):
 
 
 class SlaveTells(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/slave-tells/', format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/master-tells/',
+            {
+                'contents': '1',
+            },
+            format='json',
+        )
+        master_tell_id = response.data['id']
+
+        dictionary = {
+            'master_tell_id': master_tell_id,
+            'type': 'image/*',
+            'contents': '1',
+            'description': '1',
+        }
+
+        response = self.client.post('/api/slave-tells/', dictionary, format='json')
+        assert response.data['master_tell_id'] == dictionary['master_tell_id']
+        assert response.data['created_by_id'] == self.user.id
+        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['type'] == dictionary['type']
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
+        assert response.data['position'] == 1
+        assert response.data['is_editable'] is True
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        response = self.client.get('/api/slave-tells/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        dictionary['contents'] = '2'
+        dictionary['description'] = '2'
+
+        response = self.client.put('/api/slave-tells/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['master_tell_id'] == dictionary['master_tell_id']
+        assert response.data['created_by_id'] == self.user.id
+        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['type'] == dictionary['type']
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
+        assert response.data['position'] == 1
+        assert response.data['is_editable'] is True
+        assert response.status_code == 200
+
+        response = self.client.delete('/api/slave-tells/{id}/'.format(id=id), format='json')
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/slave-tells/', format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
 
 
 class Tellcards(TransactionTestCase):
@@ -336,7 +450,7 @@ class Users(TransactionTestCase):
     def test_c_tellzones(self):
         pass
 
-    def test__profile(self):
+    def test_d_profile(self):
         pass
 
 

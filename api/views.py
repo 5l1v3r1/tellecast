@@ -509,7 +509,7 @@ class MasterTells(ViewSet):
                     'request': request,
                 },
             ).data,
-            status=HTTP_200_OK,
+            status=HTTP_201_CREATED,
         )
 
     def put(self, request, id):
@@ -1728,7 +1728,7 @@ class SharesUsers(ViewSet):
                     'request': request,
                 },
             ).data,
-            status=HTTP_200_OK,
+            status=HTTP_201_CREATED,
         )
 
     def get_queryset(self):
@@ -1889,7 +1889,7 @@ class SlaveTells(ViewSet):
                     'request': request,
                 },
             ).data,
-            status=HTTP_200_OK,
+            status=HTTP_201_CREATED,
         )
 
     def put(self, request, id):
@@ -2268,7 +2268,7 @@ class Tellcards(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
         serializer.insert_or_update()
-        return Response(data=serializers.Null().data, status=HTTP_200_OK)
+        return Response(data=serializers.Null().data, status=HTTP_201_CREATED)
 
     def delete(self, request):
         '''

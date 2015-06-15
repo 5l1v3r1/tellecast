@@ -304,8 +304,8 @@ class SlaveTell(ModelSerializer):
     def insert(self):
         return models.SlaveTell.insert(get_user_id(self.context), self.validated_data)
 
-    def update(self, instance):
-        return instance.update(self.validated_data)
+    def update(self):
+        return self.instance.update(self.validated_data)
 
 
 class MasterTell(ModelSerializer):
@@ -334,8 +334,8 @@ class MasterTell(ModelSerializer):
     def insert(self):
         return models.MasterTell.insert(get_user_id(self.context), self.validated_data)
 
-    def update(self, instance):
-        return instance.update(self.validated_data)
+    def update(self):
+        return self.instance.update(self.validated_data)
 
 
 class User(ModelSerializer):
@@ -389,8 +389,8 @@ class User(ModelSerializer):
     def insert(self):
         return models.User.insert(self.validated_data)
 
-    def update(self, instance):
-        return instance.update(self.validated_data)
+    def update(self):
+        return self.instance.update(self.validated_data)
 
     def to_representation(self, instance):
         id = get_user_id(self.context)
@@ -1108,8 +1108,8 @@ class MessagesPatchRequest(Message):
         )
         model = models.Message
 
-    def update(self, instance):
-        return instance.update(self.validated_data)
+    def update(self):
+        return self.instance.update(self.validated_data)
 
 
 class MessagesPatchResponse(Message):

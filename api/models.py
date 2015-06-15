@@ -1298,9 +1298,9 @@ class SlaveTell(Model):
         verbose_name_plural = 'Slave Tells'
 
     @classmethod
-    def insert(cls, user_id, master_tell_id, data):
+    def insert(cls, user_id, data):
         return SlaveTell.objects.create(
-            master_tell_id=master_tell_id,
+            master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
             created_by_id=user_id,
             owned_by_id=user_id,
             photo=data['photo'] if 'photo' in data else None,
