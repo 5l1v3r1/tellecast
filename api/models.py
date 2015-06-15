@@ -164,17 +164,17 @@ class Tellzone(Model):
         verbose_name = 'Tellzone'
         verbose_name_plural = 'Tellzones'
 
-    @classmethod
-    def radius(cls):
-        return 30.00
-
-    @property
+    @cached_property
     def favorites(self):
         return self.users.get_queryset().filter(favorited_at__isnull=False).count()
 
-    @property
+    @cached_property
     def views(self):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
+
+    @classmethod
+    def radius(cls):
+        return 30.00
 
     def __str__(self):
         return self.name

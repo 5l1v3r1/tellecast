@@ -502,10 +502,9 @@ class MasterTells(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.insert()
         return Response(
             data=serializers.MasterTellsResponse(
-                message,
+                serializer.insert(),
                 context={
                     'request': request,
                 },
@@ -570,10 +569,9 @@ class MasterTells(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.update()
         return Response(
             data=serializers.MasterTellsResponse(
-                message,
+                serializer.update(),
                 context={
                     'request': request,
                 },
@@ -636,13 +634,11 @@ class MasterTells(ViewSet):
                 'request': request,
             },
             data=request.data,
-            partial=True,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.update()
         return Response(
             data=serializers.MasterTellsResponse(
-                message,
+                serializer.update(),
                 context={
                     'request': request,
                 },
@@ -1085,7 +1081,6 @@ class Messages(ViewSet):
             partial=True,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.update()
         if 'user_source_is_hidden' in request.data or 'user_destination_is_hidden' in request.data:
             current_app.send_task(
                 'api.tasks.push_notifications',
@@ -1100,7 +1095,7 @@ class Messages(ViewSet):
             )
         return Response(
             data=serializers.MessagesPatchResponse(
-                message,
+                serializer.update(),
                 context={
                     'request': request,
                 },
@@ -1520,14 +1515,19 @@ class Radar(ViewSet):
                         self.get_degrees(point, p),
                         vincenty((point.x, point.y), (p.x, p.y)).ft,
                     )
-        eps = (
-            (serializer.validated_data['widths_group'] * serializer.validated_data['radius']) /
-            serializer.validated_data['widths_radar']
-        )
         return Response(
             data=serializers.RadarGetResponse(
                 {
-                    'users': self.get_containers(get_clusters(users.values(), eps)),
+                    'users': self.get_containers(
+                        get_clusters(
+                            users.values(),
+                            (
+                                (serializer.validated_data['widths_group'] * serializer.validated_data['radius'])
+                                /
+                                serializer.validated_data['widths_radar']
+                            )
+                        )
+                    ),
                 },
                 context={
                     'request': request,
@@ -1882,10 +1882,9 @@ class SlaveTells(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.insert()
         return Response(
             data=serializers.SlaveTellsResponse(
-                message,
+                serializer.insert(),
                 context={
                     'request': request,
                 },
@@ -1993,10 +1992,9 @@ class SlaveTells(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.update()
         return Response(
             data=serializers.SlaveTellsResponse(
-                message,
+                serializer.update(),
                 context={
                     'request': request,
                 },
@@ -2102,13 +2100,11 @@ class SlaveTells(ViewSet):
                 'request': request,
             },
             data=request.data,
-            partial=True,
         )
         serializer.is_valid(raise_exception=True)
-        message = serializer.update()
         return Response(
             data=serializers.SlaveTellsResponse(
-                message,
+                serializer.update(),
                 context={
                     'request': request,
                 },

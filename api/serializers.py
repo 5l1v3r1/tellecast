@@ -316,9 +316,7 @@ class User(ModelSerializer):
             if field.field_name == 'master_tells':
                 dictionary[field.field_name] = [
                     MasterTell(master_tell, context=self.context).data
-                    for master_tell in instance.master_tells.get_queryset().filter(
-                        is_visible=True,
-                    )[0:self.context.get('master_tells', None)]
+                    for master_tell in instance.master_tells.get_queryset().filter(is_visible=True)
                 ]
                 continue
             if field.field_name == 'messages':
