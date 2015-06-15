@@ -8,7 +8,6 @@ from random import randint, uniform
 from arrow import get
 from celery import current_app
 from django.conf import settings
-from django.contrib.auth import login
 from django.contrib.gis.geos import fromstr
 from django.contrib.gis.measure import D
 from django.db import connection
