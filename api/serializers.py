@@ -648,8 +648,10 @@ class Message(ModelSerializer):
 
         fields = (
             'id',
+            'user_source_id',
             'user_source',
             'user_source_is_hidden',
+            'user_destination_id',
             'user_destination',
             'user_destination_is_hidden',
             'user_status',

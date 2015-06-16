@@ -1003,6 +1003,9 @@ class Messages(ViewSet):
                         return Response(status=HTTP_403_FORBIDDEN)
                     if message.type == 'Response - Blocked':
                         return Response(status=HTTP_403_FORBIDDEN)
+            else:
+                if not serializer.validated_data['type'] == 'Request':
+                    return Response(status=HTTP_403_FORBIDDEN)
         return Response(
             data=serializers.MessagesPostResponse(
                 serializer.insert(),
@@ -1435,7 +1438,7 @@ class Radar(ViewSet):
                     ST_Distance(
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163),
                         ST_Transform(api_users_locations.point, 2163)
-                    ) * 0.3048
+                    ) * 3.28084
                 FROM api_users_locations
                 INNER JOIN api_users ON api_users.id = api_users_locations.user_id
                 LEFT OUTER JOIN api_blocks ON
@@ -1507,7 +1510,7 @@ class Radar(ViewSet):
                 t = 2 * pi * uniform(0.0, 1.0)
                 x = w * cos(t)
                 y = w * sin(t)
-                point = get_point(point.y + y, point.x + x)
+                p = get_point(point.y + y, point.x + x)
                 if record[0] not in users:
                     users[record[0]] = (
                         models.User.objects.get_queryset().filter(id=record[0]).first(),
@@ -1522,8 +1525,7 @@ class Radar(ViewSet):
                         get_clusters(
                             users.values(),
                             (
-                                (serializer.validated_data['widths_group'] * serializer.validated_data['radius'])
-                                /
+                                (serializer.validated_data['widths_group'] * serializer.validated_data['radius']) /
                                 serializer.validated_data['widths_radar']
                             )
                         )
@@ -1631,9 +1633,7 @@ class Radar(ViewSet):
 
 class SharesUsers(ViewSet):
 
-    lookup_field = 'id'
     permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.SharesUsersGet
 
     def get(self, request, *args, **kwargs):
         '''
@@ -2678,7 +2678,7 @@ class UsersTellzones(ViewSet):
 
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def get(self, request, id):
         '''
         SELECT Users :: Tellzones
 
@@ -2711,13 +2711,14 @@ class UsersTellzones(ViewSet):
                 context={
                     'request': request,
                 },
+                many=True,
             ).data,
             status=HTTP_200_OK,
         )
 
     def post(self, request, id):
         '''
-        UPDATE (View, Favorite) Users :: Tellzones
+        INSERT/UPDATE (View, Favorite) Users :: Tellzones
 
         <pre>
         Input
@@ -4043,6 +4044,7 @@ def tellzones(request):
             context={
                 'request': request,
             },
+            many=True,
         ).data,
         status=HTTP_200_OK,
     )
@@ -4096,7 +4098,7 @@ def tellzones_master_tells(request, id):
                 api_master_tells.updated_at
             FROM api_users_locations
             INNER JOIN api_users ON api_users.id = api_users_locations.user_id
-            INNER JOIN api_master_tells ON api_master_tells.user_id = api_users_locations.user_id
+            INNER JOIN api_master_tells ON api_master_tells.owned_by_id = api_users_locations.user_id
             LEFT OUTER JOIN api_blocks ON
                 (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
                 OR
@@ -4124,7 +4126,7 @@ def tellzones_master_tells(request, id):
                 request.user.id,
                 request.user.id,
                 'POINT({x} {y})'.format(x=tellzone.point.x, y=tellzone.point.y),
-                models.Tellzone.radius(),
+                models.Tellzone.radius() * 0.3048,
             )
         )
         for record in cursor.fetchall():
@@ -4140,10 +4142,10 @@ def tellzones_master_tells(request, id):
             })
     return Response(
         data=serializers.TellzonesMasterTells(
+            master_tells,
             context={
                 'request': request,
             },
-            data=master_tells,
             many=True,
         ).data,
         status=HTTP_200_OK,

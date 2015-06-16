@@ -640,7 +640,7 @@ class UserLocation(Model):
 
     @classmethod
     def insert(cls, user_id, data):
-        return UserPhoto.objects.create(
+        return UserLocation.objects.create(
             user_id=user_id,
             tellzone_id=data['tellzone_id'] if 'tellzone' in data else None,
             point=data['point'] if 'point' in data else None,
@@ -836,7 +836,8 @@ class UserTellzone(Model):
         user_tellzone.save()
         return user_tellzone
 
-    def delete(self, user_id, data):
+    @classmethod
+    def delete(cls, user_id, data):
         user_tellzone = UserTellzone.objects.get_queryset().filter(
             user_id=user_id,
             tellzone_id=data['tellzone_id'],

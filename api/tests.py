@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from django.contrib.gis.geos import fromstr
 from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
@@ -52,6 +53,41 @@ class Blocks(TransactionTestCase):
         assert len(response.data) == 1
         assert response.data[0]['user']['id'] == self.user_2.id
         assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/tellcards/',
+            {
+                'user_destination_id': self.user_2.id,
+                'action': 'View',
+            },
+            format='json',
+        )
+        assert response.status_code == 400
+
+        response = self.client.post(
+            '/api/messages/',
+            {
+                'user_destination_id': self.user_2.id,
+                'type': 'Request',
+                'contents': '1',
+                'status': 'Unread',
+            },
+            format='json',
+        )
+        assert response.status_code == 400
+
+        response = self.client.post(
+            '/api/tellcards/',
+            {
+                'user_destination_id': self.user_2.id,
+                'action': 'Save',
+            },
+            format='json',
+        )
+        assert response.status_code == 400
+
+        response = self.client.get('/api/users/{id}/profile/'.format(id=self.user_2.id), format='json')
+        assert response.status_code == 400
 
         response = self.client.post(
             '/api/blocks/delete/',
@@ -329,19 +365,395 @@ class MasterTells(TransactionTestCase):
 
 
 class Messages(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
+
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+    def test_a(self):
+        response = self.client_1.get(
+            '/api/messages/',
+            {
+                'recent': 'True',
+            },
+            format='json',
+        )
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client_1.get(
+            '/api/messages/',
+            {
+                'user_id': self.user_2.id,
+            },
+            format='json',
+        )
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        dictionary = {
+            'user_destination_id': self.user_2.id,
+            'type': 'Message',
+            'contents': '1',
+            'status': 'Unread',
+        }
+
+        response = self.client_1.post('/api/messages/', dictionary, format='json')
+        assert response.status_code == 403
+
+        dictionary['type'] = 'Request'
+
+        response = self.client_1.post('/api/messages/', dictionary, format='json')
+        assert response.data['user_source']['id'] == self.user_1.id
+        assert response.data['user_source_is_hidden'] is False
+        assert response.data['user_destination']['id'] == dictionary['user_destination_id']
+        assert response.data['user_destination_is_hidden'] is False
+        assert response.data['user_status'] == None
+        assert response.data['master_tell'] == None
+        assert response.data['type'] == dictionary['type']
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['status'] == dictionary['status']
+        assert response.data['attachments'] == []
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        dictionary['status'] = 'Read'
+
+        response = self.client_1.patch('/api/messages/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['id'] == id
+        assert response.data['contents'] == dictionary['contents']
+        assert response.status_code == 200
+
+        dictionary = {
+            'user_destination_id': self.user_1.id,
+            'type': 'Response - Accepted',
+            'contents': '1',
+            'status': 'Unread',
+        }
+
+        response = self.client_2.post('/api/messages/', dictionary, format='json')
+        assert response.data['user_source']['id'] == self.user_2.id
+        assert response.data['user_source_is_hidden'] is False
+        assert response.data['user_destination']['id'] == dictionary['user_destination_id']
+        assert response.data['user_destination_is_hidden'] is False
+        assert response.data['user_status'] == None
+        assert response.data['master_tell'] == None
+        assert response.data['type'] == dictionary['type']
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['status'] == dictionary['status']
+        assert response.data['attachments'] == []
+        assert response.status_code == 201
+
+        response = self.client_1.get(
+            '/api/messages/',
+            {
+                'recent': 'True',
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client_1.get(
+            '/api/messages/',
+            {
+                'user_id': self.user_2.id,
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client_1.post(
+            '/api/messages/bulk/is_hidden/',
+            {
+                'user_id': self.user_2.id,
+            },
+            format='json',
+        )
+        for message in response.data:
+            assert message['user_source']['id'] in [self.user_1.id, self.user_2.id]
+            assert message['user_destination']['id'] in [self.user_1.id, self.user_2.id]
+            assert (
+                (message['user_source']['id'] == self.user_1.id and message['user_source_is_hidden'] is True) or
+                (message['user_destination']['id'] == self.user_1.id and message['user_destination_is_hidden'] is True)
+            )
+        assert response.status_code == 200
+
+        response = self.client_1.post(
+            '/api/messages/bulk/status/',
+            {
+                'user_id': self.user_2.id,
+            },
+            format='json',
+        )
+        for message in response.data:
+            assert message['user_source']['id'] == self.user_2.id
+            assert message['user_destination']['id'] == self.user_1.id
+            assert message['status'] == 'Read'
+        assert response.status_code == 200
+
+        response = self.client_1.delete('/api/messages/{id}/'.format(id=id), format='json')
+        assert response.data == {}
+        assert response.status_code == 200
 
 
 class Notifications(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
+
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+    def test_a(self):
+        response = self.client_1.get('/api/notifications/', format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        data = []
+
+        response = self.client_2.post(
+            '/api/tellcards/',
+            {
+                'user_destination_id': self.user_1.id,
+                'action': 'Save',
+            },
+            format='json',
+        )
+        assert response.status_code == 201
+
+        response = self.client_1.get('/api/notifications/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0]['type'] == 'A'
+        assert response.data[0]['status'] == 'Unread'
+        assert response.status_code == 200
+
+        data.append({
+            'id': response.data[0]['id'],
+            'status': 'Read',
+        })
+
+        response = self.client_2.post(
+            '/api/shares/users/',
+            {
+                'user_destination_id': self.user_1.id,
+                'object_id': self.user_1.id,
+            },
+            format='json',
+        )
+        assert response.status_code == 201
+
+        response = self.client_1.get('/api/notifications/', format='json')
+        assert len(response.data) == 2
+        assert response.data[0]['type'] == 'B'
+        assert response.data[0]['status'] == 'Unread'
+        assert response.status_code == 200
+
+        data.append({
+            'id': response.data[0]['id'],
+            'status': 'Read',
+        })
+
+        response = self.client_2.post(
+            '/api/messages/',
+            {
+                'user_destination_id': self.user_1.id,
+                'type': 'Request',
+                'contents': '1',
+                'status': 'Unread',
+            },
+            format='json',
+        )
+        assert response.status_code == 201
+
+        response = self.client_1.get('/api/notifications/', format='json')
+        assert len(response.data) == 3
+        assert response.data[0]['type'] == 'G'
+        assert response.data[0]['status'] == 'Unread'
+        assert response.status_code == 200
+
+        data.append({
+            'id': response.data[0]['id'],
+            'status': 'Read',
+        })
+
+        response = self.client_1.post('/api/notifications/', data, format='json')
+        for notification in response.data:
+            assert notification['status'] == 'Read'
+        assert response.status_code == 200
 
 
 class Radar(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+        with middleware.mixer.ctx(commit=False):
+            for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone'):
+                tellzone.point = get_point()
+                tellzone.save()
+            for user in middleware.mixer.cycle(5).blend('api.User'):
+                user.point = get_point()
+                user.is_signed_in = True
+                user.save()
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+                response = client.post(
+                    '/api/radar/',
+                    {
+                        'tellzone_id': models.Tellzone.objects.get_queryset().order_by('?').first().id,
+                        'point': {
+                            'latitude': 1.00,
+                            'longitude': 1.00,
+                        },
+                        'accuracies_horizontal': 1.00,
+                        'accuracies_vertical': 1.00,
+                        'bearing': 180,
+                        'is_casting': True,
+                    },
+                    format='json',
+                )
+                assert len(response.data) == 5
+                assert 'id' in response.data[0]
+                assert 'name' in response.data[0]
+                assert response.status_code == 200
+
+            for email in [
+                'bradotts@gmail.com',
+                'callmejerms@aol.com',
+                'fl@fernandoleal.me',
+                'kevin@tellecast.com',
+                'mbatchelder13@yahoo.com',
+            ]:
+                user = middleware.mixer.blend('api.User', email=email)
+                user.point = get_point()
+                user.is_signed_in = True
+                user.save()
+
+    def test_a(self):
+        response = self.client.post(
+            '/api/radar/',
+            {
+                'tellzone_id': models.Tellzone.objects.get_queryset().order_by('?').first().id,
+                'point': {
+                    'latitude': 1.00,
+                    'longitude': 1.00,
+                },
+                'accuracies_horizontal': 1.00,
+                'accuracies_vertical': 1.00,
+                'bearing': 180,
+                'is_casting': True,
+            },
+            format='json',
+        )
+        assert len(response.data) == 5
+        assert 'id' in response.data[0]
+        assert 'name' in response.data[0]
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/radar/',
+            {
+                'latitude': 1.00,
+                'longitude': 1.00,
+                'radius': 300,
+                'widths_radar': 1,
+                'widths_group': 1,
+            },
+            format='json',
+        )
+        assert 'users' in response.data
+        assert len(response.data['users']) > 1
+        assert 'degrees' in response.data['users'][0]
+        assert 'radius' in response.data['users'][0]
+        assert 'items' in response.data['users'][0]
+        assert len(response.data['users'][0]['items']) > 1
+        assert response.status_code == 200
 
 
-class Shares(TransactionTestCase):
-    pass
+class SharesUsers(TransactionTestCase):
+
+    def setUp(self):
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
+
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+    def test_a(self):
+        self.get(self.client_1, 0)
+        self.get(self.client_2, 0)
+
+        response = self.client_1.post(
+            '/api/shares/users/',
+            {
+                'user_destination_id': self.user_2.id,
+                'object_id': self.user_2.id,
+            },
+            format='json',
+        )
+        assert 'email' in response.data
+        assert 'subject' in response.data['email']
+        assert 'body' in response.data['email']
+        assert 'sms' in response.data
+        assert 'facebook_com' in response.data
+        assert 'twitter_com' in response.data
+        assert response.status_code == 201
+
+        response = self.client_2.post(
+            '/api/shares/users/',
+            {
+                'user_destination_id': self.user_1.id,
+                'object_id': self.user_1.id,
+            },
+            format='json',
+        )
+        assert 'email' in response.data
+        assert 'subject' in response.data['email']
+        assert 'body' in response.data['email']
+        assert 'sms' in response.data
+        assert 'facebook_com' in response.data
+        assert 'twitter_com' in response.data
+        assert response.status_code == 201
+
+        self.get(self.client_1, 1)
+        self.get(self.client_2, 1)
+
+    def get(self, client, count):
+        response = client.get(
+            '/api/shares/users/',
+            {
+                'type': 'Source',
+            },
+            format='json',
+        )
+        assert len(response.data) == count
+        assert response.status_code == 200
+
+        response = client.get(
+            '/api/shares/users/',
+            {
+                'type': 'Destination',
+            },
+            format='json',
+        )
+        assert len(response.data) == count
+        assert response.status_code == 200
 
 
 class SlaveTells(TransactionTestCase):
@@ -414,27 +826,173 @@ class SlaveTells(TransactionTestCase):
 
 
 class Tellcards(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
+
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+    def test_a(self):
+        self.get(self.client_1, 0, 0)
+        self.get(self.client_2, 0, 0)
+
+        response = self.client_1.post(
+            '/api/tellcards/',
+            {
+                'user_destination_id': self.user_2.id,
+                'action': 'Save',
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 201
+
+        response = self.client_2.post(
+            '/api/tellcards/',
+            {
+                'user_destination_id': self.user_1.id,
+                'action': 'Save',
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 201
+
+        self.get(self.client_1, 1, 1)
+        self.get(self.client_2, 1, 1)
+
+        response = self.client_1.post(
+            '/api/tellcards/delete/',
+            {
+                'user_destination_id': self.user_2.id,
+                'action': 'Save',
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client_2.post(
+            '/api/tellcards/delete/',
+            {
+                'user_destination_id': self.user_1.id,
+                'action': 'Save',
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 200
+
+        self.get(self.client_1, 0, 0)
+        self.get(self.client_2, 0, 0)
+
+    def get(self, client, count_1, count_2):
+        response = client.get(
+            '/api/tellcards/',
+            {
+                'type': 'Source',
+            },
+            format='json',
+        )
+        assert len(response.data) == count_1
+        assert response.status_code == 200
+
+        response = client.get(
+            '/api/tellcards/',
+            {
+                'type': 'Destination',
+            },
+            format='json',
+        )
+        assert len(response.data) == count_2
+        assert response.status_code == 200
 
 
 class Tellzones(TransactionTestCase):
-    pass
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+        with middleware.mixer.ctx(commit=False):
+            for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone'):
+                tellzone.point = get_point()
+                tellzone.save()
+            for user in middleware.mixer.cycle(5).blend('api.User'):
+                user.point = get_point()
+                user.is_signed_in = True
+                user.save()
+                for index in range(0, 5):
+                    models.MasterTell.objects.create(created_by_id=user.id, owned_by_id=user.id, contents=str(id))
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+                response = client.post(
+                    '/api/radar/',
+                    {
+                        'tellzone_id': models.Tellzone.objects.get_queryset().first().id,
+                        'point': {
+                            'latitude': 1.00,
+                            'longitude': 1.00,
+                        },
+                        'accuracies_horizontal': 1.00,
+                        'accuracies_vertical': 1.00,
+                        'bearing': 180,
+                        'is_casting': True,
+                    },
+                    format='json',
+                )
+                assert len(response.data) == 5
+                assert 'id' in response.data[0]
+                assert 'name' in response.data[0]
+                assert response.status_code == 200
+
+    def test_a(self):
+        response = self.client.get(
+            '/api/tellzones/',
+            {
+                'latitude': 1.00,
+                'longitude': 1.00,
+                'radius': 300,
+            },
+            format='json',
+        )
+        assert len(response.data) == 5
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/tellzones/{id}/master-tells/'.format(id=models.Tellzone.objects.get_queryset().first().id),
+            {
+                'latitude': 1.00,
+                'longitude': 1.00,
+                'radius': 300,
+            },
+            format='json',
+        )
+        assert len(response.data) == 25
+        assert response.status_code == 200
 
 
 class Users(TransactionTestCase):
 
     def setUp(self):
-        self.client = APIClient()
+        self.tellzone = middleware.mixer.blend('api.Tellzone')
 
-    def test_a_deauthenticate(self):
         self.user = middleware.mixer.blend('api.User')
 
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
         assert self.user.is_signed_in is False
 
         self.user.is_signed_in = True
         self.user.save()
-
-        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
         response = self.client.post('/api/deauthenticate/', format='json')
         assert response.data == {}
@@ -444,15 +1002,70 @@ class Users(TransactionTestCase):
         assert self.user is not None
         assert self.user.is_signed_in is False
 
-    def test_b(self):
-        pass
+        response = self.client.get('/api/users/0/', format='json')
+        assert response.status_code == 400
 
-    def test_c_tellzones(self):
-        pass
+        response = self.client.get('/api/users/{id}/'.format(id=self.user.id), format='json')
+        assert response.data['id'] == self.user.id
+        assert response.status_code == 200
 
-    def test_d_profile(self):
-        pass
+        dictionary = {
+            'email': self.user.email,
+            'first_name': '1',
+            'last_name': '1',
+        }
+
+        response = self.client.put('/api/users/{id}/'.format(id=self.user.id), dictionary, format='json')
+        assert response.data['id'] == self.user.id
+        assert response.data['first_name'] == dictionary['first_name']
+        assert response.data['last_name'] == dictionary['last_name']
+        assert response.status_code == 200
+
+        response = self.client.get('/api/users/{id}/profile/'.format(id=self.user.id), format='json')
+        assert response.data['id'] == self.user.id
+        assert response.status_code == 200
+
+        response = self.client.get('/api/users/{id}/tellzones/'.format(id=self.user.id), format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/users/{id}/tellzones/'.format(id=self.user.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'Favorite',
+            },
+            format='json',
+        )
+        assert response.data['tellzone_id'] == self.tellzone.id
+        assert response.status_code == 201
+
+        response = self.client.get('/api/users/{id}/tellzones/'.format(id=self.user.id), format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/users/{id}/tellzones/delete/'.format(id=self.user.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'Favorite',
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/users/{id}/tellzones/'.format(id=self.user.id), format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client.delete('/api/users/{id}/'.format(id=self.user.id), format='json')
+        assert response.status_code == 200
 
 
 def get_header(token):
         return 'Token {token}'.format(token=token)
+
+
+def get_point():
+    return fromstr('POINT(1.00 1.00)')
