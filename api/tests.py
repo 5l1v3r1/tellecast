@@ -413,8 +413,8 @@ class Messages(TransactionTestCase):
         assert response.data['user_source_is_hidden'] is False
         assert response.data['user_destination']['id'] == dictionary['user_destination_id']
         assert response.data['user_destination_is_hidden'] is False
-        assert response.data['user_status'] == None
-        assert response.data['master_tell'] == None
+        assert response.data['user_status'] is None
+        assert response.data['master_tell'] is None
         assert response.data['type'] == dictionary['type']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['status'] == dictionary['status']
@@ -442,8 +442,8 @@ class Messages(TransactionTestCase):
         assert response.data['user_source_is_hidden'] is False
         assert response.data['user_destination']['id'] == dictionary['user_destination_id']
         assert response.data['user_destination_is_hidden'] is False
-        assert response.data['user_status'] == None
-        assert response.data['master_tell'] == None
+        assert response.data['user_status'] is None
+        assert response.data['master_tell'] is None
         assert response.data['type'] == dictionary['type']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['status'] == dictionary['status']
@@ -1064,7 +1064,7 @@ class Users(TransactionTestCase):
 
 
 def get_header(token):
-        return 'Token {token}'.format(token=token)
+    return 'Token {token}'.format(token=token)
 
 
 def get_point():
