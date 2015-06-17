@@ -580,7 +580,6 @@ class MessageUserStatus(UserStatus):
 
         fields = (
             'id',
-            'user_id',
             'string',
             'title',
             'url',
