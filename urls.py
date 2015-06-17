@@ -77,6 +77,8 @@ urlpatterns = patterns(
     url(r'^api/home/statistics/frequent/$', views.home_statistics_frequent),
     url(r'^api/home/statistics/infrequent/$', views.home_statistics_infrequent),
     url(r'^api/home/tellzones/$', views.home_tellzones),
+    url(r'^api/master-tells/ids/$', views.master_tells_ids),
+    url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(
         r'^api/master-tells/(?P<id>[^/]+)/$',
         views.MasterTells.as_view({
@@ -92,8 +94,6 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
-    url(r'^api/master-tells/ids/$', views.master_tells_ids),
-    url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(
         r'^api/messages/(?P<id>[^/]+)/$',
         views.Messages.as_view({
@@ -131,6 +131,8 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
+    url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
     url(
         r'^api/slave-tells/(?P<id>[^/]+)/$',
         views.SlaveTells.as_view({
@@ -146,8 +148,6 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
-    url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
-    url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
     url(
         r'^api/tellcards/delete/$',
         views.Tellcards.as_view({
@@ -161,8 +161,8 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
-    url(r'^api/tellzones/$', views.tellzones),
     url(r'^api/tellzones/(?P<id>[^/]+)/master-tells/$', views.tellzones_master_tells),
+    url(r'^api/tellzones/$', views.tellzones),
     url(r'^api/users/(?P<id>[^/]+)/profile/$', views.users_profile),
     url(
         r'^api/users/(?P<id>[^/]+)/tellzones/delete/$',

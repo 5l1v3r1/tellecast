@@ -355,6 +355,11 @@ class MasterTells(TransactionTestCase):
         assert response.data['is_visible'] is True
         assert response.status_code == 200
 
+        response = self.client.get('/api/master-tells/ids/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0] == id
+        assert response.status_code == 200
+
         response = self.client.delete('/api/master-tells/{id}/'.format(id=id), format='json')
         assert response.data == {}
         assert response.status_code == 200
@@ -814,6 +819,11 @@ class SlaveTells(TransactionTestCase):
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 1
         assert response.data['is_editable'] is True
+        assert response.status_code == 200
+
+        response = self.client.get('/api/slave-tells/ids/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0] == id
         assert response.status_code == 200
 
         response = self.client.delete('/api/slave-tells/{id}/'.format(id=id), format='json')

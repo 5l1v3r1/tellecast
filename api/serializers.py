@@ -25,6 +25,7 @@ from rollbar import report_exc_info
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
+from ujson import dumps
 
 from api import models
 
@@ -42,6 +43,15 @@ def to_representation(self, value):
     return value.strftime(self.format)
 
 DateTimeField.to_representation = to_representation
+
+
+class JSONField(CharField):
+
+    def to_representation(self, value):
+        try:
+            return dumps(value)
+        except Exception:
+            return '{}'
 
 
 def get_user_id(context):
@@ -110,6 +120,8 @@ class DeviceGCM(ModelSerializer):
 
 
 class Notification(ModelSerializer):
+
+    contents = JSONField()
 
     class Meta:
 
@@ -774,7 +786,7 @@ class Tellcard(ModelSerializer):
 
 class Tellzone(ModelSerializer):
 
-    hours = DictField(child=CharField())
+    hours = JSONField()
     point = PointField()
     views = IntegerField()
     favorites = IntegerField()

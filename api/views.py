@@ -3517,7 +3517,7 @@ def home_tellzones(request):
 
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
-def master_tells_ids(request):
+def master_tells_ids(request, *args, **kwargs):
     '''
     SELECT (id) Master Tells
 
@@ -3551,7 +3551,7 @@ def master_tells_ids(request):
 
 @api_view(('POST',))
 @permission_classes((IsAuthenticated,))
-def master_tells_positions(request):
+def master_tells_positions(request, *args, **kwargs):
     '''
     UPDATE (position) Master Tells
 
