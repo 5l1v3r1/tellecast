@@ -1004,6 +1004,26 @@ class Users(TransactionTestCase):
         self.user.is_signed_in = True
         self.user.save()
 
+        dictionary = {
+            'name': '1',
+            'device_id': '1',
+            'registration_id': '1',
+        }
+
+        response = self.client.post('/api/devices/apns/', dictionary, format='json')
+        assert response.status_code == 201
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.post('/api/devices/gcm/', dictionary, format='json')
+        assert response.status_code == 201
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
         response = self.client.post('/api/deauthenticate/', format='json')
         assert response.data == {}
         assert response.status_code == 200
@@ -1011,6 +1031,14 @@ class Users(TransactionTestCase):
         self.user = models.User.objects.get_queryset().filter(id=self.user.id).first()
         assert self.user is not None
         assert self.user.is_signed_in is False
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
 
         response = self.client.get('/api/users/0/', format='json')
         assert response.status_code == 400

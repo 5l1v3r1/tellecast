@@ -2968,6 +2968,8 @@ def deauthenticate(request):
           message: Invalid Input
     '''
     request.user.sign_out()
+    models.DeviceAPNS.objects.get_queryset().filter(user_id=request.user.id).delete()
+    models.DeviceGCM.objects.get_queryset().filter(user_id=request.user.id).delete()
     return Response(data=serializers.Null().data, status=HTTP_200_OK)
 
 
