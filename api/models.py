@@ -1104,7 +1104,7 @@ class Message(Model):
             master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
             type=data['type'] if 'type' in data else None,
             contents=data['contents'] if 'contents' in data else None,
-            status=data['status'] if 'status' in data else None,
+            status=data['status'] if 'status' in data else 'Unread',
         )
         if 'attachments' in data:
             for attachment in data['attachments']:
