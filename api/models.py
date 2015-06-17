@@ -1027,7 +1027,8 @@ class MasterTell(Model):
         )
         if 'slave_tells' in data:
             for slave_tell in data['slave_tells']:
-                SlaveTell.insert(user_id, master_tell.id, slave_tell)
+                slave_tell['master_tell_id'] = master_tell.id
+                SlaveTell.insert(user_id, slave_tell)
         return master_tell
 
     def __str__(self):
