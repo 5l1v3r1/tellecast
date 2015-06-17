@@ -127,14 +127,12 @@ class Notification(ModelSerializer):
 
 class UserPhoto(ModelSerializer):
 
-    user_id = IntegerField()
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
-            'user_id',
             'string',
             'position',
         )
@@ -179,13 +177,10 @@ class UserSetting(Serializer):
 
 class UserSocialProfile(ModelSerializer):
 
-    user_id = IntegerField()
-
     class Meta:
 
         fields = (
             'id',
-            'user_id',
             'netloc',
             'url',
         )
@@ -194,14 +189,12 @@ class UserSocialProfile(ModelSerializer):
 
 class UserStatusAttachment(ModelSerializer):
 
-    user_status_id = IntegerField()
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
-            'user_status_id',
             'string',
             'position',
         )
@@ -210,7 +203,6 @@ class UserStatusAttachment(ModelSerializer):
 
 class UserStatus(ModelSerializer):
 
-    user_id = IntegerField()
     url = CharField(required=False)
     notes = CharField(required=False)
     attachments = UserStatusAttachment(help_text='List of Users :: Statuses :: Attachments', many=True, required=False)
@@ -219,7 +211,6 @@ class UserStatus(ModelSerializer):
 
         fields = (
             'id',
-            'user_id',
             'string',
             'title',
             'url',
@@ -261,14 +252,12 @@ class UserTellzone(ModelSerializer):
 
 class UserURL(ModelSerializer):
 
-    user_id = IntegerField()
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
-            'user_id',
             'string',
             'position',
         )
