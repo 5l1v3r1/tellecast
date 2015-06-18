@@ -246,7 +246,7 @@ class User(Model):
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
     point = PointField(ugettext_lazy('Point'), blank=True, db_index=True, null=True)
-    is_signed_in = BooleanField(ugettext_lazy('Is Signed In?'), db_index=True, default=False)
+    is_signed_in = BooleanField(ugettext_lazy('Is Signed In?'), db_index=True, default=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
 
