@@ -999,10 +999,7 @@ class Users(TransactionTestCase):
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
     def test_a(self):
-        assert self.user.is_signed_in is False
-
-        self.user.is_signed_in = True
-        self.user.save()
+        assert self.user.is_signed_in is True
 
         dictionary = {
             'name': '1',
@@ -1051,12 +1048,32 @@ class Users(TransactionTestCase):
             'email': self.user.email,
             'first_name': '1',
             'last_name': '1',
+            'social_profiles': [
+                {
+                    'netloc': 'linkedin.com',
+                    'url': '1',
+                },
+                {
+                    'netloc': 'twitter.com',
+                    'url': '1',
+                },
+            ],
         }
 
         response = self.client.put('/api/users/{id}/'.format(id=self.user.id), dictionary, format='json')
         assert response.data['id'] == self.user.id
         assert response.data['first_name'] == dictionary['first_name']
         assert response.data['last_name'] == dictionary['last_name']
+        assert len(response.data['social_profiles']) == 2
+        assert response.status_code == 200
+
+        del dictionary['social_profiles'][0]['url']
+
+        response = self.client.put('/api/users/{id}/'.format(id=self.user.id), dictionary, format='json')
+        assert response.data['id'] == self.user.id
+        assert response.data['first_name'] == dictionary['first_name']
+        assert response.data['last_name'] == dictionary['last_name']
+        assert len(response.data['social_profiles']) == 1
         assert response.status_code == 200
 
         response = self.client.get('/api/users/{id}/profile/'.format(id=self.user.id), format='json')

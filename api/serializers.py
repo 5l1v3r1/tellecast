@@ -177,6 +177,8 @@ class UserSetting(Serializer):
 
 class UserSocialProfile(ModelSerializer):
 
+    url = CharField(allow_blank=True, required=False)
+
     class Meta:
 
         fields = (
@@ -1199,7 +1201,7 @@ class RegisterRequestUserSocialProfile(Serializer):
             ('twitter.com', 'twitter.com',),
         ),
     )
-    url = CharField()
+    url = CharField(allow_blank=True, required=False)
 
     def validate(self, data):
         if data['netloc'] in ['facebook.com', 'linkedin.com']:

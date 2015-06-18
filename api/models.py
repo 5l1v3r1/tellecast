@@ -140,6 +140,12 @@ class Ad(Model):
         verbose_name = 'Ad'
         verbose_name_plural = 'Ads'
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class Tellzone(Model):
 
@@ -426,6 +432,8 @@ class User(Model):
         ids = []
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
+                if 'url' not in social_profile or not social_profile['url']:
+                    continue
                 user_social_profile = self.social_profiles.get_queryset().filter(
                     Q(id=social_profile['id'] if 'id' in social_profile else 0) |
                     Q(netloc=social_profile['netloc'] if 'netloc' in social_profile else ''),
@@ -648,6 +656,12 @@ class UserLocation(Model):
             is_casting=data['is_casting'] if 'is_casting' in data else None,
         )
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class UserPhoto(Model):
 
@@ -671,6 +685,12 @@ class UserPhoto(Model):
             string=data['string'] if 'string' in data else None,
             position=data['position'] if 'position' in data else None,
         )
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class UserSetting(Model):
@@ -703,6 +723,12 @@ class UserSetting(Model):
         )
         verbose_name = ugettext_lazy('Users :: Setting')
         verbose_name_plural = ugettext_lazy('Users :: Settings')
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class UserSocialProfile(Model):
@@ -737,7 +763,14 @@ class UserSocialProfile(Model):
 
     @classmethod
     def insert(cls, user_id, data):
-        return UserSocialProfile.objects.create(user_id=user_id, netloc=data['netloc'], url=data['url'])
+        if 'url' in data and data['url']:
+            return UserSocialProfile.objects.create(user_id=user_id, netloc=data['netloc'], url=data['url'])
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class UserStatus(Model):
@@ -801,6 +834,12 @@ class UserStatusAttachment(Model):
             position=data['position'] if 'position' in data else None,
         )
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class UserTellzone(Model):
 
@@ -849,6 +888,12 @@ class UserTellzone(Model):
         user_tellzone.save()
         return user_tellzone
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class UserURL(Model):
 
@@ -872,6 +917,12 @@ class UserURL(Model):
             string=data['string'] if 'string' in data else None,
             position=data['position'] if 'position' in data else None,
         )
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class Block(Model):
@@ -912,6 +963,12 @@ class Block(Model):
             user_destination_id=user_destination_id,
         ).delete()
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class DeviceAPNS(Model):
 
@@ -944,6 +1001,12 @@ class DeviceAPNS(Model):
                 registration_id=data['registration_id'],
             )
         return device
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
     def send_message(self, extra):
         alert = None
@@ -990,6 +1053,12 @@ class DeviceGCM(Model):
                 registration_id=data['registration_id'],
             )
         return device
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
     def send_message(self, data):
         return gcm_send_message(self.registration_id, data)
@@ -1149,6 +1218,12 @@ class MessageAttachment(Model):
             position=data['position'] if 'position' in data else None,
         )
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class Notification(Model):
 
@@ -1189,6 +1264,12 @@ class Notification(Model):
         verbose_name = 'Notification'
         verbose_name_plural = 'Notifications'
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
 
 class Report(Model):
 
@@ -1203,6 +1284,12 @@ class Report(Model):
         )
         verbose_name = 'Report'
         verbose_name_plural = 'Reports'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class ShareUser(Model):
@@ -1235,6 +1322,12 @@ class ShareUser(Model):
                 object_id=object_id,
             )
         return share_user
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
     def get_dictionary(self):
         return {
@@ -1313,6 +1406,12 @@ class SlaveTell(Model):
             is_editable=data['is_editable'] if 'is_editable' in data else None,
         )
 
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
     def update(self, data):
         if 'master_tell_id' in data:
             self.master_tell_id = data['master_tell_id']
@@ -1387,6 +1486,12 @@ class Tellcard(Model):
             tellcard.saved_at = None
         tellcard.save()
         return tellcard
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 @receiver(post_save, sender=User)
