@@ -2945,7 +2945,7 @@ def authenticate(request, backend):
 
 
 @api_view(('POST',))
-@permission_classes(())
+@permission_classes((IsAuthenticated,))
 def deauthenticate(request):
     '''
     Deauthenticate Users
