@@ -210,9 +210,7 @@ class Tellzone(Model):
 
     def get_tellecasters(self, user_id):
         return UserLocation.objects.get_queryset().filter(
-            ~Q(user_id=user_id),
             point__distance_lte=(self.point, D(ft=Tellzone.radius())),
-            is_casting=True,
             timestamp__gt=datetime.now() - timedelta(minutes=1),
             user__is_signed_in=True,
         ).count()
