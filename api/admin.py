@@ -4,11 +4,14 @@ from django.apps import apps
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.auth.admin import UserAdmin as AdministratorAdmin
 from django.contrib.auth.models import User as Administrator
+from django.contrib.gis.forms.widgets import BaseGeometryWidget
 from django.utils.translation import ugettext_lazy
 from social.apps.django_app.default.admin import UserSocialAuthOption
 from social.apps.django_app.default.models import UserSocialAuth
 
 from api import models
+
+BaseGeometryWidget.display_raw = True
 
 site.unregister(Administrator)
 site.unregister(UserSocialAuth)
