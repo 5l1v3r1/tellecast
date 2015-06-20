@@ -1,3 +1,4 @@
+*.py[cod]
 media/*
 !media/.gitkeep
 settings.py
