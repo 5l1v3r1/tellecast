@@ -815,7 +815,7 @@ class Tellzone(ModelSerializer):
                         continue
                     dictionary[field.field_name] = vincenty(
                         (instance.point.x, instance.point.y), (point.x, point.y)
-                    ).ft,
+                    ).ft
                     continue
             if field.field_name == 'connections':
                 dictionary[field.field_name] = instance.get_connections(id)
