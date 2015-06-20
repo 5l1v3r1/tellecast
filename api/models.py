@@ -178,6 +178,14 @@ class Tellzone(Model):
     def views(self):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
 
+    @cached_property
+    def tellecasters(self):
+        return UserLocation.objects.get_queryset().filter(
+            point__distance_lte=(self.point, D(ft=Tellzone.radius())),
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
+            user__is_signed_in=True,
+        ).count()
+
     @classmethod
     def radius(cls):
         return 30.00
@@ -213,13 +221,6 @@ class Tellzone(Model):
             if tellcard.user_destination_id == user_id:
                 connections.append(tellcard.user_source)
         return connections
-
-    def get_tellecasters(self, user_id):
-        return UserLocation.objects.get_queryset().filter(
-            point__distance_lte=(self.point, D(ft=Tellzone.radius())),
-            timestamp__gt=datetime.now() - timedelta(minutes=1),
-            user__is_signed_in=True,
-        ).count()
 
     def is_viewed(self, user_id):
         return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0

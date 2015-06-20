@@ -6,6 +6,7 @@ from traceback import print_exc
 from django.conf import settings
 from django.utils.translation import ugettext_lazy
 from drf_extra_fields.geo_fields import PointField
+from geopy.distance import vincenty
 from rest_framework.fields import SkipField
 from rest_framework.serializers import (
     BooleanField,
@@ -804,13 +805,20 @@ class Tellzone(ModelSerializer):
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
             if field.field_name == 'distance':
-                dictionary[field.field_name] = getattr(instance.distance, 'ft', 0.00)
-                continue
+                try:
+                    dictionary[field.field_name] = getattr(instance.distance, 'ft', 0.00)
+                    continue
+                except AttributeError:
+                    point = self.context.get('point', None)
+                    if not instance.point or not point:
+                        dictionary[field.field_name] = 0.00
+                        continue
+                    dictionary[field.field_name] = vincenty(
+                        (instance.point.x, instance.point.y), (point.x, point.y)
+                    ).ft,
+                    continue
             if field.field_name == 'connections':
                 dictionary[field.field_name] = instance.get_connections(id)
-                continue
-            if field.field_name == 'tellecasters':
-                dictionary[field.field_name] = instance.get_tellecasters(id)
                 continue
             if field.field_name == 'is_viewed':
                 dictionary[field.field_name] = instance.is_viewed(id)
@@ -1585,10 +1593,11 @@ class UsersTellzonesGet(Tellzone):
             'point',
             'inserted_at',
             'updated_at',
-            'connections',
-            'tellecasters',
             'views',
             'favorites',
+            'distance',
+            'connections',
+            'tellecasters',
             'is_viewed',
             'is_favorited',
         )

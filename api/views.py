@@ -2697,16 +2697,26 @@ class UsersTellzones(ViewSet):
             - code: 400
               message: Invalid Input
         '''
+        point = None
+        user_location = models.UserLocation.objects.get_queryset().filter(user_id=request.user.id).first()
+        if user_location:
+            point = user_location.point
         return Response(
             data=serializers.UsersTellzonesGet(
-                [
-                    user_tellzone.tellzone
-                    for user_tellzone in models.UserTellzone.objects.get_queryset().filter(
-                        user_id=request.user.id,
-                        favorited_at__isnull=False,
-                    )
-                ],
+                sorted(
+                    [
+                        user_tellzone.tellzone
+                        for user_tellzone in models.UserTellzone.objects.get_queryset().filter(
+                            user_id=request.user.id,
+                            favorited_at__isnull=False,
+                        )
+                    ],
+                    key=lambda tellzone: (
+                        -tellzone.tellecasters, self.get_distance(tellzone.point, point), -tellzone.id
+                    ),
+                ),
                 context={
+                    'point': point,
                     'request': request,
                 },
                 many=True,
@@ -2812,6 +2822,11 @@ class UsersTellzones(ViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.delete()
         return Response(data=serializers.Null().data, status=HTTP_200_OK)
+
+    def get_distance(self, point_1, point_2):
+        if not point_1 or not point_2:
+            return 0.00
+        return vincenty((point_1.x, point_1.y), (point_2.x, point_2.y)).ft
 
 
 @api_view(('GET',))
@@ -4033,14 +4048,17 @@ def tellzones(request):
     point = get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
     return Response(
         data=serializers.TellzonesResponse(
-            [
-                tellzone
-                for tellzone in models.Tellzone.objects.get_queryset().filter(
-                    point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
-                ).distance(
-                    point,
-                )
-            ],
+            sorted(
+                [
+                    tellzone
+                    for tellzone in models.Tellzone.objects.get_queryset().filter(
+                        point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
+                    ).distance(
+                        point,
+                    )
+                ],
+                key=lambda tellzone: (-tellzone.tellecasters, tellzone.distance.ft, -tellzone.id),
+            ),
             context={
                 'request': request,
             },
