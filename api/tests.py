@@ -636,16 +636,6 @@ class Radar(TransactionTestCase):
                 assert 'name' in response.data[0]
                 assert response.status_code == 200
 
-            for email in [
-                'bradotts@gmail.com',
-                'callmejerms@aol.com',
-                'kevin@tellecast.com',
-            ]:
-                user = middleware.mixer.blend('api.User', email=email)
-                user.point = get_point()
-                user.is_signed_in = True
-                user.save()
-
     def test_a(self):
         response = self.client.post(
             '/api/radar/',
@@ -679,7 +669,7 @@ class Radar(TransactionTestCase):
             format='json',
         )
         assert 'users' in response.data
-        assert len(response.data['users']) > 1
+        assert len(response.data['users']) > 0
         assert 'degrees' in response.data['users'][0]
         assert 'radius' in response.data['users'][0]
         assert 'items' in response.data['users'][0]

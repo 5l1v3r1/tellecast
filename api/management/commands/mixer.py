@@ -32,17 +32,6 @@ class Command(BaseCommand):
             user.save()
             self.user_location(user)
 
-        for email in [
-            'bradotts@gmail.com',
-            'callmejerms@aol.com',
-            'kevin@tellecast.com',
-        ]:
-            user = middleware.mixer.blend('api.User', email=email)
-            user.point = self.point
-            user.is_signed_in = True
-            user.save()
-            self.user_location(user)
-
     def user_location(self, user):
         models.UserLocation.objects.create(
             user_id=user.id,

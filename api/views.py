@@ -2,8 +2,8 @@
 
 from contextlib import closing
 from datetime import date, datetime, timedelta
-from math import atan2, cos, pi, sin, sqrt
-from random import randint, uniform
+from math import atan2, pi
+from random import randint
 
 from arrow import get
 from celery import current_app
@@ -803,6 +803,7 @@ class Messages(ViewSet):
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
                 ).order_by(
                     '-inserted_at',
+                    '-id',
                 ).first()
                 if message:
                     messages.append(message)
@@ -991,6 +992,7 @@ class Messages(ViewSet):
                 ),
             ).order_by(
                 '-inserted_at',
+                '-id',
             ).first()
             if message:
                 if message.user_source_id == request.user.id:
@@ -1461,7 +1463,7 @@ class Radar(ViewSet):
                     api_users.is_signed_in IS TRUE
                     AND
                     api_blocks.id IS NULL
-                ORDER BY api_users_locations.timestamp DESC
+                ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
                 ''',
                 (
                     'POINT({x} {y})'.format(x=point.x, y=point.y),
@@ -1481,40 +1483,6 @@ class Radar(ViewSet):
                         p,
                         self.get_degrees(point, p),
                         record[2],
-                    )
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT api_users.id
-                FROM api_users
-                LEFT OUTER JOIN api_blocks ON
-                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users.id)
-                    OR
-                    (api_blocks.user_source_id = api_users.id AND api_blocks.user_destination_id = %s)
-                WHERE
-                    api_users.email = ANY('{
-                        bradotts@gmail.com,
-                        callmejerms@aol.com,
-                        kevin@tellecast.com
-                    }'::text[])
-                    AND
-                    api_blocks.id IS NULL
-                ORDER BY api_users.id ASC
-                ''',
-                (request.user.id, request.user.id,)
-            )
-            for record in cursor.fetchall():
-                w = ((serializer.validated_data['radius'] * 0.3048) / 111300) * sqrt(uniform(0.0, 1.0))
-                t = 2 * pi * uniform(0.0, 1.0)
-                x = w * cos(t)
-                y = w * sin(t)
-                p = get_point(point.y + y, point.x + x)
-                if record[0] not in users:
-                    users[record[0]] = (
-                        models.User.objects.get_queryset().filter(id=record[0]).first(),
-                        p,
-                        self.get_degrees(point, p),
-                        vincenty((point.x, point.y), (p.x, p.y)).ft,
                     )
         return Response(
             data=serializers.RadarGetResponse(
@@ -3213,6 +3181,7 @@ def home_statistics_frequent(request):
             'user_id',
         ).order_by(
             'user_id',
+            '-id',
         ).count()
         users_area = models.UserLocation.objects.filter(
             ~Q(user_id=request.user.id),
@@ -3224,6 +3193,7 @@ def home_statistics_frequent(request):
             'user_id',
         ).order_by(
             'user_id',
+            '-id',
         ).count()
     return Response(
         data=serializers.HomeStatisticsFrequentResponse(
@@ -3341,7 +3311,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
                 GROUP BY viewed_at::DATE
-                ORDER BY viewed_at::DATE DESC
+                ORDER BY viewed_at::DATE DESC, id DESC
                 ''',
                 (request.user.id, days[6], days[0],)
             )
@@ -3357,7 +3327,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('WEEK', viewed_at)
-                ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC
+                ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC, id DESC
                 ''',
                 (request.user.id, weeks[2], weeks[1],)
             )
@@ -3373,7 +3343,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('MONTH', viewed_at)
-                ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC
+                ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC, id DESC
                 ''',
                 (request.user.id, months[2], months[1],)
             )
@@ -3389,7 +3359,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
                 GROUP BY saved_at::DATE
-                ORDER BY saved_at::DATE DESC
+                ORDER BY saved_at::DATE DESC, id DESC
                 ''',
                 (request.user.id, days[6], days[0],)
             )
@@ -3405,7 +3375,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('WEEK', saved_at)
-                ORDER BY DATE_TRUNC('WEEK', saved_at) DESC
+                ORDER BY DATE_TRUNC('WEEK', saved_at) DESC, id DESC
                 ''',
                 (request.user.id, weeks[2], weeks[1],)
             )
@@ -3421,7 +3391,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('MONTH', saved_at)
-                ORDER BY DATE_TRUNC('MONTH', saved_at) DESC
+                ORDER BY DATE_TRUNC('MONTH', saved_at) DESC, id DESC
                 ''',
                 (request.user.id, months[2], months[1],)
             )
@@ -3517,6 +3487,7 @@ def home_tellzones(request):
             point,
         ).order_by(
             'distance',
+            '-id',
         )
     return Response(
         data=serializers.HomeTellzonesResponse(
@@ -4137,7 +4108,7 @@ def tellzones_master_tells(request, id):
                 api_users.is_signed_in IS TRUE
                 AND
                 api_blocks.id IS NULL
-            ORDER BY api_users_locations.timestamp DESC
+            ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
             ''',
             (
                 request.user.id,
