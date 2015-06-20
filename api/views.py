@@ -1495,9 +1495,7 @@ class Radar(ViewSet):
                     api_users.email = ANY('{
                         bradotts@gmail.com,
                         callmejerms@aol.com,
-                        fl@fernandoleal.me,
-                        kevin@tellecast.com,
-                        mbatchelder13@yahoo.com
+                        kevin@tellecast.com
                     }'::text[])
                     AND
                     api_blocks.id IS NULL

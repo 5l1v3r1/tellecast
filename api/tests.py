@@ -639,9 +639,7 @@ class Radar(TransactionTestCase):
             for email in [
                 'bradotts@gmail.com',
                 'callmejerms@aol.com',
-                'fl@fernandoleal.me',
                 'kevin@tellecast.com',
-                'mbatchelder13@yahoo.com',
             ]:
                 user = middleware.mixer.blend('api.User', email=email)
                 user.point = get_point()
