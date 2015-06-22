@@ -308,6 +308,32 @@ class Notification(ModelAdmin):
     )
 
 
+class RecommendedTell(ModelAdmin):
+
+    fields = (
+        'type',
+        'contents',
+        'photo',
+    )
+    list_display = (
+        'id',
+        'type',
+        'contents',
+        'photo',
+        'inserted_at',
+        'updated_at',
+    )
+    list_filter = (
+        'type',
+        'inserted_at',
+        'updated_at',
+    )
+    search_fields = (
+        'contents',
+        'photo',
+    )
+
+
 class Report(ModelAdmin):
 
     fields = (
@@ -722,6 +748,7 @@ site.register(models.MasterTell, MasterTell)
 site.register(models.Message, Message)
 site.register(models.MessageAttachment, MessageAttachment)
 site.register(models.Notification, Notification)
+site.register(models.RecommendedTell, RecommendedTell)
 site.register(models.Report, Report)
 site.register(models.ShareUser, ShareUser)
 site.register(models.SlaveTell, SlaveTell)

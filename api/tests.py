@@ -681,6 +681,31 @@ class Radar(TransactionTestCase):
         assert response.status_code == 200
 
 
+class RecommendedTells(TransactionTestCase):
+
+    def setUp(self):
+        self.types = [
+            'Hobby',
+            'Mind',
+            'Passion',
+        ]
+        self.count = 10
+
+        for type in self.types:
+            middleware.mixer.cycle(self.count).blend('api.RecommendedTell', type=type)
+
+    def test_a(self):
+        self.client = APIClient()
+
+        response = self.client.get('/api/recommended-tells/TYPE/', format='json')
+        assert response.status_code == 400
+
+        for type in self.types:
+            response = self.client.get('/api/recommended-tells/{type}/'.format(type=type), format='json')
+            assert len(response.data) == self.count
+            assert response.status_code == 200
+
+
 class SharesUsers(TransactionTestCase):
 
     def setUp(self):

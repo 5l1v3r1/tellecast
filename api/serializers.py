@@ -126,6 +126,19 @@ class Notification(ModelSerializer):
         model = models.Notification
 
 
+class RecommendedTell(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'type',
+            'contents',
+            'photo',
+        )
+        model = models.RecommendedTell
+
+
 class UserPhoto(ModelSerializer):
 
     position = IntegerField(required=False)
@@ -1297,6 +1310,28 @@ class RegisterRequestMasterTell(MasterTell):
             'slave_tells',
         )
         model = models.MasterTell
+
+
+class RecommendedTellsRequest(RecommendedTell):
+
+    class Meta:
+
+        fields = (
+            'type',
+        )
+        model = models.RecommendedTell
+
+
+class RecommendedTellsResponse(RecommendedTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'contents',
+            'photo',
+        )
+        model = models.RecommendedTell
 
 
 class RegisterRequest(User):

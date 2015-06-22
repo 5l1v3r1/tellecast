@@ -123,6 +123,7 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/recommended-tells/(?P<type>[^/]+)/$', views.recommended_tells),
     url(r'^api/register/$', views.register),
     url(
         r'^api/shares/users/$',

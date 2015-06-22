@@ -3764,6 +3764,63 @@ def messages_bulk_status(request):
     )
 
 
+@api_view(('GET',))
+@permission_classes(())
+def recommended_tells(request, type):
+    '''
+    SELECT Recommended Tells
+
+    <pre>
+    Input
+    =====
+
+    + type
+        - Type: string
+        - Status: mandatory
+        - Choices:
+            - Hobby
+            - Mind
+            - Passion
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: type
+          paramType: path
+          required: true
+          type: string
+    response_serializer: api.serializers.RecommendedTellsResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.RecommendedTellsRequest(
+        context={
+            'request': request,
+        },
+        data={
+            'type': type,
+        },
+    )
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        data=serializers.RecommendedTellsResponse(
+            models.RecommendedTell.objects.get_queryset().filter(type=serializer.validated_data['type']),
+            context={
+                'request': request,
+            },
+            many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('POST',))
 @permission_classes(())
 def register(request):

@@ -147,6 +147,39 @@ class Ad(Model):
         return unicode(self.id)
 
 
+class RecommendedTell(Model):
+
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('Hobby', 'Hobby',),
+            ('Mind', 'Mind',),
+            ('Passion', 'Passion',),
+        ),
+        db_index=True,
+        default='Hobby',
+        max_length=255,
+    )
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+
+    class Meta:
+        db_table = 'api_recommended_tells'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Recommended Tell'
+        verbose_name_plural = 'Recommended Tells'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
 class Tellzone(Model):
 
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
