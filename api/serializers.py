@@ -911,7 +911,7 @@ class HomeConnectionsRequest(HomeRequest):
     pass
 
 
-class HomeConnectionsResponseUser(User):
+class HomeConnectionsResponseItemsUser(User):
 
     class Meta:
 
@@ -931,7 +931,7 @@ class HomeConnectionsResponseUser(User):
         model = models.User
 
 
-class HomeConnectionsResponseTellzone(Tellzone):
+class HomeConnectionsResponseItemsTellzone(Tellzone):
 
     class Meta:
 
@@ -950,12 +950,19 @@ class HomeConnectionsResponseTellzone(Tellzone):
         model = models.Tellzone
 
 
-class HomeConnectionsResponse(Serializer):
+class HomeConnectionsResponseItems(Serializer):
 
-    user = HomeConnectionsResponseUser()
-    tellzone = HomeConnectionsResponseTellzone(required=False)
+    user = HomeConnectionsResponseItemsUser()
+    tellzone = HomeConnectionsResponseItemsTellzone(required=False)
     point = PointField()
     timestamp = DateTimeField()
+
+
+class HomeConnectionsResponse(Serializer):
+
+    days = DictField(child=IntegerField())
+    today = IntegerField()
+    users = HomeConnectionsResponseItems(many=True, required=False)
 
 
 class HomeStatisticsFrequentRequest(HomeRequest):

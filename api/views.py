@@ -3012,18 +3012,31 @@ def home_connections(request):
         data=request.query_params,
     )
     serializer.is_valid(raise_exception=True)
+    data = {
+        'days': {},
+        'today': 0,
+        'users': [],
+    }
+    today = date.today()
+    days = get_days(today)
+    for day in days:
+        data['days'][day] = 0
     if serializer.validated_data['dummy'] == 'Yes':
-        connections = [
+        for day in days:
+            data['days'][day] = randint(1, 150)
+        data['today'] = randint(1, 150)
+        data['users'] = [
             {
                 'user': user,
                 'tellzone': models.Tellzone.objects.get_queryset().order_by('?').first(),
                 'point': user.point,
-                'timestamp': datetime.now() - timedelta(days=randint(1, 31)),
+                'timestamp': datetime.now() - timedelta(days=randint(1, 7)),
             }
             for user in models.User.objects.get_queryset().exclude(id=request.user.id).order_by('?')[0:5]
         ]
     else:
-        connections = {}
+        data['users'] = {}
+        records = []
         with closing(connection.cursor()) as cursor:
             cursor.execute(
                 '''
@@ -3031,7 +3044,8 @@ def home_connections(request):
                     api_users_locations_2.user_id,
                     api_users_locations_2.tellzone_id,
                     api_users_locations_2.point,
-                    api_users_locations_2.timestamp
+                    api_users_locations_2.timestamp,
+                    api_users_locations_2.timestamp::DATE
                 FROM api_users_locations api_users_locations_1
                 INNER JOIN api_users_locations api_users_locations_2 ON
                     api_users_locations_1.user_id != api_users_locations_2.user_id
@@ -3055,33 +3069,39 @@ def home_connections(request):
                     AND
                     api_messages.user_destination_id = api_users_locations_2.user_id
                 WHERE
-                    api_users_locations_1.user_id = 1
+                    api_users_locations_1.user_id = %s
                     AND
-                    api_users_locations_1.timestamp > NOW() - INTERVAL '1 day'
+                    api_users_locations_1.timestamp::DATE BETWEEN %s AND %s
                     AND
                     api_tellcards.id IS NULL
                     AND
                     api_messages.id IS NULL
                 GROUP BY api_users_locations_2.id
                 ''',
-                (request.user.id,)
+                (request.user.id, today, days[0],)
             )
-            for record in cursor.fetchall():
-                if record[0] not in connections:
-                    connections[record[0]] = {
-                        'user': models.User.objects.get_queryset().filter(id=record[0]).first(),
-                        'tellzone': models.Tellzone.objects.get_queryset().filter(id=record[1]).first(),
-                        'point': record[2],
-                        'timestamp': record[3],
-                    }
-        connections = connections.values()
+            records = cursor.fetchall()
+        for record in records:
+            if record[4] == today:
+                data['today'] += 1
+            else:
+                if record[4] not in data['days']:
+                    data['days'][record[4]] = 0
+                data['days'][record[4]] += 1
+            if record[0] not in data['users']:
+                data['users'][record[0]] = {
+                    'user': models.User.objects.get_queryset().filter(id=record[0]).first(),
+                    'tellzone': models.Tellzone.objects.get_queryset().filter(id=record[1]).first(),
+                    'point': record[2],
+                    'timestamp': record[3],
+                }
+        data['users'] = data['users'].values()
     return Response(
         data=serializers.HomeConnectionsResponse(
-            connections,
+            data,
             context={
                 'request': request,
             },
-            many=True,
         ).data,
         status=HTTP_200_OK,
     )
