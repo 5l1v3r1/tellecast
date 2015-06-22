@@ -3824,6 +3824,23 @@ def register(request):
             'longitude': 0.0000000000,
         }
 
+    + settings
+        - Type: dictionary
+        - Status: mandatory
+
+        Example:
+
+        {
+            'notifications_invitations': true,
+            'notifications_messages': true,
+            'notifications_saved_you': true,
+            'notifications_shared_profiles': true,
+            'show_email': false,
+            'show_last_name': true,
+            'show_phone': false,
+            'show_photo': true,
+        }
+
     + photos (see /api/users/ for more details)
         - Type: list (a list of Photo objects)
         - Status: optional

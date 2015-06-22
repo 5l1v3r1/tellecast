@@ -1318,6 +1318,7 @@ class RegisterRequest(User):
     description = CharField(required=False)
     phone = CharField(required=False)
     point = PointField(required=False)
+    settings = UserSetting(help_text='Users :: Settings')
     photos = RegisterRequestUserPhoto(help_text='List of Users :: Photos', many=True, required=False)
     social_profiles = RegisterRequestUserSocialProfile(
         help_text='List of Users :: Social Profiles',
@@ -1341,6 +1342,7 @@ class RegisterRequest(User):
             'description',
             'phone',
             'point',
+            'settings',
             'photos',
             'social_profiles',
             'status',
@@ -1412,6 +1414,7 @@ class RegisterResponse(User):
             'point',
             'inserted_at',
             'updated_at',
+            'settings',
             'photos',
             'social_profiles',
             'status',

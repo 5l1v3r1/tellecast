@@ -291,6 +291,11 @@ class User(Model):
             phone=data['phone'] if 'phone' in data else None,
             point=data['point'] if 'point' in data else None,
         )
+        if 'settings' in data:
+            for key, value in data['settings'].items():
+                user_setting = user.settings.get_queryset().filter(key=key).first()
+                user_setting.value = 'True' if value else 'False'
+                user_setting.save()
         if 'photos' in data:
             for photo in data['photos']:
                 UserPhoto.insert(user.id, photo)
