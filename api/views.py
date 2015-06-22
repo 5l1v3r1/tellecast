@@ -3331,7 +3331,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
                 GROUP BY viewed_at::DATE
-                ORDER BY viewed_at::DATE DESC, id DESC
+                ORDER BY viewed_at::DATE DESC
                 ''',
                 (request.user.id, days[6], days[0],)
             )
@@ -3347,7 +3347,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('WEEK', viewed_at)
-                ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC, id DESC
+                ORDER BY DATE_TRUNC('WEEK', viewed_at) DESC
                 ''',
                 (request.user.id, weeks[2], weeks[1],)
             )
@@ -3363,7 +3363,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND viewed_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('MONTH', viewed_at)
-                ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC, id DESC
+                ORDER BY DATE_TRUNC('MONTH', viewed_at) DESC
                 ''',
                 (request.user.id, months[2], months[1],)
             )
@@ -3379,7 +3379,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
                 GROUP BY saved_at::DATE
-                ORDER BY saved_at::DATE DESC, id DESC
+                ORDER BY saved_at::DATE DESC
                 ''',
                 (request.user.id, days[6], days[0],)
             )
@@ -3395,7 +3395,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('WEEK', saved_at)
-                ORDER BY DATE_TRUNC('WEEK', saved_at) DESC, id DESC
+                ORDER BY DATE_TRUNC('WEEK', saved_at) DESC
                 ''',
                 (request.user.id, weeks[2], weeks[1],)
             )
@@ -3411,7 +3411,7 @@ def home_statistics_infrequent(request):
                 FROM api_tellcards
                 WHERE user_destination_id = %s AND saved_at::DATE BETWEEN %s AND %s
                 GROUP BY DATE_TRUNC('MONTH', saved_at)
-                ORDER BY DATE_TRUNC('MONTH', saved_at) DESC, id DESC
+                ORDER BY DATE_TRUNC('MONTH', saved_at) DESC
                 ''',
                 (request.user.id, months[2], months[1],)
             )
