@@ -2419,7 +2419,7 @@ class Users(ViewSet):
                 'notifications_saved_you': true,
                 'notifications_shared_profiles': true,
                 'show_email': false,
-                'show_last_name': true,
+                'show_last_name': false,
                 'show_phone': false,
                 'show_photo': true,
             }
@@ -3893,7 +3893,7 @@ def register(request):
             'notifications_saved_you': true,
             'notifications_shared_profiles': true,
             'show_email': false,
-            'show_last_name': true,
+            'show_last_name': false,
             'show_phone': false,
             'show_photo': true,
         }

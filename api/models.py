@@ -740,7 +740,7 @@ class UserSetting(Model):
         'notifications_saved_you': True,
         'notifications_shared_profiles': True,
         'show_email': False,
-        'show_last_name': True,
+        'show_last_name': False,
         'show_phone': False,
         'show_photo': True,
     }
