@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+from copy import deepcopy
 from os import environ
 from traceback import print_exc
 
@@ -36,13 +37,13 @@ celery.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 def push_notifications(user_id, json):
     for device in models.DeviceAPNS.objects.get_queryset().filter(user_id=user_id):
         try:
-            device.send_message(json)
+            device.send_message(deepcopy(json))
         except Exception:
             print_exc()
             report_exc_info()
     for device in models.DeviceGCM.objects.get_queryset().filter(user_id=user_id):
         try:
-            device.send_message(json)
+            device.send_message(deepcopy(json))
         except Exception:
             print_exc()
             report_exc_info()
