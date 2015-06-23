@@ -3741,17 +3741,6 @@ def messages_bulk_status(request):
         message.status = 'Read'
         message.save()
         messages.append(message)
-    current_app.send_task(
-        'api.tasks.push_notifications',
-        (
-            request.user.id,
-            {
-                'aps': {},
-                'type': 'updateThread',
-            },
-        ),
-        serializer='json',
-    )
     return Response(
         data=serializers.MessagesBulkResponse(
             messages,
