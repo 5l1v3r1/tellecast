@@ -1026,7 +1026,9 @@ class DeviceAPNS(Model):
 
     @classmethod
     def insert_or_update(cls, user_id, data):
-        device = DeviceAPNS.objects.get_queryset().filter(user_id=user_id, device_id=data['device_id']).first()
+        device = DeviceAPNS.objects.get_queryset().filter(
+            user_id=user_id, registration_id=data['registration_id'],
+        ).first()
         if device:
             device.name = data['name']
             device.device_id = data['device_id']
