@@ -156,9 +156,10 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '...'
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '...'
 SOCIAL_AUTH_INSTAGRAM_KEY = '...'
 SOCIAL_AUTH_INSTAGRAM_SECRET = '...'
-SOCIAL_AUTH_LINKEDIN_EXTRA_DATA = (
+SOCIAL_AUTH_LINKEDIN_OAUTH2_EXTRA_DATA = [
     ('apiStandardProfileRequest', 'api_standard_profile_request',),
     ('currentShare', 'current_share',),
+    ('emailAddress', 'email',),
     ('firstName', 'first_name',),
     ('formattedName', 'formatted_name',),
     ('formattedPhoneticName', 'formatted_phonetic_name',),
@@ -179,10 +180,11 @@ SOCIAL_AUTH_LINKEDIN_EXTRA_DATA = (
     ('siteStandardProfileRequest', 'site_standard_profile_request',),
     ('specialties', 'specialties',),
     ('summary', 'summary',),
-)
-SOCIAL_AUTH_LINKEDIN_FIELD_SELECTORS = (
+]
+SOCIAL_AUTH_LINKEDIN_OAUTH2_FIELD_SELECTORS = [
     'api-standard-profile-request',
     'current-share',
+    'email-address',
     'first-name',
     'formatted-name',
     'formatted-phonetic-name',
@@ -203,14 +205,14 @@ SOCIAL_AUTH_LINKEDIN_FIELD_SELECTORS = (
     'site-standard-profile-request',
     'specialties',
     'summary',
-)
+]
 SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = '...'
 SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = '...'
-SOCIAL_AUTH_LINKEDIN_SCOPE = (
+SOCIAL_AUTH_LINKEDIN_OAUTH2_SCOPE = [
     'r_basicprofile',
     'r_emailaddress',
-)
-SOCIAL_AUTH_PIPELINE = (
+]
+SOCIAL_AUTH_PIPELINE = [
     'social.pipeline.social_auth.social_details',
     'social.pipeline.social_auth.social_uid',
     'social.pipeline.social_auth.auth_allowed',
@@ -220,8 +222,8 @@ SOCIAL_AUTH_PIPELINE = (
     'social.pipeline.social_auth.associate_user',
     'social.pipeline.social_auth.load_extra_data',
     'social.pipeline.user.user_details',
-)
-SOCIAL_AUTH_PROTECTED_USER_FIELDS = (
+]
+SOCIAL_AUTH_PROTECTED_USER_FIELDS = [
     'email',
     'photo',
     'first_name',
@@ -231,7 +233,7 @@ SOCIAL_AUTH_PROTECTED_USER_FIELDS = (
     'location',
     'description',
     'phone',
-)
+]
 SOCIAL_AUTH_TWITTER_KEY = '...'
 SOCIAL_AUTH_TWITTER_SECRET = '...'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'

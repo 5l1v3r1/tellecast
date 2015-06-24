@@ -91,6 +91,12 @@ UserSocialAuth._meta.verbose_name = ugettext_lazy('user')
 UserSocialAuth._meta.verbose_name_plural = ugettext_lazy('users')
 
 
+def create_user(self, *args, **kwargs):
+    return self.get_queryset().filter(email=kwargs['email']).first()
+
+GeoManager.create_user = create_user
+
+
 class Ad(Model):
 
     slot = CharField(
