@@ -1032,6 +1032,7 @@ class DeviceAPNS(Model):
 
     @classmethod
     def insert_or_update(cls, user_id, data):
+        DeviceAPNS.objects.get_queryset().filter(~Q(user_id=user_id), registration_id=data['registration_id']).delete()
         device = DeviceAPNS.objects.get_queryset().filter(
             user_id=user_id, registration_id=data['registration_id'],
         ).first()
@@ -1086,6 +1087,7 @@ class DeviceGCM(Model):
 
     @classmethod
     def insert_or_update(cls, user_id, data):
+        DeviceAPNS.objects.get_queryset().filter(~Q(user_id=user_id), device_id=data['device_id']).delete()
         device = DeviceGCM.objects.get_queryset().filter(user_id=user_id, device_id=data['device_id']).first()
         if device:
             device.name = data['name']
