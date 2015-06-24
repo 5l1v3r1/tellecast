@@ -119,8 +119,8 @@ class DevicesAPNS(TransactionTestCase):
         assert response.status_code == 200
 
         dictionary = {
-            'name': '1',
-            'device_id': '1',
+            'name': '1.1',
+            'device_id': '1.1',
             'registration_id': '1',
         }
 
@@ -140,8 +140,8 @@ class DevicesAPNS(TransactionTestCase):
         assert response.data[0]['registration_id'] == dictionary['registration_id']
         assert response.status_code == 200
 
-        dictionary['name'] = '2'
-        dictionary['registration_id'] = '2'
+        dictionary['name'] = '1.2'
+        dictionary['device_id'] = '1.2'
 
         response = self.client.post('/api/devices/apns/', dictionary, format='json')
         assert response.data['id'] == id
@@ -159,8 +159,8 @@ class DevicesAPNS(TransactionTestCase):
         assert response.status_code == 200
 
         dictionary = {
-            'name': '2',
-            'device_id': '2',
+            'name': '2.1',
+            'device_id': '2.1',
             'registration_id': '2',
         }
 
@@ -565,29 +565,6 @@ class Notifications(TransactionTestCase):
         response = self.client_1.get('/api/notifications/', format='json')
         assert len(response.data) == 2
         assert response.data[0]['type'] == 'B'
-        assert response.data[0]['status'] == 'Unread'
-        assert response.status_code == 200
-
-        data.append({
-            'id': response.data[0]['id'],
-            'status': 'Read',
-        })
-
-        response = self.client_2.post(
-            '/api/messages/',
-            {
-                'user_destination_id': self.user_1.id,
-                'type': 'Request',
-                'contents': '1',
-                'status': 'Unread',
-            },
-            format='json',
-        )
-        assert response.status_code == 201
-
-        response = self.client_1.get('/api/notifications/', format='json')
-        assert len(response.data) == 3
-        assert response.data[0]['type'] == 'G'
         assert response.data[0]['status'] == 'Unread'
         assert response.status_code == 200
 
