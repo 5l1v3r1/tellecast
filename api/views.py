@@ -2935,7 +2935,22 @@ def deauthenticate(request):
     Input
     =====
 
-    + N/A
+    + type
+        - Type: string
+        - Status: optional
+        - Choices:
+            - APNS
+            - GCM
+
+    + device_id
+        - Description: Only applicable if `type` = 'GCM'.
+        - Type: UUID
+        - Status: optional
+
+    + registration_id
+        - Description: Only applicable if `type` = 'APNS'.
+        - Type: string
+        - Status: optional
 
     Output
     ======
@@ -2943,15 +2958,27 @@ def deauthenticate(request):
     (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    response_serializer: api.serializers.Null
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.DeauthenticateRequest
+    response_serializer: api.serializers.DeauthenticateResponse
     responseMessages:
         - code: 400
           message: Invalid Input
     '''
+    serializer = serializers.DeauthenticateRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.process()
     request.user.sign_out()
-    models.DeviceAPNS.objects.get_queryset().filter(user_id=request.user.id).delete()
-    models.DeviceGCM.objects.get_queryset().filter(user_id=request.user.id).delete()
-    return Response(data=serializers.Null().data, status=HTTP_200_OK)
+    return Response(data=serializers.DeauthenticateResponse().data, status=HTTP_200_OK)
 
 
 @api_view(('GET',))
