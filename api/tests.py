@@ -105,6 +105,123 @@ class Blocks(TransactionTestCase):
         assert response.status_code == 200
 
 
+class Deauthenticate(TransactionTestCase):
+
+    def setUp(self):
+        self.tellzone = middleware.mixer.blend('api.Tellzone')
+
+        self.user = middleware.mixer.blend('api.User')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        assert self.user.is_signed_in is True
+
+        response = self.client.post('/api/deauthenticate/', format='json')
+        assert response.data == {}
+        assert response.status_code == 200
+
+        self.user = models.User.objects.get_queryset().filter(id=self.user.id).first()
+        assert self.user is not None
+        assert self.user.is_signed_in is False
+
+    def test_b(self):
+        dictionary = {
+            'name': '1',
+            'device_id': '1',
+            'registration_id': '1',
+        }
+
+        response = self.client.post('/api/devices/apns/', dictionary, format='json')
+        assert response.status_code == 201
+
+        response = self.client.post('/api/devices/gcm/', dictionary, format='json')
+        assert response.status_code == 201
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.post('/api/deauthenticate/', format='json')
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.post('/api/deauthenticate/', {}, format='json')
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/deauthenticate/',
+            {
+                'type': '',
+                'device_id': '',
+                'registration_id': '',
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/deauthenticate/',
+            {
+                'type': 'APNS',
+                'registration_id': dictionary['registration_id'],
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/deauthenticate/',
+            {
+                'type': 'GCM',
+                'device_id': '0x{device_id}'.format(device_id=dictionary['device_id']),
+            },
+            format='json',
+        )
+        assert response.data == {}
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client.get('/api/devices/gcm/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+
 class DevicesAPNS(TransactionTestCase):
 
     def test_a(self):
@@ -330,21 +447,21 @@ class DevicesGCM(TransactionTestCase):
         self.client_2 = APIClient()
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
-        response = self.client_1.get('/api/devices/apns/', format='json')
+        response = self.client_1.get('/api/devices/gcm/', format='json')
         assert response.data == []
         assert response.status_code == 200
 
-        response = self.client_2.get('/api/devices/apns/', format='json')
+        response = self.client_2.get('/api/devices/gcm/', format='json')
         assert response.data == []
         assert response.status_code == 200
 
         dictionary = {
             'name': '1',
-            'device_id': '1',
+            'device_id': '0x1',
             'registration_id': '1',
         }
 
-        response = self.client_1.post('/api/devices/apns/', dictionary, format='json')
+        response = self.client_1.post('/api/devices/gcm/', dictionary, format='json')
         assert response.data['name'] == dictionary['name']
         assert response.data['device_id'] == dictionary['device_id']
         assert response.data['registration_id'] == dictionary['registration_id']
@@ -352,7 +469,7 @@ class DevicesGCM(TransactionTestCase):
 
         id = response.data['id']
 
-        response = self.client_1.get('/api/devices/apns/', format='json')
+        response = self.client_1.get('/api/devices/gcm/', format='json')
         assert len(response.data) == 1
         assert response.data[0]['id'] == id
         assert response.data[0]['name'] == dictionary['name']
@@ -360,11 +477,11 @@ class DevicesGCM(TransactionTestCase):
         assert response.data[0]['registration_id'] == dictionary['registration_id']
         assert response.status_code == 200
 
-        response = self.client_2.get('/api/devices/apns/', format='json')
+        response = self.client_2.get('/api/devices/gcm/', format='json')
         assert response.data == []
         assert response.status_code == 200
 
-        response = self.client_2.post('/api/devices/apns/', dictionary, format='json')
+        response = self.client_2.post('/api/devices/gcm/', dictionary, format='json')
         assert response.data['name'] == dictionary['name']
         assert response.data['device_id'] == dictionary['device_id']
         assert response.data['registration_id'] == dictionary['registration_id']
@@ -372,11 +489,11 @@ class DevicesGCM(TransactionTestCase):
 
         id = response.data['id']
 
-        response = self.client_1.get('/api/devices/apns/', format='json')
+        response = self.client_1.get('/api/devices/gcm/', format='json')
         assert response.data == []
         assert response.status_code == 200
 
-        response = self.client_2.get('/api/devices/apns/', format='json')
+        response = self.client_2.get('/api/devices/gcm/', format='json')
         assert len(response.data) == 1
         assert response.data[0]['id'] == id
         assert response.data[0]['name'] == dictionary['name']
@@ -1117,44 +1234,6 @@ class Users(TransactionTestCase):
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
     def test_a(self):
-        assert self.user.is_signed_in is True
-
-        dictionary = {
-            'name': '1',
-            'device_id': '1',
-            'registration_id': '1',
-        }
-
-        response = self.client.post('/api/devices/apns/', dictionary, format='json')
-        assert response.status_code == 201
-
-        response = self.client.get('/api/devices/apns/', format='json')
-        assert len(response.data) == 1
-        assert response.status_code == 200
-
-        response = self.client.post('/api/devices/gcm/', dictionary, format='json')
-        assert response.status_code == 201
-
-        response = self.client.get('/api/devices/gcm/', format='json')
-        assert len(response.data) == 1
-        assert response.status_code == 200
-
-        response = self.client.post('/api/deauthenticate/', format='json')
-        assert response.data == {}
-        assert response.status_code == 200
-
-        self.user = models.User.objects.get_queryset().filter(id=self.user.id).first()
-        assert self.user is not None
-        assert self.user.is_signed_in is False
-
-        response = self.client.get('/api/devices/apns/', format='json')
-        assert response.data == []
-        assert response.status_code == 200
-
-        response = self.client.get('/api/devices/gcm/', format='json')
-        assert response.data == []
-        assert response.status_code == 200
-
         response = self.client.get('/api/users/0/', format='json')
         assert response.status_code == 400
 
