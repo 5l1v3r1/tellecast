@@ -107,13 +107,12 @@ class Blocks(TransactionTestCase):
 
 class DevicesAPNS(TransactionTestCase):
 
-    def setUp(self):
+    def test_a(self):
         self.user = middleware.mixer.blend('api.User')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
-    def test_a(self):
         response = self.client.get('/api/devices/apns/', format='json')
         assert response.data == []
         assert response.status_code == 200
@@ -182,16 +181,78 @@ class DevicesAPNS(TransactionTestCase):
         assert len(response.data) == 1
         assert response.status_code == 200
 
+    def test_b(self):
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
+
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+        response = self.client_1.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client_2.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        dictionary = {
+            'name': '1',
+            'device_id': '1',
+            'registration_id': '1',
+        }
+
+        response = self.client_1.post('/api/devices/apns/', dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert response.data['device_id'] == dictionary['device_id']
+        assert response.data['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        response = self.client_1.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0]['id'] == id
+        assert response.data[0]['name'] == dictionary['name']
+        assert response.data[0]['device_id'] == dictionary['device_id']
+        assert response.data[0]['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 200
+
+        response = self.client_2.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client_2.post('/api/devices/apns/', dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert response.data['device_id'] == dictionary['device_id']
+        assert response.data['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        response = self.client_1.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client_2.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0]['id'] == id
+        assert response.data[0]['name'] == dictionary['name']
+        assert response.data[0]['device_id'] == dictionary['device_id']
+        assert response.data[0]['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 200
+
 
 class DevicesGCM(TransactionTestCase):
 
-    def setUp(self):
+    def test_a(self):
         self.user = middleware.mixer.blend('api.User')
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
-    def test_a(self):
         response = self.client.get('/api/devices/gcm/', format='json')
         assert response.data == []
         assert response.status_code == 200
@@ -258,6 +319,69 @@ class DevicesGCM(TransactionTestCase):
 
         response = self.client.get('/api/devices/gcm/', format='json')
         assert len(response.data) == 1
+        assert response.status_code == 200
+
+    def test_b(self):
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
+
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+        response = self.client_1.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client_2.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        dictionary = {
+            'name': '1',
+            'device_id': '1',
+            'registration_id': '1',
+        }
+
+        response = self.client_1.post('/api/devices/apns/', dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert response.data['device_id'] == dictionary['device_id']
+        assert response.data['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        response = self.client_1.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0]['id'] == id
+        assert response.data[0]['name'] == dictionary['name']
+        assert response.data[0]['device_id'] == dictionary['device_id']
+        assert response.data[0]['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 200
+
+        response = self.client_2.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client_2.post('/api/devices/apns/', dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert response.data['device_id'] == dictionary['device_id']
+        assert response.data['registration_id'] == dictionary['registration_id']
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        response = self.client_1.get('/api/devices/apns/', format='json')
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client_2.get('/api/devices/apns/', format='json')
+        assert len(response.data) == 1
+        assert response.data[0]['id'] == id
+        assert response.data[0]['name'] == dictionary['name']
+        assert response.data[0]['device_id'] == dictionary['device_id']
+        assert response.data[0]['registration_id'] == dictionary['registration_id']
         assert response.status_code == 200
 
 
