@@ -1556,6 +1556,16 @@ class SlaveTellsResponse(SlaveTell):
     pass
 
 
+class SlaveTellsGetRequest(Serializer):
+
+    inserted_at = DateTimeField(required=False)
+    updated_at = DateTimeField(required=False)
+
+
+class SlaveTellsGetResponseRequest(SlaveTellsResponse):
+    pass
+
+
 class TellcardsRequest(Tellcard):
 
     class Meta:

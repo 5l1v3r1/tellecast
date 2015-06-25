@@ -474,8 +474,12 @@ class MasterTells(ViewSet):
         return Response(
             data=serializers.MasterTellsGetResponse(
                 self.get_queryset(
-                    inserted_at=serializer.validated_data['inserted_at'] if 'inserted_at' in serializer.validated_data else None,
-                    updated_at=serializer.validated_data['updated_at'] if 'updated_at' in serializer.validated_data else None,
+                    inserted_at=serializer.validated_data[
+                        'inserted_at'
+                    ] if 'inserted_at' in serializer.validated_data else None,
+                    updated_at=serializer.validated_data[
+                        'updated_at'
+                    ] if 'updated_at' in serializer.validated_data else None,
                 ),
                 context={
                     'request': request,
@@ -1766,18 +1770,34 @@ class SlaveTells(ViewSet):
         parameters:
             - name: inserted_at
               paramType: query
+              required: false
               type: datetime
             - name: updated_at
               paramType: query
+              required: false
               type: datetime
-        response_serializer: api.serializers.SlaveTellsResponse
+        response_serializer: api.serializers.SlaveTellsGetResponse
         responseMessages:
             - code: 400
               message: Invalid Input
         '''
+        serializer = serializers.SlaveTellsGetRequest(
+            context={
+                'request': request,
+            },
+            data=request.query_params,
+        )
+        serializer.is_valid(raise_exception=True)
         return Response(
             data=serializers.SlaveTellsResponse(
-                self.get_queryset(),
+                self.get_queryset(
+                    inserted_at=serializer.validated_data[
+                        'inserted_at'
+                    ] if 'inserted_at' in serializer.validated_data else None,
+                    updated_at=serializer.validated_data[
+                        'updated_at'
+                    ] if 'updated_at' in serializer.validated_data else None,
+                ),
                 context={
                     'request': request,
                 },
@@ -2141,12 +2161,10 @@ class SlaveTells(ViewSet):
     def get_instance(self, id):
         return self.get_queryset().filter(id=id).first()
 
-    def get_queryset(self):
+    def get_queryset(self, inserted_at=None, updated_at=None):
         queryset = models.SlaveTell.objects.get_queryset().filter(owned_by_id=self.request.user.id)
-        inserted_at = self.request.QUERY_PARAMS.get('inserted_at', None)
         if inserted_at:
             queryset = queryset.filter(inserted_at__gte=inserted_at)
-        updated_at = self.request.QUERY_PARAMS.get('updated_at', None)
         if updated_at:
             queryset = queryset.filter(updated_at__gte=updated_at)
         return queryset

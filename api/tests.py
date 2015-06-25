@@ -584,10 +584,10 @@ class MasterTells(TransactionTestCase):
         assert response.data['is_visible'] is True
         assert response.status_code == 201
 
+        id = response.data['id']
+
         inserted_at = parser.parse(response.data['inserted_at'])
         updated_at = parser.parse(response.data['updated_at'])
-
-        id = response.data['id']
 
         response = self.client.get('/api/master-tells/', format='json')
         assert len(response.data) == 1
@@ -1084,8 +1084,51 @@ class SlaveTells(TransactionTestCase):
 
         id = response.data['id']
 
+        inserted_at = parser.parse(response.data['inserted_at'])
+        updated_at = parser.parse(response.data['updated_at'])
+
         response = self.client.get('/api/slave-tells/', format='json')
         assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/slave-tells/',
+            {
+                'inserted_at': inserted_at - timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/slave-tells/',
+            {
+                'inserted_at': inserted_at + timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/slave-tells/',
+            {
+                'updated_at': updated_at - timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/slave-tells/',
+            {
+                'updated_at': updated_at + timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert response.data == []
         assert response.status_code == 200
 
         dictionary['contents'] = '2'
