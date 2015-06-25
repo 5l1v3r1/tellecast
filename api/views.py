@@ -1027,7 +1027,7 @@ class Messages(ViewSet):
             ).first()
             if message:
                 if message.user_source_id == request.user.id:
-                    if message.type == 'Request' and serializer.validated_data['type'] == 'Message':
+                    if message.type == 'Request':
                         return Response(status=HTTP_403_FORBIDDEN)
                     if message.type == 'Response - Blocked':
                         return Response(status=HTTP_403_FORBIDDEN)
