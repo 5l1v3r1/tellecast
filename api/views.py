@@ -739,20 +739,8 @@ class Messages(ViewSet):
             Type: boolean (default = True)
             Status: optional
             Choices:
-                - True
-                - False
-            Notes:
-                - Python evaluates `'False'` (string) to `True` (boolean).
-                - In order to pass `recent=False`, please use `recent=` (empty value).
-            Examples:
-                - `recent=True` is evaluated as `recent=True`
-                - `recent=true` is evaluated as `recent=True`
-                - `recent=t` is evaluated as `recent=True`
-                - `recent=False` is evaluated as `recent=True`
-                - `recent=false` is evaluated as `recent=True`
-                - `recent=f` is evaluated as `recent=True`
-                - `recent=` is evaluated as `recent=False`
-                - `` is evaluated as `recent=False`
+                - True ('t', 'T', 'true', 'True', 'TRUE', '1', 1, True)
+                - False ('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, '')
 
         + user_id
             Description: If supplied, all messages will pertain to this `user_id`. Only applicable if
