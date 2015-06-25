@@ -422,15 +422,15 @@ class User(Model):
     def update(self, data):
         if 'email' in data:
             self.email = data['email']
-        self.photo = data['photo'] if 'photo' in data else ''
-        self.first_name = data['first_name'] if 'first_name' in data else ''
-        self.last_name = data['last_name'] if 'last_name' in data else ''
-        self.date_of_birth = data['date_of_birth'] if 'date_of_birth' in data else ''
-        self.gender = data['gender'] if 'gender' in data else ''
-        self.location = data['location'] if 'location' in data else ''
-        self.description = data['description'] if 'description' in data else ''
-        self.phone = data['phone'] if 'phone' in data else ''
-        self.point = data['point'] if 'point' in data else ''
+        self.photo = data['photo'] if 'photo' in data else None
+        self.first_name = data['first_name'] if 'first_name' in data else None
+        self.last_name = data['last_name'] if 'last_name' in data else None
+        self.date_of_birth = data['date_of_birth'] if 'date_of_birth' in data else None
+        self.gender = data['gender'] if 'gender' in data else None
+        self.location = data['location'] if 'location' in data else None
+        self.description = data['description'] if 'description' in data else None
+        self.phone = data['phone'] if 'phone' in data else None
+        self.point = data['point'] if 'point' in data else None
         self.save()
         self.update_photos(data)
         self.update_settings(data)
