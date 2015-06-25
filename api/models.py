@@ -1698,8 +1698,8 @@ def tellcard_post_save(instance, **kwargs):
                 },
             )
             string = '{first_name} {last_name} saved your tellcard'.format(
-                'first_name': instance.user_source.first_name,
-                'last_name': instance.user_source.last_name,
+                first_name=instance.user_source.first_name,
+                last_name=instance.user_source.last_name,
             )
             current_app.send_task(
                 'api.tasks.push_notifications',
