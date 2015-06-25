@@ -48,7 +48,7 @@ urlpatterns = patterns(
     ),
     url(r'^api/deauthenticate/$', views.deauthenticate),
     url(
-        r'^api/devices/apns/(?P<id>[^/]+)/$',
+        r'^api/devices/apns/(?P<id>[0-9]+)/$',
         views.DevicesAPNS.as_view({
             'delete': 'delete',
         }),
@@ -61,7 +61,7 @@ urlpatterns = patterns(
         }),
     ),
     url(
-        r'^api/devices/gcm/(?P<id>[^/]+)/$',
+        r'^api/devices/gcm/(?P<id>[0-9]+)/$',
         views.DevicesGCM.as_view({
             'delete': 'delete',
         }),
@@ -80,7 +80,7 @@ urlpatterns = patterns(
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(
-        r'^api/master-tells/(?P<id>[^/]+)/$',
+        r'^api/master-tells/(?P<id>[0-9]+)/$',
         views.MasterTells.as_view({
             'put': 'put',
             'patch': 'patch',
@@ -95,7 +95,7 @@ urlpatterns = patterns(
         }),
     ),
     url(
-        r'^api/messages/(?P<id>[^/]+)/$',
+        r'^api/messages/(?P<id>[0-9]+)/$',
         views.Messages.as_view({
             'patch': 'patch',
             'delete': 'delete',
@@ -135,7 +135,7 @@ urlpatterns = patterns(
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
     url(
-        r'^api/slave-tells/(?P<id>[^/]+)/$',
+        r'^api/slave-tells/(?P<id>[0-9]+)/$',
         views.SlaveTells.as_view({
             'put': 'put',
             'patch': 'patch',
@@ -162,17 +162,17 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
-    url(r'^api/tellzones/(?P<id>[^/]+)/master-tells/$', views.tellzones_master_tells),
+    url(r'^api/tellzones/(?P<id>[0-9]+)/master-tells/$', views.tellzones_master_tells),
     url(r'^api/tellzones/$', views.tellzones),
-    url(r'^api/users/(?P<id>[^/]+)/profile/$', views.users_profile),
+    url(r'^api/users/(?P<id>[0-9]+)/profile/$', views.users_profile),
     url(
-        r'^api/users/(?P<id>[^/]+)/tellzones/delete/$',
+        r'^api/users/(?P<id>[0-9]+)/tellzones/delete/$',
         views.UsersTellzones.as_view({
             'post': 'delete',
         }),
     ),
     url(
-        r'^api/users/(?P<id>[^/]+)/tellzones/$',
+        r'^api/users/(?P<id>[0-9]+)/tellzones/$',
         views.UsersTellzones.as_view({
             'get': 'get',
             'post': 'post',
@@ -180,7 +180,7 @@ urlpatterns = patterns(
         }),
     ),
     url(
-        r'^api/users/(?P<id>[^/]+)/$',
+        r'^api/users/(?P<id>[0-9]+)/$',
         views.Users.as_view({
             'get': 'get',
             'put': 'put',
