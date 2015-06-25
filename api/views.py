@@ -800,32 +800,46 @@ class Messages(ViewSet):
         parameters:
             - name: recent
               paramType: query
+              required: False
               type: string
             - name: user_id
               paramType: query
+              required: False
               type: integer
             - name: user_status_id
               paramType: query
+              required: False
               type: integer
             - name: master_tell_id
               paramType: query
+              required: False
               type: integer
             - name: since_id
               paramType: query
+              required: False
               type: integer
             - name: max_id
               paramType: query
+              required: False
               type: integer
             - name: limit
               paramType: query
+              required: False
               type: integer
         response_serializer: api.serializers.MessagesGetResponse
         responseMessages:
             - code: 400
               message: Invalid Input
         '''
+        serializer = serializers.MessagesGetRequest(
+            context={
+                'request': request,
+            },
+            data=request.query_params,
+        )
+        serializer.is_valid(request.query_params)
         messages = []
-        if request.query_params.get('recent', True):
+        if serializer.validated_data.get('recent', True):
             for user in models.User.objects.get_queryset().exclude(id=request.user.id):
                 message = models.Message.objects.get_queryset().filter(
                     Q(user_source_id=request.user.id, user_destination_id=user.id) |
@@ -841,32 +855,32 @@ class Messages(ViewSet):
             query = models.Message.objects.get_queryset().filter(
                 Q(user_source_id=request.user.id) | Q(user_destination_id=request.user.id),
             )
-            user_id = request.query_params.get('user_id', None)
+            user_id = serializer.validated_data.get('user_id', None)
             if user_id:
                 query = query.filter(Q(user_source_id=user_id) | Q(user_destination_id=user_id))
-            user_status_id = request.query_params.get('user_status_id', None)
+            user_status_id = serializer.validated_data.get('user_status_id', None)
             if user_status_id:
                 query = query.filter(user_status_id=user_status_id)
-            master_tell_id = request.query_params.get('master_tell_id', None)
+            master_tell_id = serializer.validated_data.get('master_tell_id', None)
             if master_tell_id:
                 query = query.filter(master_tell_id=master_tell_id)
             since_id = 0
             try:
-                since_id = int(request.query_params.get('since_id', '0'))
+                since_id = serializer.validated_data.get('since_id', 0)
             except Exception:
                 pass
             if since_id:
                 query = query.filter(id__gt=since_id)
             max_id = 0
             try:
-                max_id = int(request.query_params.get('max_id', '0'))
+                max_id = serializer.validated_data.get('max_id', 0)
             except Exception:
                 pass
             if max_id:
                 query = query.filter(id__lt=max_id)
             limit = 100
             try:
-                limit = int(request.query_params.get('limit', '100'))
+                limit = serializer.validated_data.get('limit', 100)
             except Exception:
                 pass
             for message in query.order_by('-inserted_at')[:limit]:

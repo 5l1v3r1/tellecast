@@ -1105,6 +1105,17 @@ class MasterTellsGetResponse(MasterTellsResponse):
     pass
 
 
+class MessagesGetRequest(Serializer):
+
+    recent = BooleanField(default=False)
+    user_id = IntegerField(required=False)
+    user_status_id = IntegerField(required=False)
+    master_tell_id = IntegerField(required=False)
+    since_id = IntegerField(required=False)
+    max_id = IntegerField(required=False)
+    limit = IntegerField(required=False)
+
+
 class MessagesGetResponse(Message):
     pass
 
