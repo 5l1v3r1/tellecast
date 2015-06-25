@@ -719,6 +719,9 @@ class Messages(TransactionTestCase):
 
         id = response.data['id']
 
+        response = self.client_1.post('/api/messages/', dictionary, format='json')
+        assert response.status_code == 403
+
         dictionary['status'] = 'Read'
 
         response = self.client_1.patch('/api/messages/{id}/'.format(id=id), dictionary, format='json')
