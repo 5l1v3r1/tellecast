@@ -556,7 +556,7 @@ class User(Model):
                             position=attachment['position'] if 'position' in attachment else 0,
                         )
                     ids.append(user_status_attachment.id)
-        UserStatusAttachment.objects.get_queryset().filter(user_status__user_id=self.id)exclude(id__in=ids).delete()
+        UserStatusAttachment.objects.get_queryset().filter(user_status__user_id=self.id).exclude(id__in=ids).delete()
         return self
 
     def update_urls(self, data):
