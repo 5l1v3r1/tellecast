@@ -29,6 +29,8 @@ from social.strategies.django_strategy import DjangoStrategy
 
 from api import models
 
+BooleanField.FALSE_VALUES = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, ''))
+
 
 def to_representation(self, value):
     if self.format is None:
