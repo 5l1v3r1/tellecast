@@ -1562,7 +1562,7 @@ class SlaveTellsGetRequest(Serializer):
     updated_at = DateTimeField(required=False)
 
 
-class SlaveTellsGetResponseRequest(SlaveTellsResponse):
+class SlaveTellsGetResponse(SlaveTellsResponse):
     pass
 
 
