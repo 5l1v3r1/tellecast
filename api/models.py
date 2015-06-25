@@ -223,6 +223,11 @@ class Tellzone(Model):
             point__distance_lte=(self.point, D(ft=Tellzone.radius())),
             timestamp__gt=datetime.now() - timedelta(minutes=1),
             user__is_signed_in=True,
+        ).distinct(
+            'user_id',
+        ).order_by(
+            'user_id',
+            '-id',
         ).count()
 
     @classmethod
