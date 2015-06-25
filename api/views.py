@@ -24,12 +24,27 @@ from rest_framework.status import (
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from social.apps.django_app.default.models import DjangoStorage
+from social.backends.linkedin import LinkedinOAuth2
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
 from ujson import loads
 
 from api import models, serializers
 from api.algorithms.clusters import get_clusters
+
+
+def do_auth(self, access_token, *args, **kwargs):
+    data = self.user_data(access_token, *args, **kwargs)
+    data['access_token'] = access_token
+    response = kwargs.get('response') or {}
+    response.update(data or {})
+    kwargs.update({
+        'backend': self,
+        'response': response,
+    })
+    return self.strategy.authenticate(*args, **kwargs)
+
+LinkedinOAuth2.do_auth = do_auth
 
 
 class Blocks(ViewSet):
