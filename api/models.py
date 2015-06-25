@@ -360,6 +360,7 @@ class User(Model):
                         except Exception:
                             pass
                         if response and 'id' in response:
+                            response['access_token'] = social_profile['access_token']
                             UserSocialAuth.objects.create(
                                 user_id=user.id,
                                 provider='facebook',
@@ -379,6 +380,7 @@ class User(Model):
                         except Exception:
                             pass
                         if response and 'id' in response:
+                            response['access_token'] = social_profile['access_token']
                             UserSocialAuth.objects.create(
                                 user_id=user.id,
                                 provider='linkedin-oauth2',
