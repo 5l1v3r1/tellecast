@@ -1097,7 +1097,7 @@ class Messages(ViewSet):
         =================
 
         {
-            'action': 'updateMessage'
+            'action': 'updateMessage',
             'type': 'message',
         }
         </pre>
@@ -1136,7 +1136,7 @@ class Messages(ViewSet):
                 (
                     request.user.id,
                     {
-                        'action': 'updateMessage'
+                        'action': 'updateMessage',
                         'aps': {},
                         'type': 'message',
                     },
