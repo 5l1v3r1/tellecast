@@ -1199,6 +1199,17 @@ class Notifications(Notification):
     pass
 
 
+class NotificationsGetRequest(Serializer):
+
+    since_id = IntegerField(required=False)
+    max_id = IntegerField(required=False)
+    limit = IntegerField(required=False)
+
+
+class NotificationsGetResponse(Notifications):
+    pass
+
+
 class RadarGetRequest(Serializer):
 
     latitude = FloatField()

@@ -763,7 +763,7 @@ class Messages(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 1
+        assert len(response.data) == 2
         assert response.status_code == 200
 
         response = self.client_1.post(
@@ -863,6 +863,26 @@ class Notifications(TransactionTestCase):
         response = self.client_1.post('/api/notifications/', data, format='json')
         for notification in response.data:
             assert notification['status'] == 'Read'
+        assert response.status_code == 200
+
+        response = self.client_1.get(
+            '/api/notifications/',
+            {
+                'since_id': data[0]['id'],
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client_1.get(
+            '/api/notifications/',
+            {
+                'max_id': data[1]['id'],
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
         assert response.status_code == 200
 
 

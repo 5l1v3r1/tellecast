@@ -1296,40 +1296,50 @@ class Notifications(ViewSet):
         parameters:
             - name: since_id
               paramType: query
+              required: False
               type: integer
             - name: max_id
               paramType: query
+              required: False
               type: integer
             - name: limit
               paramType: query
+              required: False
               type: integer
-        response_serializer: api.serializers.Notifications
+        response_serializer: api.serializers.NotificationsGetResponse
         responseMessages:
             - code: 400
               message: Invalid Input
         '''
+        serializer = serializers.NotificationsGetRequest(
+            context={
+                'request': request,
+            },
+            data=request.query_params,
+        )
+        serializer.is_valid(request.query_params)
         query = models.Notification.objects.get_queryset().filter(user_id=request.user.id)
         since_id = 0
         try:
-            since_id = int(request.query_params.get('since_id', '0'))
+            since_id = serializer.validated_data.get('since_id', 0)
         except Exception:
             pass
         if since_id:
             query = query.filter(id__gt=since_id)
         max_id = 0
         try:
-            max_id = int(request.query_params.get('max_id', '0'))
+            max_id = serializer.validated_data.get('max_id', 0)
         except Exception:
             pass
         if max_id:
             query = query.filter(id__lt=max_id)
         limit = 50
         try:
-            limit = int(request.query_params.get('limit', '100'))
+            limit = serializer.validated_data.get('limit', 100)
         except Exception:
             pass
         return Response(
-            data=serializers.Notifications(
+            data=serializers.NotificationsGetResponse(
                 query.order_by('-timestamp')[:limit],
                 context={
                     'request': request,
