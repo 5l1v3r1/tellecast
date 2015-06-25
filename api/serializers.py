@@ -916,13 +916,13 @@ class DeauthenticateRequest(Serializer):
         if 'type' not in self.validated_data:
             return
         if self.validated_data['type'] == 'APNS':
-            if 'registration_id' in self.validated_data and  self.validated_data['registration_id']:
+            if 'registration_id' in self.validated_data and self.validated_data['registration_id']:
                 models.DeviceAPNS.objects.get_queryset().filter(
                     user_id=get_user_id(self.context),
                     registration_id=self.validated_data['registration_id']
                 ).delete()
         if self.validated_data['type'] == 'GCM':
-            if 'device_id' in self.validated_data and  self.validated_data['device_id']:
+            if 'device_id' in self.validated_data and self.validated_data['device_id']:
                 models.DeviceGCM.objects.get_queryset().filter(
                     user_id=get_user_id(self.context),
                     device_id=self.validated_data['device_id']
@@ -1093,6 +1093,16 @@ class MasterTellsResponse(MasterTell):
             'updated_at',
         )
         model = models.MasterTell
+
+
+class MasterTellsGetRequest(Serializer):
+
+    inserted_at = DateTimeField(required=False)
+    updated_at = DateTimeField(required=False)
+
+
+class MasterTellsGetResponse(MasterTellsResponse):
+    pass
 
 
 class MessagesGetResponse(Message):

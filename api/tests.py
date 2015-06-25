@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from datetime import timedelta
+
+from dateutil import parser
 from django.contrib.gis.geos import fromstr
 from django.test import TransactionTestCase
 from rest_framework.test import APIClient
@@ -581,10 +584,53 @@ class MasterTells(TransactionTestCase):
         assert response.data['is_visible'] is True
         assert response.status_code == 201
 
+        inserted_at = parser.parse(response.data['inserted_at'])
+        updated_at = parser.parse(response.data['updated_at'])
+
         id = response.data['id']
 
         response = self.client.get('/api/master-tells/', format='json')
         assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/master-tells/',
+            {
+                'inserted_at': inserted_at - timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/master-tells/',
+            {
+                'inserted_at': inserted_at + timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert response.data == []
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/master-tells/',
+            {
+                'updated_at': updated_at - timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/master-tells/',
+            {
+                'updated_at': updated_at + timedelta(seconds=1),
+            },
+            format='json',
+        )
+        assert response.data == []
         assert response.status_code == 200
 
         dictionary = {
