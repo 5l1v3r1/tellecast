@@ -1074,6 +1074,7 @@ class DeviceAPNS(Model):
                 badge = extra['aps']['badge']
                 del extra['aps']['badge']
             del extra['aps']
+            extra['sound'] = 'default'
         return apns_send_message(self.registration_id, alert, badge=badge, extra=extra)
 
 
