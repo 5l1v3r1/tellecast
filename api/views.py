@@ -1097,7 +1097,8 @@ class Messages(ViewSet):
         =================
 
         {
-            'type': 'updateMessage',
+            'action': 'updateMessage'
+            'type': 'message',
         }
         </pre>
         ---
@@ -1135,8 +1136,9 @@ class Messages(ViewSet):
                 (
                     request.user.id,
                     {
+                        'action': 'updateMessage'
                         'aps': {},
-                        'type': 'updateMessage',
+                        'type': 'message',
                     },
                 ),
                 serializer='json',
@@ -3734,7 +3736,8 @@ def messages_bulk_is_hidden(request):
     =================
 
     {
-        'type': 'updateThread',
+        'action': 'updateThread',
+        'type': 'message',
     }
     </pre>
     ---
@@ -3772,8 +3775,9 @@ def messages_bulk_is_hidden(request):
         (
             request.user.id,
             {
+                'action': 'updateThread',
                 'aps': {},
-                'type': 'updateThread',
+                'type': 'message',
             },
         ),
         serializer='json',

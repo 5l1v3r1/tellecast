@@ -1645,30 +1645,6 @@ def message_attachment_pre_save(instance, **kwargs):
         instance.position = position + 1 if position else 1
 
 
-@receiver(post_save, sender=Notification)
-def notification_post_save(instance, **kwargs):
-    if 'created' in kwargs and kwargs['created']:
-        current_app.send_task(
-            'api.tasks.push_notifications',
-            (
-                instance.user_id,
-                {
-                    'aps': {
-                        'alert': {
-                            'title': 'New notification',
-                        },
-                        'badge': Notification.objects.get_queryset().filter(
-                            user_id=instance.user_id,
-                            status='Unread',
-                        ).count(),
-                    },
-                    'type': 'notification',
-                },
-            ),
-            serializer='json',
-        )
-
-
 @receiver(post_save, sender=ShareUser)
 def share_user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
@@ -1720,4 +1696,28 @@ def tellcard_post_save(instance, **kwargs):
                     'last_name': instance.user_source.last_name,
                     'photo': instance.user_source.photo,
                 },
+            )
+            string = '{first_name} {last_name} saved your tellcard'.format(
+                'first_name': instance.user_source.first_name,
+                'last_name': instance.user_source.last_name,
+            )
+            current_app.send_task(
+                'api.tasks.push_notifications',
+                (
+                    instance.user_destination_id,
+                    {
+                        'aps': {
+                            'alert': {
+                                'body': string,
+                                'title': string,
+                            },
+                            'badge': Notification.objects.get_queryset().filter(
+                                user_id=instance.user_destination_id,
+                                status='Unread',
+                            ).count(),
+                        },
+                        'type': 'tellcard',
+                    },
+                ),
+                serializer='json',
             )
