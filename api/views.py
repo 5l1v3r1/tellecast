@@ -2615,6 +2615,91 @@ class Users(ViewSet):
             - Type: integer
             - Status: optional
 
+        Note: If you want to unset/remove a value, skip the corresponding key.
+
+            Example 1:
+
+            {
+                ...,
+                ...,
+                ...,
+                'phone': '1234567890',
+                ...,
+                ...,
+                ...,
+            }
+
+            This will set the `phone` to '1234567890'.
+
+            {
+                ...,
+                ...,
+                ...,
+                ...,
+                ...,
+                ...,
+            }
+
+            This will unset/remove the `phone`.
+
+            Example 2:
+
+            {
+                ...,
+                ...,
+                ...,
+                'status': {
+                    ...,
+                    ...,
+                    ...,
+                },
+                ...,
+                ...,
+                ...,
+            }
+
+            This will set the `status` (DELETE old record and INSERT new record).
+
+            {
+                ...,
+                ...,
+                ...,
+                ...,
+                ...,
+                ...,
+            }
+
+            This will unset/remove the `status`.
+
+            Example 3:
+
+            {
+                ...,
+                ...,
+                ...,
+                'photos': [
+                    ...,
+                    ...,
+                    ...,
+                ],
+                ...,
+                ...,
+                ...,
+            }
+
+            This will set the `photos` (INSERT/UPDATE new records and DELETE old/unused/unreferenced records).
+
+            {
+                ...,
+                ...,
+                ...,
+                ...,
+                ...,
+                ...,
+            }
+
+            This will unset/remove all the `photos`.
+
         Output
         ======
 
