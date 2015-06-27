@@ -1647,14 +1647,18 @@ def share_user_post_save(instance, **kwargs):
                     'user_source': {
                         'id': instance.user_source.id,
                         'first_name': instance.user_source.first_name,
-                        'last_name': instance.user_source.last_name,
-                        'photo': instance.user_source.photo,
+                        'last_name': instance.user_source.last_name if instance.user_source.settings_[
+                            'show_last_name'
+                        ] else None,
+                        'photo': instance.user_source.photo if instance.user_source.settings_['show_photo'] else None,
                     },
                     'user_destination': {
                         'id': instance.object.id,
                         'first_name': instance.object.first_name,
-                        'last_name': instance.object.last_name,
-                        'photo': instance.object.photo,
+                        'last_name': instance.object.last_name if instance.object.settings_[
+                            'show_last_name'
+                        ] else None,
+                        'photo': instance.object.photo if instance.object.settings_['show_photo'] else None,
                     },
                 },
             )
@@ -1684,13 +1688,24 @@ def tellcard_post_save(instance, **kwargs):
                 contents={
                     'id': instance.user_source.id,
                     'first_name': instance.user_source.first_name,
-                    'last_name': instance.user_source.last_name,
-                    'photo': instance.user_source.photo,
+                    'last_name': instance.user_source.last_name if instance.user_source.settings_[
+                        'show_last_name'
+                    ] else None,
+                    'photo': instance.user_source.photo if instance.user_source.settings_['show_photo'] else None,
                 },
             )
-            string = u'{first_name} {last_name} saved your tellcard'.format(
-                first_name=instance.user_source.first_name,
-                last_name=instance.user_source.last_name,
+            string = u'{name} saved your tellcard'.format(
+                name=' '.join(
+                    filter(
+                        None,
+                        [
+                            instance.user_source.first_name,
+                            instance.user_source.last_name if instance.user_source.settings_[
+                                'show_last_name'
+                            ] else None,
+                        ]
+                    )
+                ),
             )
             current_app.send_task(
                 'api.tasks.push_notifications',
