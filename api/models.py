@@ -1688,7 +1688,7 @@ def tellcard_post_save(instance, **kwargs):
                     'photo': instance.user_source.photo,
                 },
             )
-            string = '{first_name} {last_name} saved your tellcard'.format(
+            string = u'{first_name} {last_name} saved your tellcard'.format(
                 first_name=instance.user_source.first_name,
                 last_name=instance.user_source.last_name,
             )
