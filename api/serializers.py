@@ -161,6 +161,7 @@ class UserLocation(ModelSerializer):
     point = PointField()
     accuracies_horizontal = FloatField(default=0.00)
     accuracies_vertical = FloatField(default=0.00)
+    bearing = IntegerField(default=0)
     is_casting = BooleanField(default=False)
 
     class Meta:
@@ -1217,11 +1218,9 @@ class RadarGetRequest(Serializer):
     latitude = FloatField()
     longitude = FloatField()
     radius = FloatField()
-    widths_radar = IntegerField()
-    widths_group = IntegerField()
 
 
-class RadarGetResponseUsersItems(User):
+class RadarGetResponseItems(User):
 
     class Meta:
 
@@ -1240,16 +1239,10 @@ class RadarGetResponseUsersItems(User):
         model = models.User
 
 
-class RadarGetResponseUsers(Serializer):
-
-    degrees = FloatField()
-    radius = FloatField()
-    items = RadarGetResponseUsersItems(many=True, required=False)
-
-
 class RadarGetResponse(Serializer):
 
-    users = RadarGetResponseUsers(many=True, required=False)
+    items = RadarGetResponseItems(many=True, required=False)
+    position = IntegerField()
 
 
 class RadarPostRequest(UserLocation):

@@ -917,7 +917,6 @@ class Radar(TransactionTestCase):
                         },
                         'accuracies_horizontal': 1.00,
                         'accuracies_vertical': 1.00,
-                        'bearing': 180,
                         'is_casting': True,
                     },
                     format='json',
@@ -938,7 +937,6 @@ class Radar(TransactionTestCase):
                 },
                 'accuracies_horizontal': 1.00,
                 'accuracies_vertical': 1.00,
-                'bearing': 180,
                 'is_casting': True,
             },
             format='json',
@@ -959,12 +957,12 @@ class Radar(TransactionTestCase):
             },
             format='json',
         )
-        assert 'users' in response.data
-        assert len(response.data['users']) > 0
-        assert 'degrees' in response.data['users'][0]
-        assert 'radius' in response.data['users'][0]
-        assert 'items' in response.data['users'][0]
-        assert len(response.data['users'][0]['items']) > 1
+        assert len(response.data) == 16
+        for index in range(5):
+            assert 'items' in response.data[index]
+            assert len(response.data[index]['items']) > 0
+            assert 'position' in response.data[index]
+            assert response.data[index]['position'] == index + 1
         assert response.status_code == 200
 
 
@@ -1299,7 +1297,6 @@ class Tellzones(TransactionTestCase):
                         },
                         'accuracies_horizontal': 1.00,
                         'accuracies_vertical': 1.00,
-                        'bearing': 180,
                         'is_casting': True,
                     },
                     format='json',

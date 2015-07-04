@@ -2,7 +2,6 @@
 
 from contextlib import closing
 from datetime import date, datetime, timedelta
-from math import atan2, pi
 from random import randint
 
 from arrow import get
@@ -15,7 +14,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy
 from geopy.distance import vincenty
-from numpy import mean
+from numpy import array_split
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import (
@@ -30,7 +29,6 @@ from social.strategies.django_strategy import DjangoStrategy
 from ujson import loads
 
 from api import models, serializers
-from api.algorithms.clusters import get_clusters
 
 
 def do_auth(self, access_token, *args, **kwargs):
@@ -1419,18 +1417,6 @@ class Radar(ViewSet):
             - Type: float
             - Status: mandatory
 
-        + widths_radar
-            - Description: Width of the screen
-            - Unit: `dip` (density-independent pixel) for Android; `point` for iOS
-            - Type: integer
-            - Status: mandatory
-
-        + widths_group
-            - Description: Width of the group (or the profile image)
-            - Unit: `dip` (density-independent pixel) for Android; `point` for iOS
-            - Type: integer
-            - Status: mandatory
-
         Output
         ======
 
@@ -1449,14 +1435,6 @@ class Radar(ViewSet):
               required: true
               type: number
             - name: radius
-              paramType: query
-              required: true
-              type: number
-            - name: widths_radar
-              paramType: query
-              required: true
-              type: number
-            - name: widths_group
               paramType: query
               required: true
               type: number
@@ -1524,25 +1502,26 @@ class Radar(ViewSet):
                     users[record[0]] = (
                         models.User.objects.get_queryset().filter(id=record[0]).first(),
                         p,
-                        self.get_degrees(point, p),
                         record[2],
                     )
         return Response(
             data=serializers.RadarGetResponse(
-                {
-                    'users': self.get_containers(
-                        get_clusters(
-                            users.values(),
-                            (
-                                (serializer.validated_data['widths_group'] * serializer.validated_data['radius']) /
-                                serializer.validated_data['widths_radar']
-                            )
+                [
+                    {
+                        'items': items,
+                        'position': position + 1,
+                    }
+                    for position, items in enumerate(
+                        self.get_items(
+                            [user[0] for user in sorted(users.values(), key=lambda user: (user[2], user[0].id))],
+                            16
                         )
-                    ),
-                },
+                    )
+                ],
                 context={
                     'request': request,
                 },
+                many=True,
             ).data,
             status=HTTP_200_OK,
         )
@@ -1580,7 +1559,7 @@ class Radar(ViewSet):
 
         + bearing
             - Type: integer
-            - Status: mandatory
+            - Status: optional
 
         + is_casting
             - Type: boolean (default = True)
@@ -1626,18 +1605,8 @@ class Radar(ViewSet):
             status=HTTP_200_OK,
         )
 
-    def get_containers(self, groups):
-        containers = []
-        for group in groups:
-            containers.append({
-                'degrees': mean([item[2] for item in group]),
-                'radius': mean([item[3] for item in group]),
-                'items': [item[0] for item in group],
-            })
-        return containers
-
-    def get_degrees(self, point_1, point_2):
-        return (360 - (((atan2((point_1.y - point_2.y), (point_1.x - point_2.x)) * (180 / pi)) + 360) % 360))
+    def get_items(self, items, count):
+        return [item.tolist() for item in array_split(items, count)]
 
 
 class SharesUsers(ViewSet):
