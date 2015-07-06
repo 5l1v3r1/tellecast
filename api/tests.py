@@ -720,7 +720,7 @@ class Messages(TransactionTestCase):
         id = response.data['id']
 
         response = self.client_1.post('/api/messages/', dictionary, format='json')
-        assert response.status_code == 403
+        assert response.status_code == 409
 
         dictionary['status'] = 'Read'
 
