@@ -3216,7 +3216,7 @@ def home_connections(request):
                     api_messages.id IS NULL
                 GROUP BY api_users_locations_2.id
                 ''',
-                (request.user.id, today, days[0],)
+                (request.user.id, days[0], today,)
             )
             records = cursor.fetchall()
         for record in records:
