@@ -1680,7 +1680,7 @@ def tellcard_post_save(instance, **kwargs):
     if instance.saved_at:
         if (
             ('created' in kwargs and kwargs['created']) or
-            ('update_fields' in kwargs and 'saved_at' in kwargs['update_fields'])
+            ('update_fields' in kwargs and kwargs['update_fields'] and 'saved_at' in kwargs['update_fields'])
         ):
             Notification.objects.create(
                 user_id=instance.user_destination_id,
