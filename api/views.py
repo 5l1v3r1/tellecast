@@ -3152,9 +3152,10 @@ def home_connections(request):
     serializer.is_valid(raise_exception=True)
     data = {
         'days': {},
-        'today': 0,
+        'trailing_24_hours': 0,
         'users': [],
     }
+    now = datetime.now()
     today = date.today()
     days = get_days(today)
     for day in days:
@@ -3162,7 +3163,7 @@ def home_connections(request):
     if serializer.validated_data['dummy'] == 'Yes':
         for day in days:
             data['days'][day] = randint(1, 150)
-        data['today'] = randint(1, 150)
+        data['trailing_24_hours'] = randint(1, 150)
         data['users'] = [
             {
                 'user': user,
@@ -3220,12 +3221,11 @@ def home_connections(request):
             )
             records = cursor.fetchall()
         for record in records:
-            if record[4] == today:
-                data['today'] += 1
-            else:
-                if record[4] not in data['days']:
-                    data['days'][record[4]] = 0
-                data['days'][record[4]] += 1
+            if record[3] > now - timedelta(hours=24):
+                data['trailing_24_hours'] += 1
+            if record[4] not in data['days']:
+                data['days'][record[4]] = 0
+            data['days'][record[4]] += 1
             if record[0] not in data['users']:
                 data['users'][record[0]] = {
                     'user': models.User.objects.get_queryset().filter(id=record[0]).first(),

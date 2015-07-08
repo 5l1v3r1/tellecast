@@ -1004,7 +1004,7 @@ class HomeConnectionsResponseItems(Serializer):
 class HomeConnectionsResponse(Serializer):
 
     days = DictField(child=IntegerField())
-    today = IntegerField()
+    trailing_24_hours = IntegerField()
     users = HomeConnectionsResponseItems(many=True, required=False)
 
 
