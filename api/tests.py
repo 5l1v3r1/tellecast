@@ -526,7 +526,7 @@ class Home(TransactionTestCase):
         response = self.client.get('/api/home/connections/', dictionary, format='json')
         assert 'days' in response.data
         assert len(response.data['days'].keys()) == 7
-        assert 'today' in response.data
+        assert 'trailing_24_hours' in response.data
         assert 'users' in response.data
         assert len(response.data['users']) == 5
         assert response.status_code == 200
