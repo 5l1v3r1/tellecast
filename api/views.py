@@ -3190,9 +3190,15 @@ def home_connections(request):
                     AND
                     api_users_locations_2.user_id != %s
                     AND
-                    api_users_locations_1.timestamp::DATE BETWEEN %s AND %s
+                    api_users_locations_1.timestamp BETWEEN
+                        NOW() - INTERVAL '25 hour'
+                        AND
+                        NOW() - INTERVAL '1 hour'
                     AND
-                    api_users_locations_2.timestamp::DATE BETWEEN %s AND %s
+                    api_users_locations_2.timestamp BETWEEN
+                        NOW() - INTERVAL '25 hour'
+                        AND
+                        NOW() - INTERVAL '1 hour'
                     AND
                     api_users_locations_1.timestamp BETWEEN
                         api_users_locations_2.timestamp - INTERVAL '1 minute'
@@ -3218,7 +3224,7 @@ def home_connections(request):
                     api_messages.id IS NULL
                 GROUP BY api_users_locations_2.id
                 ''',
-                (request.user.id, request.user.id, days[0], today, days[0], today,)
+                (request.user.id, request.user.id,)
             )
             records = cursor.fetchall()
         for record in records:
