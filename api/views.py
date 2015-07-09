@@ -3182,7 +3182,7 @@ def home_connections(request):
                 SELECT
                     api_users_locations_2.user_id,
                     api_users_locations_2.tellzone_id,
-                    api_users_locations_2.point,
+                    ST_AsGeoJSON(api_users_locations_2.point),
                     api_users_locations_2.timestamp,
                     api_users_locations_2.timestamp::DATE
                 FROM api_users_locations api_users_locations_1
@@ -3227,10 +3227,14 @@ def home_connections(request):
                 data['days'][record[4]] = 0
             data['days'][record[4]] += 1
             if record[0] not in data['users']:
+                p = loads(record[2])
                 data['users'][record[0]] = {
                     'user': models.User.objects.get_queryset().filter(id=record[0]).first(),
                     'tellzone': models.Tellzone.objects.get_queryset().filter(id=record[1]).first(),
-                    'point': record[2],
+                    'point': {
+                        'latitude': p['coordinates'][1],
+                        'longitude': p['coordinates'][0],
+                    },
                     'timestamp': record[3],
                 }
         data['users'] = data['users'].values()
