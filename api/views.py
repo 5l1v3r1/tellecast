@@ -3180,6 +3180,7 @@ def home_connections(request):
             cursor.execute(
                 '''
                 SELECT
+                    DISTINCT ON (api_users_locations_2.user_id)
                     api_users_locations_2.user_id,
                     api_users_locations_2.tellzone_id,
                     ST_AsGeoJSON(api_users_locations_2.point),
@@ -3223,6 +3224,7 @@ def home_connections(request):
                     AND
                     api_messages.id IS NULL
                 GROUP BY api_users_locations_2.id
+                ORDER BY api_users_locations_2.user_id ASC , api_users_locations_2.timestamp DESC
                 ''',
                 (request.user.id, request.user.id,)
             )
