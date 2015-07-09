@@ -3186,18 +3186,24 @@ def home_connections(request):
                     api_users_locations_2.timestamp
                 FROM api_users_locations api_users_locations_1
                 INNER JOIN api_users_locations api_users_locations_2 ON
-                    api_users_locations_1.user_id != api_users_locations_2.user_id
+                    api_users_locations_1.user_id = %s
+                    AND
+                    api_users_locations_2.user_id != %s
+                    AND
+                    api_users_locations_1.timestamp::DATE BETWEEN %s AND %s
+                    AND
+                    api_users_locations_2.timestamp::DATE BETWEEN %s AND %s
+                    AND
+                    api_users_locations_1.timestamp BETWEEN
+                        api_users_locations_2.timestamp - INTERVAL '1 minute'
+                        AND
+                        api_users_locations_2.timestamp + INTERVAL '1 minute'
                     AND
                     ST_DWithin(
                         ST_Transform(api_users_locations_1.point, 2163),
                         ST_Transform(api_users_locations_2.point, 2163),
                         91.44
                     )
-                    AND
-                    api_users_locations_1.timestamp BETWEEN
-                        api_users_locations_2.timestamp - INTERVAL '1 minute'
-                        AND
-                        api_users_locations_2.timestamp + INTERVAL '1 minute'
                 LEFT OUTER JOIN api_tellcards ON
                     api_tellcards.user_source_id = api_users_locations_1.user_id
                     AND
@@ -3207,16 +3213,12 @@ def home_connections(request):
                     AND
                     api_messages.user_destination_id = api_users_locations_2.user_id
                 WHERE
-                    api_users_locations_1.user_id = %s
-                    AND
-                    api_users_locations_1.timestamp::DATE BETWEEN %s AND %s
-                    AND
                     api_tellcards.id IS NULL
                     AND
                     api_messages.id IS NULL
                 GROUP BY api_users_locations_2.id
                 ''',
-                (request.user.id, days[0], today,)
+                (request.user.id, request.user.id, days[0], today, days[0], today,)
             )
             records = cursor.fetchall()
         for record in records:
