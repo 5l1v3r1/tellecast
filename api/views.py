@@ -3183,8 +3183,7 @@ def home_connections(request):
                     api_users_locations_2.user_id,
                     api_users_locations_2.tellzone_id,
                     ST_AsGeoJSON(api_users_locations_2.point),
-                    api_users_locations_2.timestamp,
-                    api_users_locations_2.timestamp::DATE
+                    api_users_locations_2.timestamp
                 FROM api_users_locations api_users_locations_1
                 INNER JOIN api_users_locations api_users_locations_2 ON
                     api_users_locations_1.user_id != api_users_locations_2.user_id
@@ -3223,9 +3222,9 @@ def home_connections(request):
         for record in records:
             if record[3] > now - timedelta(hours=24):
                 data['trailing_24_hours'] += 1
-            if record[4] not in data['days']:
-                data['days'][record[4]] = 0
-            data['days'][record[4]] += 1
+            d = record[3].date().isoformat()
+            if d in data['days']:
+                data['days'][d] += 1
             if record[0] not in data['users']:
                 p = loads(record[2])
                 data['users'][record[0]] = {
