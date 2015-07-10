@@ -1486,6 +1486,8 @@ class Tellcard(Model):
 
     user_source = ForeignKey(User, related_name='+')
     user_destination = ForeignKey(User, related_name='+')
+    tellzone = ForeignKey(Tellzone, blank=True, default=None, null=True, related_name='+')
+    location = CharField(ugettext_lazy('Location'), blank=True, default=None, db_index=True, max_length=255, null=True)
     viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
     saved_at = DateTimeField(ugettext_lazy('Saved At'), blank=True, db_index=True, null=True)
 
@@ -1509,6 +1511,17 @@ class Tellcard(Model):
                 user_source_id=user_source_id,
                 user_destination_id=data['user_destination_id'],
             )
+        if 'tellzone_id' in data and data['tellzone_id']:
+            tellcard.tellzone_id = data['tellzone_id']
+            tellcard.location = None
+            update_fields.append('tellzone_id')
+            update_fields.append('location')
+        else:
+            if 'location' in data and data['location']:
+                tellcard.tellzone_id = None
+                tellcard.location = data['location']
+                update_fields.append('tellzone_id')
+                update_fields.append('location')
         now = datetime.now()
         if data['action'] == 'View':
             update_fields.append('viewed_at')

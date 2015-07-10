@@ -426,6 +426,8 @@ class Tellcard(ModelAdmin):
     fields = (
         'user_source',
         'user_destination',
+        'tellzone',
+        'location',
         'viewed_at',
         'saved_at',
     )
@@ -433,12 +435,16 @@ class Tellcard(ModelAdmin):
         'id',
         'user_source',
         'user_destination',
+        'tellzone',
+        'location',
         'viewed_at',
         'saved_at',
     )
     list_filter = (
         'user_source',
         'user_destination',
+        'tellzone',
+        'location',
         'viewed_at',
         'saved_at',
     )

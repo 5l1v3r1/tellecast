@@ -2221,6 +2221,14 @@ class Tellcards(ViewSet):
             - Type: integer
             - Status: mandatory
 
+        + tellzone_id
+            - Type: integer
+            - Status: optional (if and only if location is provided)
+
+        + location
+            - Type: string
+            - Status: optional (if and only if tellzone_id is provided)
+
         + action
             - Type: string
             - Status: mandatory

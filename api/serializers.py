@@ -725,62 +725,6 @@ class ShareUser(ModelSerializer):
         )
 
 
-class Tellcard(ModelSerializer):
-
-    user_destination_id = IntegerField()
-    user = UsersProfile()
-    action = ChoiceField(
-        choices=(
-            ('View', 'View',),
-            ('Save', 'Save',),
-        ),
-    )
-
-    class Meta:
-
-        fields = (
-            'id',
-            'user_destination_id',
-            'user',
-            'viewed_at',
-            'saved_at',
-            'action',
-        )
-        model = models.Tellcard
-
-    def to_representation(self, instance):
-        dictionary = OrderedDict()
-        for field in [field for field in self.fields.values() if not field.write_only]:
-            if field.field_name == 'user':
-                request = self.context.get('request', None)
-                if request:
-                    if 'type' in request.QUERY_PARAMS:
-                        if request.QUERY_PARAMS['type'] == 'Source':
-                            dictionary[field.field_name] = field.to_representation(instance.user_destination)
-                            continue
-                        if request.QUERY_PARAMS['type'] == 'Destination':
-                            dictionary[field.field_name] = field.to_representation(instance.user_source)
-                            continue
-                dictionary[field.field_name] = field.to_representation(instance.user_destination)
-                continue
-            attribute = None
-            try:
-                attribute = field.get_attribute(instance)
-            except SkipField:
-                continue
-            if attribute is None:
-                dictionary[field.field_name] = None
-            else:
-                dictionary[field.field_name] = field.to_representation(attribute)
-        return dictionary
-
-    def insert_or_update(self):
-        return models.Tellcard.insert_or_update(get_user_id(self.context), self.validated_data)
-
-    def delete(self):
-        return models.Tellcard.delete(get_user_id(self.context), self.validated_data)
-
-
 class Tellzone(ModelSerializer):
 
     hours = DictField()
@@ -852,6 +796,87 @@ class Tellzone(ModelSerializer):
             else:
                 dictionary[field.field_name] = field.to_representation(attribute)
         return dictionary
+
+
+class TellcardTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Tellzone
+
+
+class Tellcard(ModelSerializer):
+
+    user_destination_id = IntegerField()
+    user = UsersProfile()
+    tellzone_id = IntegerField(required=False)
+    tellzone = TellcardTellzone(required=False)
+    location = CharField(required=False)
+    action = ChoiceField(
+        choices=(
+            ('View', 'View',),
+            ('Save', 'Save',),
+        ),
+    )
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_destination_id',
+            'user',
+            'tellzone_id',
+            'tellzone',
+            'location',
+            'viewed_at',
+            'saved_at',
+            'action',
+        )
+        model = models.Tellcard
+
+    def to_representation(self, instance):
+        dictionary = OrderedDict()
+        for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'user':
+                request = self.context.get('request', None)
+                if request:
+                    if 'type' in request.QUERY_PARAMS:
+                        if request.QUERY_PARAMS['type'] == 'Source':
+                            dictionary[field.field_name] = field.to_representation(instance.user_destination)
+                            continue
+                        if request.QUERY_PARAMS['type'] == 'Destination':
+                            dictionary[field.field_name] = field.to_representation(instance.user_source)
+                            continue
+                dictionary[field.field_name] = field.to_representation(instance.user_destination)
+                continue
+            attribute = None
+            try:
+                attribute = field.get_attribute(instance)
+            except SkipField:
+                continue
+            if attribute is None:
+                dictionary[field.field_name] = None
+            else:
+                dictionary[field.field_name] = field.to_representation(attribute)
+        return dictionary
+
+    def insert_or_update(self):
+        return models.Tellcard.insert_or_update(get_user_id(self.context), self.validated_data)
+
+    def delete(self):
+        return models.Tellcard.delete(get_user_id(self.context), self.validated_data)
 
 
 class Ads(Ad):
@@ -1589,9 +1614,21 @@ class TellcardsRequest(Tellcard):
 
         fields = (
             'user_destination_id',
+            'tellzone_id',
+            'location',
             'action',
         )
         model = models.Tellcard
+
+    def validate(self, data):
+        request = self.context.get('request', None)
+        if not request:
+            return data
+        if not request._request.path == '/api/tellcards/':
+            return data
+        if ('tellzone_id' not in data or not data['tellzone_id']) and ('location' not in data or not data['location']):
+            raise ValidationError(ugettext_lazy('Invalid `tellzone_id` and `location`'))
+        return data
 
 
 class TellcardsResponse(Tellcard):
@@ -1601,6 +1638,8 @@ class TellcardsResponse(Tellcard):
         fields = (
             'id',
             'user',
+            'tellzone',
+            'location',
             'viewed_at',
             'saved_at',
         )
