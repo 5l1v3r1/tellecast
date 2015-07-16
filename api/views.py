@@ -2223,11 +2223,11 @@ class Tellcards(ViewSet):
 
         + tellzone_id
             - Type: integer
-            - Status: optional (if and only if location is provided)
+            - Status: optional
 
         + location
             - Type: string
-            - Status: optional (if and only if tellzone_id is provided)
+            - Status: optional
 
         + action
             - Type: string

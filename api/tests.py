@@ -1194,8 +1194,6 @@ class Tellcards(TransactionTestCase):
         self.client_2 = APIClient()
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
-
     def test_a(self):
         self.get(self.client_1, 0, 0)
         self.get(self.client_2, 0, 0)
@@ -1208,17 +1206,6 @@ class Tellcards(TransactionTestCase):
             },
             format='json',
         )
-        assert response.status_code == 400
-
-        response = self.client_1.post(
-            '/api/tellcards/',
-            {
-                'user_destination_id': self.user_2.id,
-                'tellzone_id': self.tellzone.id,
-                'action': 'Save',
-            },
-            format='json',
-        )
         assert response.data == {}
         assert response.status_code == 201
 
@@ -1226,17 +1213,6 @@ class Tellcards(TransactionTestCase):
             '/api/tellcards/',
             {
                 'user_destination_id': self.user_1.id,
-                'action': 'Save',
-            },
-            format='json',
-        )
-        assert response.status_code == 400
-
-        response = self.client_2.post(
-            '/api/tellcards/',
-            {
-                'user_destination_id': self.user_1.id,
-                'location': 'Location',
                 'action': 'Save',
             },
             format='json',

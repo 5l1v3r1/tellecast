@@ -1621,16 +1621,6 @@ class TellcardsRequest(Tellcard):
         )
         model = models.Tellcard
 
-    def validate(self, data):
-        request = self.context.get('request', None)
-        if not request:
-            return data
-        if not request._request.path == '/api/tellcards/':
-            return data
-        if ('tellzone_id' not in data or not data['tellzone_id']) and ('location' not in data or not data['location']):
-            raise ValidationError(ugettext_lazy('Invalid `tellzone_id` and `location`'))
-        return data
-
 
 class TellcardsResponse(Tellcard):
 
