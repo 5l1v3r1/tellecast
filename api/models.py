@@ -232,7 +232,7 @@ class Tellzone(Model):
 
     @classmethod
     def radius(cls):
-        return 30.00
+        return 300.00
 
     def __str__(self):
         return self.name
