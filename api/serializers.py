@@ -1254,6 +1254,7 @@ class RadarGetResponseItems(User):
             'photo',
             'first_name',
             'last_name',
+            'gender',
             'location',
             'description',
             'photos',
