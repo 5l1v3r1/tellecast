@@ -1589,14 +1589,18 @@ class Radar(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        user_location = serializer.insert()
+        if 'point' in serializer.validated_data and serializer.validated_data['point']:
+            user_location = serializer.insert()
+            tellzones = models.Tellzone.objects.get_queryset().filter(
+                point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
+            ).distance(
+                user_location.point,
+            )
+        else:
+            tellzones = []
         return Response(
             data=serializers.RadarPostResponse(
-                models.Tellzone.objects.get_queryset().filter(
-                    point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
-                ).distance(
-                    user_location.point,
-                ),
+                tellzones,
                 context={
                     'request': request,
                 },
