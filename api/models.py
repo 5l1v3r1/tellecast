@@ -8,6 +8,7 @@ from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db.models import GeoManager, PointField
 from django.contrib.gis.measure import D
+from django.db import IntegrityError
 from django.db.models import (
     BooleanField,
     CharField,
@@ -1507,10 +1508,13 @@ class Tellcard(Model):
             user_destination_id=data['user_destination_id'],
         ).first()
         if not tellcard:
-            tellcard = Tellcard.objects.create(
-                user_source_id=user_source_id,
-                user_destination_id=data['user_destination_id'],
-            )
+            try:
+                tellcard = Tellcard.objects.create(
+                    user_source_id=user_source_id,
+                    user_destination_id=data['user_destination_id'],
+                )
+            except IntegrityError:
+                return
         tellcard.tellzone_id = None
         tellcard.location = None
         if 'tellzone_id' in data and data['tellzone_id']:
