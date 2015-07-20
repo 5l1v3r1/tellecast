@@ -1627,10 +1627,7 @@ def message_post_save(instance, **kwargs):
                             'body': instance.contents,
                             'title': 'New message from user',
                         },
-                        'badge': Notification.objects.get_queryset().filter(
-                            user_id=instance.user_destination_id,
-                            status='Unread',
-                        ).count(),
+                        'badge': get_badge(instance.user_destination_id),
                     },
                     'type': 'message',
                 },
@@ -1731,13 +1728,18 @@ def tellcard_post_save(instance, **kwargs):
                                 'body': string,
                                 'title': string,
                             },
-                            'badge': Notification.objects.get_queryset().filter(
-                                user_id=instance.user_destination_id,
-                                status='Unread',
-                            ).count(),
+                            'badge': get_badge(instance.user_destination_id),
                         },
                         'type': 'tellcard',
                     },
                 ),
                 serializer='json',
             )
+
+
+def get_badge(user_id):
+    return (
+        Message.objects.get_queryset().filter(user_destination_id=user_id, status='Unread').count()
+        +
+        Notification.objects.get_queryset().filter(user_id=user_id, status='Unread').count()
+    )

@@ -963,7 +963,7 @@ class Messages(ViewSet):
                 'body': '{{ body }}',
                 'title': 'New message from user',
             },
-            'badge': {{ total_number_of_unread_notifications }},
+            'badge': {{ total_number_of_unread_messages + total_number_of_unread_notifications }},
             'type': 'message',
         }
         </pre>
