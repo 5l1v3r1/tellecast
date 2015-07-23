@@ -566,6 +566,7 @@ class UserLocation(ModelAdmin):
     fields = (
         'user',
         'tellzone',
+        'location',
         'point',
         'accuracies_horizontal',
         'accuracies_vertical',
@@ -576,6 +577,7 @@ class UserLocation(ModelAdmin):
         'id',
         'user',
         'tellzone',
+        'location',
         'point',
         'accuracies_horizontal',
         'accuracies_vertical',
@@ -589,7 +591,9 @@ class UserLocation(ModelAdmin):
         'is_casting',
         'timestamp',
     )
-    search_fields = ()
+    search_fields = (
+        'location',
+    )
 
 
 class UserPhoto(ModelAdmin):

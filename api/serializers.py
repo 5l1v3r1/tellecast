@@ -178,6 +178,7 @@ class UserPhoto(ModelSerializer):
 class UserLocation(ModelSerializer):
 
     tellzone_id = IntegerField(allow_null=True, default=None)
+    location = CharField(required=False)
     point = PointField()
     accuracies_horizontal = FloatField(default=0.00)
     accuracies_vertical = FloatField(default=0.00)
@@ -188,6 +189,7 @@ class UserLocation(ModelSerializer):
 
         fields = (
             'tellzone_id',
+            'location',
             'point',
             'accuracies_horizontal',
             'accuracies_vertical',
@@ -1042,6 +1044,7 @@ class HomeConnectionsResponseItems(Serializer):
 
     user = HomeConnectionsResponseItemsUser()
     tellzone = HomeConnectionsResponseItemsTellzone(required=False)
+    location = CharField(required=False)
     point = PointField()
     timestamp = DateTimeField()
 

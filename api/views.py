@@ -1534,6 +1534,14 @@ class Radar(ViewSet):
         Input
         =====
 
+        + tellzone_id
+            - Type: integer
+            - Status: optional
+
+        + location
+            - Type: string
+            - Status: optional
+
         + point
             - Type: dictionary (of floats)
             - Status: mandatory
@@ -1551,10 +1559,6 @@ class Radar(ViewSet):
 
         + accuracies_vertical
             - Type: float
-            - Status: optional
-
-        + tellzone_id
-            - Type: integer
             - Status: optional
 
         + bearing
@@ -3180,6 +3184,7 @@ def home_connections(request):
             {
                 'user': user,
                 'tellzone': models.Tellzone.objects.get_queryset().order_by('?').first(),
+                'location': None,
                 'point': user.point,
                 'timestamp': datetime.now() - timedelta(days=randint(1, 7)),
             }
@@ -3195,6 +3200,7 @@ def home_connections(request):
                     DISTINCT ON (api_users_locations_2.user_id)
                     api_users_locations_2.user_id,
                     api_users_locations_2.tellzone_id,
+                    api_users_locations_2.location,
                     ST_AsGeoJSON(api_users_locations_2.point),
                     api_users_locations_2.timestamp
                 FROM api_users_locations api_users_locations_1
@@ -3242,21 +3248,22 @@ def home_connections(request):
             )
             records = cursor.fetchall()
         for record in records:
-            if record[3] > now - timedelta(hours=24):
+            if record[4] > now - timedelta(hours=24):
                 data['trailing_24_hours'] += 1
-            d = record[3].date().isoformat()
+            d = record[4].date().isoformat()
             if d in data['days']:
                 data['days'][d] += 1
             if record[0] not in data['users']:
-                p = loads(record[2])
+                p = loads(record[3])
                 data['users'][record[0]] = {
                     'user': models.User.objects.get_queryset().filter(id=record[0]).first(),
                     'tellzone': models.Tellzone.objects.get_queryset().filter(id=record[1]).first(),
+                    'location': record[2],
                     'point': {
                         'latitude': p['coordinates'][1],
                         'longitude': p['coordinates'][0],
                     },
-                    'timestamp': record[3],
+                    'timestamp': record[4],
                 }
         data['users'] = data['users'].values()
     return Response(

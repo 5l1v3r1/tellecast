@@ -670,6 +670,7 @@ class UserLocation(Model):
 
     user = ForeignKey(User, related_name='locations')
     tellzone = ForeignKey(Tellzone, blank=True, default=None, null=True, related_name='+')
+    location = CharField(ugettext_lazy('Location'), blank=True, default=None, db_index=True, max_length=255, null=True)
     point = PointField(ugettext_lazy('Point'), db_index=True)
     accuracies_horizontal = FloatField(ugettext_lazy('Accuracies :: Horizontal'), blank=True, db_index=True, null=True)
     accuracies_vertical = FloatField(ugettext_lazy('Accuracies :: Vertical'), blank=True, db_index=True, null=True)
@@ -692,7 +693,8 @@ class UserLocation(Model):
     def insert(cls, user_id, data):
         return UserLocation.objects.create(
             user_id=user_id,
-            tellzone_id=data['tellzone_id'] if 'tellzone' in data else None,
+            tellzone_id=data['tellzone_id'] if 'tellzone_id' in data else None,
+            location=data['location'] if 'location' in data else None,
             point=data['point'] if 'point' in data else None,
             accuracies_horizontal=data['accuracies_horizontal'] if 'accuracies_horizontal' in data else None,
             accuracies_vertical=data['accuracies_vertical'] if 'accuracies_vertical' in data else None,
