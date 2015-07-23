@@ -4,6 +4,8 @@ from collections import OrderedDict
 from traceback import print_exc
 
 from django.conf import settings
+from django.contrib.gis.geos import Point
+from django.utils.six import string_types
 from django.utils.translation import ugettext_lazy
 from drf_extra_fields.geo_fields import PointField
 from geopy.distance import vincenty
@@ -26,6 +28,7 @@ from rollbar import report_exc_info
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
+from ujson import loads
 
 from api import models
 
@@ -45,6 +48,23 @@ def to_representation(self, value):
     return value.strftime(self.format)
 
 DateTimeField.to_representation = to_representation
+
+
+def to_internal_value(self, value):
+    if value in (None, '', [], (), {}):
+        return None
+    if isinstance(value, string_types):
+        try:
+            value = loads(value.replace("'", '"'))
+        except ValueError:
+            raise ValidationError(self.error_messages['invalid'])
+    if value and type(value) is dict:
+        longitude = value.get('longitude')
+        latitude = value.get('latitude')
+        if longitude and latitude:
+            return Point(longitude, latitude)
+
+PointField.to_internal_value = to_internal_value
 
 
 def get_user_id(context):

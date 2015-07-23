@@ -1739,7 +1739,6 @@ def tellcard_post_save(instance, **kwargs):
 
 def get_badge(user_id):
     return (
-        Message.objects.get_queryset().filter(user_destination_id=user_id, status='Unread').count()
-        +
+        Message.objects.get_queryset().filter(user_destination_id=user_id, status='Unread').count() +
         Notification.objects.get_queryset().filter(user_id=user_id, status='Unread').count()
     )

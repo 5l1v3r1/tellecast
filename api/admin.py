@@ -5,6 +5,7 @@ from django.contrib.admin import ModelAdmin, site
 from django.contrib.auth.admin import UserAdmin as AdministratorAdmin
 from django.contrib.auth.models import User as Administrator
 from django.contrib.gis.forms.widgets import BaseGeometryWidget
+from django.contrib.gis.geos import GEOSGeometry
 from django.utils.translation import ugettext_lazy
 from social.apps.django_app.default.admin import UserSocialAuthOption
 from social.apps.django_app.default.models import UserSocialAuth
@@ -12,6 +13,17 @@ from social.apps.django_app.default.models import UserSocialAuth
 from api import models
 
 BaseGeometryWidget.display_raw = True
+
+
+@property
+def ewkt(self):
+    if self.get_srid():
+        return 'SRID={srid};POINT ({coords_0:.14f}, {coords_1:.14f})'.format(
+            srid=self.srid, coords_0=self.coords[0], coords_1=self.coords[1],
+        )
+    return 'N/A'
+
+GEOSGeometry.ewkt = ewkt
 
 site.unregister(Administrator)
 site.unregister(UserSocialAuth)
