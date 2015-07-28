@@ -8,6 +8,7 @@ from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db.models import GeoManager, PointField
 from django.contrib.gis.measure import D
+from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError
 from django.db.models import (
     BooleanField,
@@ -38,6 +39,35 @@ from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
 from ujson import dumps
+
+
+def __init__(
+    self,
+    verbose_name=None,
+    name=None,
+    auto=False,
+    version=4,
+    node=None,
+    clock_seq=None,
+    namespace=None,
+    uuid_name=None,
+    *args,
+    **kwargs
+):
+    kwargs.setdefault('max_length', self.DEFAULT_MAX_LENGTH)
+    if auto:
+        self.empty_strings_allowed = False
+        kwargs['blank'] = True
+        kwargs.setdefault('editable', False)
+    self.auto = auto
+    self.version = version
+    self.node = node
+    self.clock_seq = clock_seq
+    self.namespace = namespace
+    self.uuid_name = uuid_name or name
+    super(UUIDField, self).__init__(verbose_name=verbose_name, *args, **kwargs)
+
+UUIDField.__init__ = __init__
 
 user_logged_in.disconnect(update_last_login)
 
