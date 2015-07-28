@@ -978,6 +978,10 @@ class Messages(ViewSet):
         responseMessages:
             - code: 400
               message: Invalid Input
+            - code: 403
+              message: Invalid Input
+            - code: 409
+              message: Invalid Input
         '''
         serializer = serializers.MessagesPostRequest(
             context={
@@ -3003,6 +3007,8 @@ def authenticate(request, backend):
     response_serializer: api.serializers.AuthenticateResponse
     responseMessages:
         - code: 400
+          message: Invalid Input
+        - code: 401
           message: Invalid Input
     '''
     if backend not in ['facebook', 'linkedin-oauth2']:
