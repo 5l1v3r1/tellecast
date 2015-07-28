@@ -4420,6 +4420,8 @@ def users_profile(request, id):
     responseMessages:
         - code: 400
           message: Invalid Input
+        - code: 403
+          message: Invalid Input
     '''
     if request.user.is_authenticated():
         if is_blocked(request.user.id, id):
@@ -4427,7 +4429,7 @@ def users_profile(request, id):
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
                 },
-                status=HTTP_400_BAD_REQUEST,
+                status=HTTP_403_FORBIDDEN,
             )
     user = models.User.objects.get_queryset().filter(id=id).first()
     if not user:
