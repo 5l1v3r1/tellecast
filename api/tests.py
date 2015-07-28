@@ -92,7 +92,7 @@ class Blocks(TransactionTestCase):
         assert response.status_code == 400
 
         response = self.client.get('/api/users/{id}/profile/'.format(id=self.user_2.id), format='json')
-        assert response.status_code == 400
+        assert response.status_code == 403
 
         response = self.client.post(
             '/api/blocks/delete/',
