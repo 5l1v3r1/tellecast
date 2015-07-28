@@ -8,7 +8,6 @@ from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db.models import GeoManager, PointField
 from django.contrib.gis.measure import D
-from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError
 from django.db.models import (
     BooleanField,
