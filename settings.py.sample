@@ -2,6 +2,8 @@
 
 from os.path import dirname, join
 
+SITE_ROOT = dirname(realpath(__file__))
+
 ADMINS = (
     ('...', '...'),
 )
@@ -76,9 +78,9 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'filters': [
+            'filters': (
                 'require_debug_true',
-            ],
+            ),
             'level': 'DEBUG',
         },
         'mail_admins': {
@@ -91,9 +93,9 @@ LOGGING = {
     },
     'loggers': {
         'django.db.backends': {
-            'handlers': [
+            'handlers': (
                 'console',
-            ],
+            ),
             'level': 'DEBUG',
         },
         'django.request': {
@@ -107,7 +109,7 @@ LOGGING = {
     'version': 1,
 }
 MANAGERS = ADMINS
-MEDIA_ROOT = join(dirname(__file__), 'media')
+MEDIA_ROOT = join(SITE_ROOT, 'media')
 MEDIA_URL = '/media/'
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -238,7 +240,7 @@ SOCIAL_AUTH_TWITTER_KEY = '...'
 SOCIAL_AUTH_TWITTER_SECRET = '...'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_USER_MODEL = 'api.User'
-STATIC_ROOT = join(dirname(__file__), 'static')
+STATIC_ROOT = join(SITE_ROOT, 'static')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = ()
 STATICFILES_FINDERS = (
