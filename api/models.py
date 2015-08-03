@@ -33,7 +33,7 @@ from itsdangerous import TimestampSigner
 from jsonfield import JSONField
 from push_notifications.apns import apns_send_message
 from push_notifications.fields import HexIntegerField
-from push_notifications.gcm import gcm_send_message
+from push_notifications.gcm import _gcm_send_json
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
@@ -1140,7 +1140,7 @@ class DeviceGCM(Model):
         return unicode(self.id)
 
     def send_message(self, data):
-        return gcm_send_message(self.registration_id, data)
+        return _gcm_send_json([self.registration_id], data)
 
 
 class MasterTell(Model):
