@@ -8,6 +8,7 @@ from traceback import print_exc
 
 from celery import Celery
 from django.conf import settings
+from kombu import Exchange, Queue
 from rollbar import report_exc_info
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
@@ -21,8 +22,20 @@ celery.conf.update(
         'json',
     ],
     CELERY_ACKS_LATE=True,
+    CELERY_QUEUES = (
+        Queue(
+            'api.tasks.push_notifications',
+            Exchange('api.tasks.push_notifications'),
+            routing_key='api.tasks.push_notifications',
+        ),
+    ),
     CELERY_IGNORE_RESULT=True,
     CELERY_RESULT_SERIALIZER='json',
+    CELERY_ROUTES={
+        'api.tasks.push_notifications': {
+            'queue': 'api.tasks.push_notifications',
+        }
+    },
     CELERY_TASK_SERIALIZER='json',
     CELERYD_LOG_FORMAT='[%(asctime)s: %(levelname)s] %(message)s',
     CELERYD_POOL_RESTARTS=True,
@@ -30,7 +43,6 @@ celery.conf.update(
     CELERYD_TASK_SOFT_TIME_LIMIT=3600,
     CELERYD_TASK_TIME_LIMIT=7200,
 )
-celery.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 
 @celery.task

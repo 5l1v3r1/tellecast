@@ -1131,6 +1131,8 @@ class Messages(ViewSet):
                         'type': 'message',
                     },
                 ),
+                queue='api.tasks.push_notifications',
+                routing_key='api.tasks.push_notifications',
                 serializer='json',
             )
         return Response(
@@ -3860,6 +3862,8 @@ def messages_bulk_is_hidden(request):
                 'type': 'message',
             },
         ),
+        queue='api.tasks.push_notifications',
+        routing_key='api.tasks.push_notifications',
         serializer='json',
     )
     return Response(

@@ -1663,6 +1663,8 @@ def message_post_save(instance, **kwargs):
                     'type': 'message',
                 },
             ),
+            queue='api.tasks.push_notifications',
+            routing_key='api.tasks.push_notifications',
             serializer='json',
         )
 
@@ -1764,6 +1766,8 @@ def tellcard_post_save(instance, **kwargs):
                         'type': 'tellcard',
                     },
                 ),
+                queue='api.tasks.push_notifications',
+                routing_key='api.tasks.push_notifications',
                 serializer='json',
             )
 
