@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from os.path import dirname, join
+from os.path import dirname, join, realpath
 
 SITE_ROOT = dirname(realpath(__file__))
 
