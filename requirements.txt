@@ -13,7 +13,7 @@ certifi==2015.04.28
 django-debug-toolbar==1.3.0
 django-extensions==1.5.2
 django-extra-fields==0.3
-django-push-notifications==1.2.0
+-e git+https://github.com/jamaalscarlett/django-push-notifications.git#egg=django-push-notifications
 django-rest-swagger==0.3.2
 django-suit==0.2.13
 django-uuidfield==0.5.0
