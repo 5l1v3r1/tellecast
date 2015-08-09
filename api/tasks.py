@@ -7,7 +7,6 @@ from os import environ
 from traceback import print_exc
 
 from celery import Celery
-from django.conf import settings
 from kombu import Exchange, Queue
 from rollbar import report_exc_info
 
@@ -22,7 +21,7 @@ celery.conf.update(
         'json',
     ],
     CELERY_ACKS_LATE=True,
-    CELERY_QUEUES = (
+    CELERY_QUEUES=(
         Queue(
             'api.tasks.push_notifications',
             Exchange('api.tasks.push_notifications'),
