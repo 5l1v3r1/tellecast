@@ -284,6 +284,10 @@ TEMPLATE_LOADERS = (
 )
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 TIME_ZONE = '...'
+TORNADO = {
+    'address': '...',
+    'port': ...,
+}
 USE_ETAGS = True
 USE_L10N = True
 WSGI_APPLICATION = 'wsgi.application'
