@@ -4120,9 +4120,10 @@ def register(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
+    request.user = serializer.insert()
     return Response(
         data=serializers.RegisterResponse(
-            serializer.insert(),
+            request.user,
             context={
                 'request': request,
             },
