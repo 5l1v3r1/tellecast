@@ -12,6 +12,8 @@ from tornado.web import Application
 from tornado.websocket import WebSocketHandler
 from ujson import dumps, loads
 
+from api import models, serializers
+
 clients = {}
 
 
@@ -92,9 +94,23 @@ class RabbitMQHandler(object):
 
     def on_channel_basic_consume(self, channel, method, properties, body):
         print 'RabbitMQHandler.on_channel_basic_consume()'
-        body = loads(body)
-        print 'body[args]', body['args']
         try:
+            message = loads(body)['args'][0]
+            print 'message', message
+            if message['subject'] == 'notifications':
+                notification = models.Notification.objects.get_queryset().filter(id=message['body']).first()
+                if notification:
+                    if notification.user_id in clients:
+                        print 'clients[notification.user_id].write_message()'
+                        clients[notification.user_id].write_message(
+                            dumps({
+                                'subject': 'notifications',
+                                'body': serializers.NotificationsGetResponse(
+                                    notification,
+                                    context={},
+                                ).data,
+                            })
+                        )
             self.channel.basic_ack(method.delivery_tag)
         except Exception:
             print_exc()
@@ -129,7 +145,23 @@ class WebSocketHandler(WebSocketHandler):
         print 'WebSocketHandler.on_message()'
         print 'message', message
         try:
-            pass
+            message = loads(message)
+            if message['subject'] == 'token':
+                user = None
+                try:
+                    user = models.User.objects.filter(id=message['body'].split('.')[0]).first()
+                except Exception:
+                    print_exc()
+                    return
+                if not user:
+                    print 'if not user'
+                    return
+                if not user.is_valid(message['body']):
+                    print 'if not user.is_valid(message[\'token\'])'
+                    return
+                if user.id not in clients:
+                    clients[user.id] = self
+                return
         except Exception:
             print_exc()
 

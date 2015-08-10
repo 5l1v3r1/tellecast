@@ -1680,6 +1680,22 @@ def message_attachment_pre_save(instance, **kwargs):
         instance.position = position + 1 if position else 1
 
 
+@receiver(post_save, sender=Notification)
+def notification_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'notifications',
+                'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
+
+
 @receiver(post_save, sender=ShareUser)
 def share_user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
