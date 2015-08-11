@@ -9,7 +9,6 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from django.db.models import Q
 from django.test.client import RequestFactory
-from django.utils.translation import ugettext_lazy
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
 from tornado.gen import coroutine
@@ -318,7 +317,7 @@ class WebSocketHandler(WebSocketHandler):
                 if not serializer.is_valid(raise_exception=False):
                     print 'if not serializer.is_valid(raise_exception=False)'
                     self.write_message(dumps({
-                        'subject': 'users_locations_post',
+                        'subject': 'messages',
                         'body': {
                             'errors': serializer.errors,
                         },
@@ -328,9 +327,9 @@ class WebSocketHandler(WebSocketHandler):
                 if views.is_blocked(user.id, serializer.validated_data['user_destination_id']):
                     print 'if is_blocked()'
                     self.write_message(dumps({
-                        'subject': 'users_locations_post',
+                        'subject': 'messages',
                         'body': {
-                            'errors': ugettext_lazy('Invalid `user_destination_id`'),
+                            'errors': 'Invalid `user_destination_id`',
                         },
                     }))
                     print 'self.write_message()'
@@ -338,9 +337,9 @@ class WebSocketHandler(WebSocketHandler):
                 if user.id == serializer.validated_data['user_destination_id']:
                     print 'if user.id == serializer.validated_data[\'user_destination_id\']'
                     self.write_message(dumps({
-                        'subject': 'users_locations_post',
+                        'subject': 'messages',
                         'body': {
-                            'errors': ugettext_lazy('Invalid `user_destination_id`'),
+                            'errors': 'Invalid `user_destination_id`',
                         },
                     }))
                     print 'self.write_message()'
@@ -373,9 +372,9 @@ class WebSocketHandler(WebSocketHandler):
                             if message.type == 'Request':
                                 print 'if message.type == \'Request\''
                                 self.write_message(dumps({
-                                    'subject': 'users_locations_post',
+                                    'subject': 'messages',
                                     'body': {
-                                        'errors': ugettext_lazy('HTTP_409_CONFLICT'),
+                                        'errors': 'HTTP_409_CONFLICT',
                                     },
                                 }))
                                 print 'self.write_message()'
@@ -383,9 +382,9 @@ class WebSocketHandler(WebSocketHandler):
                             if message.type == 'Response - Blocked':
                                 print 'if message.type == \'Response - Blocked\''
                                 self.write_message(dumps({
-                                    'subject': 'users_locations_post',
+                                    'subject': 'messages',
                                     'body': {
-                                        'errors': ugettext_lazy('HTTP_403_FORBIDDEN'),
+                                        'errors': 'HTTP_403_FORBIDDEN',
                                     },
                                 }))
                                 print 'self.write_message()'
@@ -397,9 +396,9 @@ class WebSocketHandler(WebSocketHandler):
                                     'serializer.validated_data[\'type\'] == \'Message\''
                                 )
                                 self.write_message(dumps({
-                                    'subject': 'users_locations_post',
+                                    'subject': 'messages',
                                     'body': {
-                                        'errors': ugettext_lazy('HTTP_403_FORBIDDEN'),
+                                        'errors': 'HTTP_403_FORBIDDEN',
                                     },
                                 }))
                                 print 'self.write_message()'
@@ -407,9 +406,9 @@ class WebSocketHandler(WebSocketHandler):
                             if message.type == 'Response - Blocked':
                                 print 'if message.type == \'Response - Blocked\''
                                 self.write_message(dumps({
-                                    'subject': 'users_locations_post',
+                                    'subject': 'messages',
                                     'body': {
-                                        'errors': ugettext_lazy('HTTP_403_FORBIDDEN'),
+                                        'errors': 'HTTP_403_FORBIDDEN',
                                     },
                                 }))
                                 print 'self.write_message()'
@@ -418,9 +417,9 @@ class WebSocketHandler(WebSocketHandler):
                         if not serializer.validated_data['type'] == 'Request':
                             print 'if not serializer.validated_data[\'type\'] == \'Request\''
                             self.write_message(dumps({
-                                'subject': 'users_locations_post',
+                                'subject': 'messages',
                                 'body': {
-                                    'errors': ugettext_lazy('HTTP_403_FORBIDDEN'),
+                                    'errors': 'HTTP_403_FORBIDDEN',
                                 },
                             }))
                             print 'self.write_message()'
