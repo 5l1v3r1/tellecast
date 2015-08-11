@@ -1667,6 +1667,18 @@ def message_post_save(instance, **kwargs):
             routing_key='api.tasks.push_notifications',
             serializer='json',
         )
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'messages',
+                'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
 
 
 @receiver(pre_save, sender=MessageAttachment)
@@ -1786,6 +1798,22 @@ def tellcard_post_save(instance, **kwargs):
                 routing_key='api.tasks.push_notifications',
                 serializer='json',
             )
+
+
+@receiver(post_save, sender=UserLocation)
+def user_location_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'users_locations',
+                'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
 
 
 def get_badge(user_id):

@@ -1518,7 +1518,7 @@ class Radar(ViewSet):
                         'position': position + 1,
                     }
                     for position, items in enumerate(
-                        self.get_items(
+                        get_items(
                             [user[0] for user in sorted(users.values(), key=lambda user: (user[2], user[0].id))],
                             5
                         )
@@ -1618,9 +1618,6 @@ class Radar(ViewSet):
             ).data,
             status=HTTP_200_OK,
         )
-
-    def get_items(self, items, count):
-        return [item.tolist() for item in array_split(items, count)]
 
 
 class SharesUsers(ViewSet):
@@ -4520,6 +4517,10 @@ def get_months(today):
         dates[-1].isoformat(),
         get(dates[0]).replace(days=-1, months=1).date().isoformat(),
     ]
+
+
+def get_items(items, count):
+    return [item.tolist() for item in array_split(items, count)]
 
 
 def get_point(latitude, longitude):
