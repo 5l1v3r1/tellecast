@@ -208,7 +208,6 @@ class RabbitMQHandler(object):
                                 'POINT({x} {y})'.format(x=instance.point.x, y=instance.point.y),
                                 instance.user.id,
                                 instance.user.id,
-                                instance.user.id,
                                 'POINT({x} {y})'.format(x=instance.point.x, y=instance.point.y),
                                 models.Tellzone.radius(),
                             )
