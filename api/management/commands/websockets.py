@@ -126,12 +126,31 @@ class WebSocketHandler(WebSocketHandler):
         print 'WebSocketHandler.open()'
         self.stream.set_nodelay(True)
 
+    def send_error(self, *args, **kwargs):
+        super(WebSocketHandler, self).send_error(*args, **kwargs)
+        print 'WebSocketHandler.send_error()'
+        print 'args', args
+        print 'kwargs', kwargs
+
+    def write_message(self, message, binary=False):
+        super(WebSocketHandler, self).write_message(message, binary)
+        print 'WebSocketHandler.write_message()'
+        print 'message', message
+
     def on_close(self):
         print 'WebSocketHandler.on_close()'
         for key, value in clients.items():
             if value is self:
                 del clients[key]
                 return
+
+    def on_connection_close(self):
+        super(WebSocketHandler, self).on_connection_close()
+        print 'WebSocketHandler.on_connection_close()'
+
+    def on_pong(self, data):
+        print 'WebSocketHandler.on_pong()'
+        print 'data', data
 
     def get_id(self):
         print 'WebSocketHandler.get_id()'
@@ -151,15 +170,31 @@ class WebSocketHandler(WebSocketHandler):
                 try:
                     user = models.User.objects.filter(id=message['body'].split('.')[0]).first()
                 except Exception:
+                    self.write_message(dumps({
+                        'subject': 'token',
+                        'body': False,
+                    }))
                     print_exc()
                     return
                 if not user:
+                    self.write_message(dumps({
+                        'subject': 'token',
+                        'body': False,
+                    }))
                     print 'if not user'
                     return
                 if not user.is_valid(message['body']):
+                    self.write_message(dumps({
+                        'subject': 'token',
+                        'body': False,
+                    }))
                     print 'if not user.is_valid(message[\'token\'])'
                     return
                 if user.id not in clients:
+                    self.write_message(dumps({
+                        'subject': 'token',
+                        'body': True,
+                    }))
                     clients[user.id] = self
                 return
         except Exception:
