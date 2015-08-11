@@ -163,7 +163,7 @@ class RabbitMQHandler(object):
                                 })
                             )
                             print 'clients[instance.user_id].write_message()'
-                    users = []
+                    users = {}
                     with closing(connection.cursor()) as cursor:
                         cursor.execute(
                             '''
@@ -226,7 +226,7 @@ class RabbitMQHandler(object):
                             clients[key].write_message(
                                 dumps({
                                     'subject': 'users_locations_get',
-                                    'body': serializers.RadarGetResponseItems(
+                                    'body': serializers.RadarGetResponse(
                                         [
                                             {
                                                 'items': items,
