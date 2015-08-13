@@ -106,62 +106,65 @@ class RabbitMQHandler(object):
             if message['subject'] == 'messages':
                 instance = models.Message.objects.get_queryset().filter(id=message['body']).first()
                 if instance:
-                    if instance.user_source_id in clients:
-                        clients[instance.user_source_id].write_message(
-                            dumps({
-                                'subject': 'messages',
-                                'body': serializers.MessagesGetResponse(
-                                    instance,
-                                    context=get_context(instance.user_source),
-                                ).data,
-                            })
-                        )
-                        print 'clients[instance.user_source_id].write_message()'
-                    if instance.user_destination_id in clients:
-                        clients[instance.user_destination_id].write_message(
-                            dumps({
-                                'subject': 'messages',
-                                'body': serializers.MessagesGetResponse(
-                                    instance,
-                                    context=get_context(instance.user_destination),
-                                ).data,
-                            })
-                        )
-                        print 'clients[instance.user_source_id].write_message()'
+                    for key, value in clients.items():
+                        if value == instance.user_source_id:
+                            key.write_message(
+                                dumps({
+                                    'subject': 'messages',
+                                    'body': serializers.MessagesGetResponse(
+                                        instance,
+                                        context=get_context(instance.user_source),
+                                    ).data,
+                                })
+                            )
+                            print 'key.write_message()'
+                        if value == instance.user_destination_id:
+                            key.write_message(
+                                dumps({
+                                    'subject': 'messages',
+                                    'body': serializers.MessagesGetResponse(
+                                        instance,
+                                        context=get_context(instance.user_destination),
+                                    ).data,
+                                })
+                            )
+                            print 'key.write_message()'
             if message['subject'] == 'notifications':
                 instance = models.Notification.objects.get_queryset().filter(id=message['body']).first()
                 if instance:
-                    if instance.user_id in clients:
-                        clients[instance.user_id].write_message(
-                            dumps({
-                                'subject': 'notifications',
-                                'body': serializers.NotificationsGetResponse(
-                                    instance,
-                                    context=get_context(instance.user),
-                                ).data,
-                            })
-                        )
-                        print 'clients[instance.user_id].write_message()'
+                    for key, value in clients.items():
+                        if value == instance.user_id:
+                            key.write_message(
+                                dumps({
+                                    'subject': 'notifications',
+                                    'body': serializers.NotificationsGetResponse(
+                                        instance,
+                                        context=get_context(instance.user),
+                                    ).data,
+                                })
+                            )
+                            print 'key.write_message()'
             if message['subject'] == 'users_locations':
                 instance = models.UserLocation.objects.get_queryset().filter(id=message['body']).first()
                 if instance:
                     if instance.point:
-                        if instance.user_id in clients:
-                            clients[instance.user_id].write_message(
-                                dumps({
-                                    'subject': 'users_locations_post',
-                                    'body': serializers.RadarPostResponse(
-                                        models.Tellzone.objects.get_queryset().filter(
-                                            point__distance_lte=(instance.point, D(ft=models.Tellzone.radius())),
-                                        ).distance(
-                                            instance.point,
-                                        ),
-                                        context=get_context(instance.user),
-                                        many=True,
-                                    ).data,
-                                })
-                            )
-                            print 'clients[instance.user_id].write_message()'
+                        for key, value in clients.items():
+                            if value == instance.user_id:
+                                key.write_message(
+                                    dumps({
+                                        'subject': 'users_locations_post',
+                                        'body': serializers.RadarPostResponse(
+                                            models.Tellzone.objects.get_queryset().filter(
+                                                point__distance_lte=(instance.point, D(ft=models.Tellzone.radius())),
+                                            ).distance(
+                                                instance.point,
+                                            ),
+                                            context=get_context(instance.user),
+                                            many=True,
+                                        ).data,
+                                    })
+                                )
+                                print 'key.write_message()'
                     users = {}
                     with closing(connection.cursor()) as cursor:
                         cursor.execute(
@@ -221,35 +224,36 @@ class RabbitMQHandler(object):
                                     record[2],
                                 )
                     for key, value in users.items():
-                        if key in clients:
-                            clients[key].write_message(
-                                dumps({
-                                    'subject': 'users_locations_get',
-                                    'body': serializers.RadarGetResponse(
-                                        [
-                                            {
-                                                'items': items,
-                                                'position': position + 1,
-                                            }
-                                            for position, items in enumerate(
-                                                views.get_items(
-                                                    [
-                                                        user[0]
-                                                        for user in sorted(
-                                                            users.values(), key=lambda user: (user[2], user[0].id)
-                                                        )
-                                                        if user[0].id != key
-                                                    ],
-                                                    5
+                        for k, v in clients.items():
+                            if v == key:
+                                k.write_message(
+                                    dumps({
+                                        'subject': 'users_locations_get',
+                                        'body': serializers.RadarGetResponse(
+                                            [
+                                                {
+                                                    'items': items,
+                                                    'position': position + 1,
+                                                }
+                                                for position, items in enumerate(
+                                                    views.get_items(
+                                                        [
+                                                            user[0]
+                                                            for user in sorted(
+                                                                users.values(), key=lambda user: (user[2], user[0].id)
+                                                            )
+                                                            if user[0].id != key
+                                                        ],
+                                                        5
+                                                    )
                                                 )
-                                            )
-                                        ],
-                                        context=get_context(value[0]),
-                                        many=True,
-                                    ).data,
-                                })
-                            )
-                            print 'clients[key].write_message()'
+                                            ],
+                                            context=get_context(value[0]),
+                                            many=True,
+                                        ).data,
+                                    })
+                                )
+                                print 'k.write_message()'
             self.channel.basic_ack(method.delivery_tag)
         except Exception:
             print_exc()
@@ -278,10 +282,7 @@ class WebSocketHandler(WebSocketHandler):
 
     def on_close(self):
         print 'WebSocketHandler.on_close()'
-        for key, value in clients.items():
-            if value is self:
-                del clients[key]
-                return
+        del clients[self]
 
     def on_connection_close(self):
         super(WebSocketHandler, self).on_connection_close()
@@ -291,13 +292,6 @@ class WebSocketHandler(WebSocketHandler):
         print 'WebSocketHandler.on_pong()'
         print 'data', data
 
-    def get_id(self):
-        print 'WebSocketHandler.get_id()'
-        for key, value in clients.items():
-            if value is self:
-                return key
-        return 0
-
     @coroutine
     def on_message(self, message):
         print 'WebSocketHandler.on_message()'
@@ -305,13 +299,26 @@ class WebSocketHandler(WebSocketHandler):
         try:
             message = loads(message)
             if message['subject'] == 'messages':
-                id = self.get_id()
-                if not id:
-                    print 'if not self.get_id()'
+                if self not in clients:
+                    print 'if self not in clients'
+                    self.write_message(dumps({
+                        'subject': 'messages',
+                        'body': {
+                            'errors': 'if self not in clients',
+                        },
+                    }))
+                    print 'self.write_message()'
                     return
-                user = models.User.objects.filter(id=id).first()
+                user = models.User.objects.filter(id=clients[self]).first()
                 if not user:
                     print 'if not user'
+                    self.write_message(dumps({
+                        'subject': 'messages',
+                        'body': {
+                            'errors': 'if not user',
+                        },
+                    }))
+                    print 'self.write_message()'
                     return
                 serializer = serializers.MessagesPostRequest(context=get_context(user), data=message['body'])
                 if not serializer.is_valid(raise_exception=False):
@@ -431,28 +438,31 @@ class WebSocketHandler(WebSocketHandler):
                 try:
                     user = models.User.objects.filter(id=message['body'].split('.')[0]).first()
                 except Exception:
+                    print 'except Exception'
+                    print_exc()
                     self.write_message(dumps({
                         'subject': 'users',
                         'body': False,
                     }))
-                    print_exc()
+                    print 'self.write_message()'
                     return
                 if not user:
+                    print 'if not user'
                     self.write_message(dumps({
                         'subject': 'users',
                         'body': False,
                     }))
-                    print 'if not user'
+                    print 'self.write_message()'
                     return
                 if not user.is_valid(message['body']):
+                    print 'if not user.is_valid(message[\'body\'])'
                     self.write_message(dumps({
                         'subject': 'users',
                         'body': False,
                     }))
-                    print 'if not user.is_valid(message[\'body\'])'
+                    print 'self.write_message()'
                     return
-                if user.id not in clients:
-                    clients[user.id] = self
+                clients[self] = user.id
                 self.write_message(dumps({
                     'subject': 'users',
                     'body': True,
@@ -460,13 +470,26 @@ class WebSocketHandler(WebSocketHandler):
                 print 'self.write_message()'
                 return
             if message['subject'] == 'users_locations_post':
-                id = self.get_id()
-                if not id:
-                    print 'if not self.get_id()'
+                if self not in clients:
+                    print 'if self not in clients'
+                    self.write_message(dumps({
+                        'subject': 'messages',
+                        'body': {
+                            'errors': 'if self not in clients',
+                        },
+                    }))
+                    print 'if self not in clients'
                     return
-                user = models.User.objects.filter(id=id).first()
+                user = models.User.objects.filter(id=clients[self]).first()
                 if not user:
                     print 'if not user'
+                    self.write_message(dumps({
+                        'subject': 'messages',
+                        'body': {
+                            'errors': 'if not user',
+                        },
+                    }))
+                    print 'self.write_message()'
                     return
                 serializer = serializers.RadarPostRequest(context=get_context(user), data=message['body'])
                 if not serializer.is_valid(raise_exception=False):
