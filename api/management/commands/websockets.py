@@ -272,8 +272,13 @@ class WebSocketHandler(WebSocketHandler):
     def send_error(self, *args, **kwargs):
         super(WebSocketHandler, self).send_error(*args, **kwargs)
         print 'WebSocketHandler.send_error()'
-        print 'args', args
-        print 'kwargs', kwargs
+        try:
+            print 'args', args
+            print 'kwargs', kwargs
+            print 'status_code', args[0]
+            print 'exc_info', kwargs['exc_info']
+        except Exception:
+            print_exc()
 
     def write_message(self, message, binary=False):
         super(WebSocketHandler, self).write_message(message, binary)
