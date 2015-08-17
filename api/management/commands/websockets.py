@@ -46,12 +46,18 @@ class RabbitMQHandler(object):
 
     def on_connection_open_error(self, connection, error_message):
         print 'RabbitMQHandler.on_connection_open_error()'
-        print 'error_message', error_message
+        try:
+            print 'error_message', error_message
+        except Exception:
+            print_exc()
 
     def on_connection_close(self, connection, reply_code, reply_text):
         print 'RabbitMQHandler.on_connection_close()'
-        print 'reply_code', reply_code
-        print 'reply_text', reply_text
+        try:
+            print 'reply_code', reply_code
+            print 'reply_text', reply_text
+        except Exception:
+            print_exc()
 
     def on_channel_open(self, channel):
         print 'RabbitMQHandler.on_channel_open()'
@@ -283,7 +289,10 @@ class WebSocketHandler(WebSocketHandler):
     def write_message(self, message, binary=False):
         super(WebSocketHandler, self).write_message(message, binary)
         print 'WebSocketHandler.write_message()'
-        print 'message', message
+        try:
+            print 'message', message
+        except Exception:
+            print_exc()
 
     def on_close(self):
         print 'WebSocketHandler.on_close()'
@@ -295,12 +304,18 @@ class WebSocketHandler(WebSocketHandler):
 
     def on_pong(self, data):
         print 'WebSocketHandler.on_pong()'
-        print 'data', data
+        try:
+            print 'data', data
+        except Exception:
+            print_exc()
 
     @coroutine
     def on_message(self, message):
         print 'WebSocketHandler.on_message()'
-        print 'message', message
+        try:
+            print 'message', message
+        except Exception:
+            print_exc()
         try:
             message = loads(message)
             if message['subject'] == 'messages':
