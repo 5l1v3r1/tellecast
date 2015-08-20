@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from contextlib import closing
 from datetime import datetime, timedelta
 
 from celery import current_app
@@ -7,8 +8,9 @@ from django.conf import settings
 from django.contrib.auth.models import update_last_login, User as Administrator
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db.models import GeoManager, PointField
+from django.contrib.gis.geos import fromstr
 from django.contrib.gis.measure import D
-from django.db import IntegrityError
+from django.db import connection, IntegrityError
 from django.db.models import (
     BooleanField,
     CharField,
@@ -31,13 +33,14 @@ from django.utils.translation import ugettext_lazy
 from django_extensions.db.fields import UUIDField
 from itsdangerous import TimestampSigner
 from jsonfield import JSONField
+from numpy import array_split
 from push_notifications.apns import apns_send_message
 from push_notifications.fields import HexIntegerField
 from push_notifications.gcm import _gcm_send_json
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
-from ujson import dumps
+from ujson import dumps, loads
 
 
 def __init__(
@@ -1821,3 +1824,74 @@ def get_badge(user_id):
         Message.objects.get_queryset().filter(user_destination_id=user_id, status='Unread').count() +
         Notification.objects.get_queryset().filter(user_id=user_id, status='Unread').count()
     )
+
+
+def get_items(items, count):
+    return [item.tolist() for item in array_split(items, count)]
+
+
+def get_point(latitude, longitude):
+    return fromstr('POINT({longitude} {latitude})'.format(latitude=latitude, longitude=longitude))
+
+
+def get_users(user_id, point, radius, include_user_id):
+    users = {}
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT
+                api_users_locations.user_id,
+                ST_AsGeoJSON(api_users_locations.point),
+                ST_Distance(
+                    ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                    ST_Transform(api_users_locations.point, 2163)
+                ) * 3.28084
+            FROM api_users_locations
+            INNER JOIN api_users ON api_users.id = api_users_locations.user_id
+            INNER JOIN (
+                SELECT MAX(api_users_locations.id) AS id
+                FROM api_users_locations
+                GROUP BY api_users_locations.user_id
+            ) api_users_locations_ ON api_users_locations.id = api_users_locations_.id
+            LEFT OUTER JOIN api_blocks ON
+                (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
+                OR
+                (api_blocks.user_source_id = api_users_locations.user_id AND api_blocks.user_destination_id = %s)
+            WHERE
+                (api_users_locations.user_id != %s OR %s = true)
+                AND
+                ST_DWithin(
+                    ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                    ST_Transform(api_users_locations.point, 2163),
+                    %s
+                )
+                AND
+                api_users_locations.is_casting IS TRUE
+                AND
+                api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
+                AND
+                api_users.is_signed_in IS TRUE
+                AND
+                api_blocks.id IS NULL
+            ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
+            ''',
+            (
+                'POINT({x} {y})'.format(x=point.x, y=point.y),
+                user_id,
+                user_id,
+                user_id,
+                include_user_id,
+                'POINT({x} {y})'.format(x=point.x, y=point.y),
+                radius,
+            )
+        )
+        for record in cursor.fetchall():
+            if record[0] not in users:
+                p = loads(record[1])
+                p = get_point(p['coordinates'][1], p['coordinates'][0])
+                users[record[0]] = (
+                    User.objects.get_queryset().filter(id=record[0]).first(),
+                    p,
+                    record[2],
+                )
+    return users

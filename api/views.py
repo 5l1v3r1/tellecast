@@ -7,14 +7,12 @@ from random import randint
 from arrow import get
 from celery import current_app
 from django.conf import settings
-from django.contrib.gis.geos import fromstr
 from django.contrib.gis.measure import D
 from django.db import connection
 from django.db.models import Q
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy
 from geopy.distance import vincenty
-from numpy import array_split
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import (
@@ -1456,60 +1454,8 @@ class Radar(ViewSet):
             data=request.query_params,
         )
         serializer.is_valid(raise_exception=True)
-        point = get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
-        users = {}
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT
-                    api_users_locations.user_id,
-                    ST_AsGeoJSON(api_users_locations.point),
-                    ST_Distance(
-                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                        ST_Transform(api_users_locations.point, 2163)
-                    ) * 3.28084
-                FROM api_users_locations
-                INNER JOIN api_users ON api_users.id = api_users_locations.user_id
-                LEFT OUTER JOIN api_blocks ON
-                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
-                    OR
-                    (api_blocks.user_source_id = api_users_locations.user_id AND api_blocks.user_destination_id = %s)
-                WHERE
-                    api_users_locations.user_id != %s
-                    AND
-                    ST_DWithin(
-                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                        ST_Transform(api_users_locations.point, 2163),
-                        %s
-                    )
-                    AND
-                    api_users_locations.is_casting IS TRUE
-                    AND
-                    api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
-                    AND
-                    api_users.is_signed_in IS TRUE
-                    AND
-                    api_blocks.id IS NULL
-                ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
-                ''',
-                (
-                    'POINT({x} {y})'.format(x=point.x, y=point.y),
-                    request.user.id,
-                    request.user.id,
-                    request.user.id,
-                    'POINT({x} {y})'.format(x=point.x, y=point.y),
-                    serializer.validated_data['radius'] * 0.3048,
-                )
-            )
-            for record in cursor.fetchall():
-                if record[0] not in users:
-                    p = loads(record[1])
-                    p = get_point(p['coordinates'][1], p['coordinates'][0])
-                    users[record[0]] = (
-                        models.User.objects.get_queryset().filter(id=record[0]).first(),
-                        p,
-                        record[2],
-                    )
+        point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
+        users = models.get_users(request.user.id, point, serializer.validated_data['radius'] * 0.3048, True)
         return Response(
             data=serializers.RadarGetResponse(
                 [
@@ -1519,7 +1465,7 @@ class Radar(ViewSet):
                     }
                     for position, items in enumerate(
                         get_items(
-                            [user[0] for user in sorted(users.values(), key=lambda user: (user[2], user[0].id))],
+                            [user[0] for user in sorted(users.values(), key=lambda user: (user[2], user[0].id,))],
                             5
                         )
                     )
@@ -3354,7 +3300,7 @@ def home_statistics_frequent(request):
         data=request.query_params,
     )
     serializer.is_valid(raise_exception=True)
-    point = get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
+    point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
     today = date.today()
     if serializer.validated_data['dummy'] == 'Yes':
         views_today = randint(1, 150)
@@ -3686,7 +3632,7 @@ def home_tellzones(request):
         data=request.query_params,
     )
     serializer.is_valid(raise_exception=True)
-    point = get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
+    point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
     if serializer.validated_data['dummy'] == 'Yes':
         tellzones = models.Tellzone.objects.get_queryset().distance(point).order_by('?')[0:5]
     else:
@@ -4303,7 +4249,7 @@ def tellzones(request):
         data=request.QUERY_PARAMS,
     )
     serializer.is_valid(raise_exception=True)
-    point = get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
+    point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
     return Response(
         data=serializers.TellzonesResponse(
             sorted(
@@ -4541,14 +4487,6 @@ def get_months(today):
         dates[-1].isoformat(),
         get(dates[0]).replace(days=-1, months=1).date().isoformat(),
     ]
-
-
-def get_items(items, count):
-    return [item.tolist() for item in array_split(items, count)]
-
-
-def get_point(latitude, longitude):
-    return fromstr('POINT({longitude} {latitude})'.format(latitude=latitude, longitude=longitude))
 
 
 def is_blocked(one, two):

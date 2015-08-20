@@ -6,9 +6,9 @@ from traceback import print_exc
 from django.conf import settings
 from django.contrib.gis.measure import D
 from django.core.management.base import BaseCommand
-from django.db import connection
 from django.db.models import Q
 from django.test.client import RequestFactory
+from geopy.distance import vincenty
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
 from tornado.gen import coroutine
@@ -151,84 +151,34 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'users_locations':
-                instance = models.UserLocation.objects.get_queryset().filter(id=message['body']).first()
-                if instance:
-                    if instance.point:
+                users_locations_new = models.UserLocation.objects.get_queryset().filter(id=message['body']).first()
+                if users_locations_new:
+                    if users_locations_new.point:
                         for key, value in clients.items():
-                            if value == instance.user_id:
+                            if value == users_locations_new.user_id:
                                 key.write_message(
                                     dumps({
                                         'subject': 'users_locations_post',
                                         'body': serializers.RadarPostResponse(
                                             models.Tellzone.objects.get_queryset().filter(
-                                                point__distance_lte=(instance.point, D(ft=models.Tellzone.radius())),
+                                                point__distance_lte=(
+                                                    users_locations_new.point, D(ft=models.Tellzone.radius()),
+                                                ),
                                             ).distance(
-                                                instance.point,
+                                                users_locations_new.point,
                                             ),
-                                            context=get_context(instance.user),
+                                            context=get_context(users_locations_new.user),
                                             many=True,
                                         ).data,
                                     })
                                 )
                                 print 'key.write_message()'
-                    users = {}
-                    with closing(connection.cursor()) as cursor:
-                        cursor.execute(
-                            '''
-                            SELECT
-                                api_users_locations.user_id,
-                                ST_AsGeoJSON(api_users_locations.point),
-                                ST_Distance(
-                                    ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                                    ST_Transform(api_users_locations.point, 2163)
-                                ) * 3.28084
-                            FROM api_users_locations
-                            INNER JOIN api_users ON api_users.id = api_users_locations.user_id
-                            LEFT OUTER JOIN api_blocks ON
-                                (
-                                    api_blocks.user_source_id = %s
-                                    AND
-                                    api_blocks.user_destination_id = api_users_locations.user_id
-                                )
-                                OR
-                                (
-                                    api_blocks.user_source_id = api_users_locations.user_id
-                                    AND
-                                    api_blocks.user_destination_id = %s
-                                )
-                            WHERE
-                                ST_DWithin(
-                                    ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                                    ST_Transform(api_users_locations.point, 2163),
-                                    %s
-                                )
-                                AND
-                                api_users_locations.is_casting IS TRUE
-                                AND
-                                api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
-                                AND
-                                api_users.is_signed_in IS TRUE
-                                AND
-                                api_blocks.id IS NULL
-                            ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
-                            ''',
-                            (
-                                'POINT({x} {y})'.format(x=instance.point.x, y=instance.point.y),
-                                instance.user.id,
-                                instance.user.id,
-                                'POINT({x} {y})'.format(x=instance.point.x, y=instance.point.y),
-                                models.Tellzone.radius(),
-                            )
-                        )
-                        for record in cursor.fetchall():
-                            if record[0] not in users:
-                                p = loads(record[1])
-                                p = views.get_point(p['coordinates'][1], p['coordinates'][0])
-                                users[record[0]] = (
-                                    models.User.objects.get_queryset().filter(id=record[0]).first(),
-                                    p,
-                                    record[2],
-                                )
+                    users = models.get_users(
+                        users_locations_new.user.id,
+                        users_locations_new.point,
+                        models.Tellzone.radius(),
+                        True,
+                    )
                     for key, value in users.items():
                         for k, v in clients.items():
                             if v == key:
@@ -242,11 +192,12 @@ class RabbitMQHandler(object):
                                                     'position': position + 1,
                                                 }
                                                 for position, items in enumerate(
-                                                    views.get_items(
+                                                    models.get_items(
                                                         [
                                                             user[0]
                                                             for user in sorted(
-                                                                users.values(), key=lambda user: (user[2], user[0].id)
+                                                                users.values(),
+                                                                key=lambda user: (user[2], user[0].id,)
                                                             )
                                                             if user[0].id != key
                                                         ],
@@ -260,6 +211,53 @@ class RabbitMQHandler(object):
                                     })
                                 )
                                 print 'k.write_message()'
+                    users_locations_old = models.UserLocation.objects.get_queryset().filter(
+                        id__lt=message['body'],
+                        user_id=users_locations_new.user_id
+                    ).first()
+                    if users_locations_old:
+                        if vincenty(
+                            (users_locations_new.point.x, users_locations_new.point.y),
+                            (users_locations_old.point.x, users_locations_old.point.y)
+                        ).m > models.Tellzone.radius():
+                            users = models.get_users(
+                                users_locations_old.user.id,
+                                users_locations_old.point,
+                                models.Tellzone.radius(),
+                                include_user_id=False
+                            )
+                            for key, value in users.items():
+                                for k, v in clients.items():
+                                    if v == key:
+                                        k.write_message(
+                                            dumps({
+                                                'subject': 'users_locations_get',
+                                                'body': serializers.RadarGetResponse(
+                                                    [
+                                                        {
+                                                            'items': items,
+                                                            'position': position + 1,
+                                                        }
+                                                        for position, items in enumerate(
+                                                            models.get_items(
+                                                                [
+                                                                    user[0]
+                                                                    for user in sorted(
+                                                                        users.values(),
+                                                                        key=lambda user: (user[2], user[0].id,)
+                                                                    )
+                                                                    if user[0].id != key
+                                                                ],
+                                                                5
+                                                            )
+                                                        )
+                                                    ],
+                                                    context=get_context(value[0]),
+                                                    many=True,
+                                                ).data,
+                                            })
+                                        )
+                                        print 'k.write_message()'
             self.channel.basic_ack(method.delivery_tag)
         except Exception:
             print_exc()
