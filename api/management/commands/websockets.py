@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from contextlib import closing
 from traceback import print_exc
 
 from django.conf import settings

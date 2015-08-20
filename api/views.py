@@ -1464,7 +1464,7 @@ class Radar(ViewSet):
                         'position': position + 1,
                     }
                     for position, items in enumerate(
-                        get_items(
+                        models.get_items(
                             [user[0] for user in sorted(users.values(), key=lambda user: (user[2], user[0].id,))],
                             5
                         )
