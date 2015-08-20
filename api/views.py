@@ -1725,12 +1725,26 @@ class SharesUsers(ViewSet):
             if self.request.QUERY_PARAMS['type'] == 'Source':
                 return models.ShareUser.objects.get_queryset().filter(
                     user_source_id=self.request.user.id,
+                ).select_related(
+                    'user_source',
+                    'user_destination',
+                    'object',
                 )
             if self.request.QUERY_PARAMS['type'] == 'Destination':
                 return models.ShareUser.objects.get_queryset().filter(
                     user_destination_id=self.request.user.id,
+                ).select_related(
+                    'user_source',
+                    'user_destination',
+                    'object',
                 )
-        return models.ShareUser.objects.get_queryset().filter(user_source_id=self.request.user.id)
+        return models.ShareUser.objects.get_queryset().filter(
+            user_source_id=self.request.user.id,
+        ).select_related(
+            'user_source',
+            'user_destination',
+            'object',
+        )
 
 
 class SlaveTells(ViewSet):
@@ -3842,6 +3856,11 @@ def messages_bulk_is_hidden(request):
     for message in models.Message.objects.get_queryset().filter(
         Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
         Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+    ).select_related(
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
     ):
         if message.user_source_id == request.user.id:
             message.user_source_is_hidden = True
@@ -3916,6 +3935,11 @@ def messages_bulk_status(request):
     messages = []
     for message in models.Message.objects.get_queryset().filter(
         Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+    ).select_related(
+        'user_source',
+        'user_destination',
+        'user_status',
+        'master_tell',
     ):
         message.status = 'Read'
         message.save()
