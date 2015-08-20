@@ -495,9 +495,9 @@ class User(Model):
 
     def update_settings(self, data):
         if 'settings' in data:
-            for key, value in data['settings'].items():
-                user_setting = self.settings.get_queryset().filter(key=key).first()
-                user_setting.value = 'True' if value else 'False'
+            for user_setting in self.settings.get_queryset():
+                if user_setting.key in data['settings']:
+                    user_setting.value = 'True' if data['settings'][user_setting.key] else 'False'
                 user_setting.save()
         return self
 
