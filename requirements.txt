@@ -11,6 +11,7 @@ billiard==3.3.0.19
 boto==2.36.0
 celery==3.1.17
 certifi==2015.04.28
+decorator==3.4.2
 django-debug-toolbar==1.3.0
 django-extensions==1.5.2
 django-extra-fields==0.3
@@ -31,12 +32,14 @@ oauthlib==0.7.2
 pika==0.9.14
 pilkit==1.1.12
 psycopg2==2.5.4
+py==1.4.30
 python-dateutil==2.4.2
 python-openid==2.2.5
 python-social-auth==0.2.10
 pytz==2015.2
 requests==2.7.0
 requests-oauthlib==0.5.0
+retry==0.9.1
 rollbar==0.9.11
 six==1.9.0
 sqlparse==0.1.15

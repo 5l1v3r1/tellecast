@@ -10,6 +10,7 @@ from django.test.client import RequestFactory
 from geopy.distance import vincenty
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
+from retry import retry
 from tornado.gen import coroutine
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
@@ -109,7 +110,7 @@ class RabbitMQHandler(object):
             message = loads(body)['args'][0]
             print 'message', message
             if message['subject'] == 'messages':
-                instance = models.Message.objects.get_queryset().filter(id=message['body']).first()
+                instance = self.get_instance(models.Message, id=message['body'])
                 if instance:
                     for key, value in clients.items():
                         if value == instance.user_source_id:
@@ -135,7 +136,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'notifications':
-                instance = models.Notification.objects.get_queryset().filter(id=message['body']).first()
+                instance = self.get_instance(models.Notification, id=message['body'])
                 if instance:
                     for key, value in clients.items():
                         if value == instance.user_id:
@@ -150,7 +151,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'users_locations':
-                users_locations_new = models.UserLocation.objects.get_queryset().filter(id=message['body']).first()
+                instance = self.get_instance(models.UserLocation, id=message['body'])
                 if users_locations_new:
                     if users_locations_new.point:
                         for key, value in clients.items():
@@ -260,6 +261,13 @@ class RabbitMQHandler(object):
             self.channel.basic_ack(method.delivery_tag)
         except Exception:
             print_exc()
+
+    @retry(tries=3, delay=1)
+    def get_instance(self, model, id):
+        instance = model.objects.get_queryset().filter(id=id).first()
+        if not instance:
+            raise Exception
+        return instance
 
 
 class WebSocketHandler(WebSocketHandler):
