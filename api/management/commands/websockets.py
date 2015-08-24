@@ -7,7 +7,6 @@ from django.contrib.gis.measure import D
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.test.client import RequestFactory
-from geopy.distance import vincenty
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
 from retry import retry
@@ -151,7 +150,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'users_locations':
-                instance = self.get_instance(models.UserLocation, id=message['body'])
+                users_locations_new = self.get_instance(models.UserLocation, id=message['body'])
                 if users_locations_new:
                     if users_locations_new.point:
                         for key, value in clients.items():
@@ -176,7 +175,7 @@ class RabbitMQHandler(object):
                     users = models.get_users(
                         users_locations_new.user.id,
                         users_locations_new.point,
-                        models.Tellzone.radius(),
+                        999999999,
                         True,
                     )
                     for key, value in users.items():
@@ -216,48 +215,44 @@ class RabbitMQHandler(object):
                         user_id=users_locations_new.user_id
                     ).first()
                     if users_locations_old:
-                        if vincenty(
-                            (users_locations_new.point.x, users_locations_new.point.y),
-                            (users_locations_old.point.x, users_locations_old.point.y)
-                        ).m > models.Tellzone.radius():
-                            users = models.get_users(
-                                users_locations_old.user.id,
-                                users_locations_old.point,
-                                models.Tellzone.radius(),
-                                include_user_id=False
-                            )
-                            for key, value in users.items():
-                                for k, v in clients.items():
-                                    if v == key:
-                                        k.write_message(
-                                            dumps({
-                                                'subject': 'users_locations_get',
-                                                'body': serializers.RadarGetResponse(
-                                                    [
-                                                        {
-                                                            'items': items,
-                                                            'position': position + 1,
-                                                        }
-                                                        for position, items in enumerate(
-                                                            models.get_items(
-                                                                [
-                                                                    user[0]
-                                                                    for user in sorted(
-                                                                        users.values(),
-                                                                        key=lambda user: (user[2], user[0].id,)
-                                                                    )
-                                                                    if user[0].id != key
-                                                                ],
-                                                                5
-                                                            )
+                        users = models.get_users(
+                            users_locations_old.user.id,
+                            users_locations_old.point,
+                            999999999,
+                            include_user_id=False
+                        )
+                        for key, value in users.items():
+                            for k, v in clients.items():
+                                if v == key:
+                                    k.write_message(
+                                        dumps({
+                                            'subject': 'users_locations_get',
+                                            'body': serializers.RadarGetResponse(
+                                                [
+                                                    {
+                                                        'items': items,
+                                                        'position': position + 1,
+                                                    }
+                                                    for position, items in enumerate(
+                                                        models.get_items(
+                                                            [
+                                                                user[0]
+                                                                for user in sorted(
+                                                                    users.values(),
+                                                                    key=lambda user: (user[2], user[0].id,)
+                                                                )
+                                                                if user[0].id != key
+                                                            ],
+                                                            5
                                                         )
-                                                    ],
-                                                    context=get_context(value[0]),
-                                                    many=True,
-                                                ).data,
-                                            })
-                                        )
-                                        print 'k.write_message()'
+                                                    )
+                                                ],
+                                                context=get_context(value[0]),
+                                                many=True,
+                                            ).data,
+                                        })
+                                    )
+                                    print 'k.write_message()'
             self.channel.basic_ack(method.delivery_tag)
         except Exception:
             print_exc()
