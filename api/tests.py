@@ -962,6 +962,8 @@ class Radar(TransactionTestCase):
         )
         assert len(response.data) == 5
         for index in range(5):
+            assert 'hash' in response.data[index]
+            assert len(response.data[index]['hash'].split('-')) == len(response.data[index]['items'])
             assert 'items' in response.data[index]
             assert len(response.data[index]['items']) > 0
             assert 'position' in response.data[index]

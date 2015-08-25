@@ -1460,6 +1460,7 @@ class Radar(ViewSet):
             data=serializers.RadarGetResponse(
                 [
                     {
+                        'hash': models.get_hash(items),
                         'items': items,
                         'position': position + 1,
                     }

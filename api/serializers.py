@@ -1290,6 +1290,7 @@ class RadarGetResponseItems(User):
 
 class RadarGetResponse(Serializer):
 
+    hash = CharField()
     items = RadarGetResponseItems(many=True, required=False)
     position = IntegerField()
 
