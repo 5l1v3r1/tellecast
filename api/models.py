@@ -371,8 +371,11 @@ class User(Model):
         if 'settings' in data:
             for key, value in data['settings'].items():
                 user_setting = user.settings.get_queryset().filter(key=key).first()
-                user_setting.value = 'True' if value else 'False'
-                user_setting.save()
+                if user_setting:
+                    user_setting.value = 'True' if value else 'False'
+                    user_setting.save()
+                else:
+                    UserSetting.objects.create(user_id=user.id, key=key, value=value)
         if 'photos' in data:
             for photo in data['photos']:
                 UserPhoto.insert(user.id, photo)
@@ -483,25 +486,26 @@ class User(Model):
                 if user_photo:
                     if 'string' in photo:
                         user_photo.string = photo['string']
+                    if 'description' in photo:
+                        user_photo.description = photo['description']
                     if 'position' in photo:
                         user_photo.position = photo['position']
                     user_photo.save()
                 else:
-                    user_photo = UserPhoto.objects.create(
-                        user_id=self.id,
-                        string=photo['string'] if 'string' in photo else '',
-                        position=photo['position'] if 'position' in photo else 0,
-                    )
+                    user_photo = UserPhoto.insert(self.id, photo)
                 ids.append(user_photo.id)
         self.photos.get_queryset().exclude(id__in=ids).delete()
         return self
 
     def update_settings(self, data):
         if 'settings' in data:
-            for user_setting in self.settings.get_queryset():
-                if user_setting.key in data['settings']:
-                    user_setting.value = 'True' if data['settings'][user_setting.key] else 'False'
-                user_setting.save()
+            for key, value in data['settings'].items():
+                user_setting = self.settings.get_queryset().filter(key=key).first()
+                if user_setting:
+                    user_setting.value = 'True' if value else 'False'
+                    user_setting.save()
+                else:
+                    UserSetting.objects.create(user_id=self.id, key=key, value=value)
         return self
 
     def update_social_profiles(self, data):
@@ -521,11 +525,7 @@ class User(Model):
                         user_social_profile.url = social_profile['url']
                     user_social_profile.save()
                 else:
-                    user_social_profile = UserSocialProfile.objects.create(
-                        user_id=self.id,
-                        netloc=social_profile['netloc'] if 'netloc' in social_profile else '',
-                        url=social_profile['url'] if 'url' in social_profile else '',
-                    )
+                    user_social_profile = UserSocialProfile.insert(self.id, social_profile)
                 ids.append(user_social_profile.id)
         self.social_profiles.get_queryset().exclude(id__in=ids).delete()
         return self
@@ -597,11 +597,7 @@ class User(Model):
                         user_url.position = url['position']
                     user_url.save()
                 else:
-                    user_url = UserURL.objects.create(
-                        user_id=self.id,
-                        string=url['string'] if 'string' in url else '',
-                        position=url['position'] if 'position' in url else 0,
-                    )
+                    user_url = UserURL.insert(self.id, url)
                 ids.append(user_url.id)
         self.urls.get_queryset().exclude(id__in=ids).delete()
         return self
@@ -745,6 +741,7 @@ class UserPhoto(Model):
 
     user = ForeignKey(User, related_name='photos')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
@@ -761,6 +758,7 @@ class UserPhoto(Model):
         return UserPhoto.objects.create(
             user_id=user_id,
             string=data['string'] if 'string' in data else None,
+            description=data['description'] if 'description' in data else None,
             position=data['position'] if 'position' in data else None,
         )
 
@@ -782,6 +780,7 @@ class UserSetting(Model):
         'show_last_name': False,
         'show_phone': False,
         'show_photo': True,
+        'show_photos': True,
     }
 
     user = ForeignKey(User, related_name='settings')
@@ -842,7 +841,11 @@ class UserSocialProfile(Model):
     @classmethod
     def insert(cls, user_id, data):
         if 'url' in data and data['url']:
-            return UserSocialProfile.objects.create(user_id=user_id, netloc=data['netloc'], url=data['url'])
+            return UserSocialProfile.objects.create(
+                user_id=user_id,
+                netloc=data['netloc'] if 'netloc' in data else None,
+                url=data['url'] if 'url' in data else None,
+            )
 
     def __str__(self):
         return str(self.id)

@@ -163,6 +163,7 @@ class RecommendedTell(ModelSerializer):
 
 class UserPhoto(ModelSerializer):
 
+    description = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -170,6 +171,7 @@ class UserPhoto(ModelSerializer):
         fields = (
             'id',
             'string',
+            'description',
             'position',
         )
         model = models.UserPhoto
@@ -178,7 +180,7 @@ class UserPhoto(ModelSerializer):
 class UserLocation(ModelSerializer):
 
     tellzone_id = IntegerField(allow_null=True, default=None)
-    location = CharField(required=False)
+    location = CharField(allow_blank=True, required=False)
     point = PointField()
     accuracies_horizontal = FloatField(default=0.00)
     accuracies_vertical = FloatField(default=0.00)
@@ -208,6 +210,7 @@ class UserSetting(Serializer):
     show_photo = BooleanField()
     show_email = BooleanField()
     show_phone = BooleanField()
+    show_photos = BooleanField()
     notifications_invitations = BooleanField()
     notifications_messages = BooleanField()
     notifications_saved_you = BooleanField()
@@ -244,8 +247,8 @@ class UserStatusAttachment(ModelSerializer):
 
 class UserStatus(ModelSerializer):
 
-    url = CharField(required=False)
-    notes = CharField(required=False)
+    url = CharField(allow_blank=True, required=False)
+    notes = CharField(allow_blank=True, required=False)
     attachments = UserStatusAttachment(help_text='List of Users :: Statuses :: Attachments', many=True, required=False)
 
     class Meta:
@@ -372,14 +375,14 @@ class MasterTell(ModelSerializer):
 
 class User(ModelSerializer):
 
-    photo = CharField(required=False)
-    first_name = CharField(required=False)
-    last_name = CharField(required=False)
+    photo = CharField(allow_blank=True, required=False)
+    first_name = CharField(allow_blank=True, required=False)
+    last_name = CharField(allow_blank=True, required=False)
     date_of_birth = DateField(required=False)
-    gender = CharField(required=False)
-    location = CharField(required=False)
-    description = CharField(required=False)
-    phone = CharField(required=False)
+    gender = CharField(allow_blank=True, required=False)
+    location = CharField(allow_blank=True, required=False)
+    description = CharField(allow_blank=True, required=False)
+    phone = CharField(allow_blank=True, required=False)
     point = PointField(required=False)
     photos = UserPhoto(help_text='List of Users :: Photos', many=True, required=False)
     settings = UserSetting(help_text='Users :: Settings', required=False)
@@ -845,7 +848,7 @@ class Tellcard(ModelSerializer):
     user = UsersProfile()
     tellzone_id = IntegerField(required=False)
     tellzone = TellcardTellzone(required=False)
-    location = CharField(required=False)
+    location = CharField(allow_blank=True, required=False)
     action = ChoiceField(
         choices=(
             ('View', 'View',),
@@ -1044,7 +1047,7 @@ class HomeConnectionsResponseItems(Serializer):
 
     user = HomeConnectionsResponseItemsUser()
     tellzone = HomeConnectionsResponseItemsTellzone(required=False)
-    location = CharField(required=False)
+    location = CharField(allow_blank=True, required=False)
     point = PointField()
     timestamp = DateTimeField()
 
@@ -1316,6 +1319,7 @@ class RegisterRequestUserPhoto(UserPhoto):
 
         fields = (
             'string',
+            'description',
             'position',
         )
         model = models.UserPhoto
@@ -1323,7 +1327,7 @@ class RegisterRequestUserPhoto(UserPhoto):
 
 class RegisterRequestUserSocialProfile(Serializer):
 
-    access_token = CharField(required=False)
+    access_token = CharField(allow_blank=True, required=False)
     netloc = ChoiceField(
         choices=(
             ('facebook.com', 'facebook.com',),
@@ -1441,9 +1445,9 @@ class RecommendedTellsResponse(RecommendedTell):
 class RegisterRequest(User):
 
     email = EmailField()
-    photo = CharField(required=False)
-    first_name = CharField(required=False)
-    last_name = CharField(required=False)
+    photo = CharField(allow_blank=True, required=False)
+    first_name = CharField(allow_blank=True, required=False)
+    last_name = CharField(allow_blank=True, required=False)
     date_of_birth = DateField(required=False)
     gender = ChoiceField(
         allow_null=True,
@@ -1453,9 +1457,9 @@ class RegisterRequest(User):
         ),
         required=False,
     )
-    location = CharField(required=False)
-    description = CharField(required=False)
-    phone = CharField(required=False)
+    location = CharField(allow_blank=True, required=False)
+    description = CharField(allow_blank=True, required=False)
+    phone = CharField(allow_blank=True, required=False)
     point = PointField(required=False)
     settings = UserSetting(help_text='Users :: Settings')
     photos = RegisterRequestUserPhoto(help_text='List of Users :: Photos', many=True, required=False)

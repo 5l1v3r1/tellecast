@@ -601,12 +601,14 @@ class UserPhoto(ModelAdmin):
     fields = (
         'user',
         'string',
+        'description',
         'position',
     )
     list_display = (
         'id',
         'user',
         'string',
+        'description',
         'position',
     )
     list_filter = (

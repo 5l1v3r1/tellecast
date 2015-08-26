@@ -2428,6 +2428,7 @@ class Users(ViewSet):
                 'show_last_name': false,
                 'show_phone': false,
                 'show_photo': true,
+                'show_photos': true,
             }
 
         + photos
@@ -2465,6 +2466,10 @@ class Users(ViewSet):
         + string
             - Type: string
             - Status: mandatory
+
+        + description
+            - Type: string
+            - Status: optional
 
         + position
             - Type: integer
@@ -4035,6 +4040,7 @@ def register(request):
             'show_last_name': false,
             'show_phone': false,
             'show_photo': true,
+            'show_photos': true,
         }
 
     + photos (see /api/users/ for more details)
