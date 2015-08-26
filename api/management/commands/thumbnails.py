@@ -129,36 +129,37 @@ class Command(BaseCommand):
         if not name:
             log(1, 'not name (#2)')
             return
-        log(1, 'name = {name}'.format(name=name))
-        log(1, 'type = {type}'.format(type=type))
-        key = self.bucket.get_key(name)
-        if not key:
-            log(1, 'not key')
-            return
-        _, source = mkstemp()
-        key.get_contents_to_filename(source)
-        for item in items:
-            n = '{prefix}_{suffix}'.format(prefix=item['name'], suffix=name)
-            log(1, n)
-            k = self.bucket.get_key(n)
-            if k:
-                log(2, 'Success (#1)')
+        for name in [name, 'preview_{name}'.format(name=name)]:
+            log(1, 'name = {name}'.format(name=name))
+            log(1, 'type = {type}'.format(type=type))
+            key = self.bucket.get_key(name)
+            if not key:
+                log(1, 'not key')
                 continue
-            destination = None
-            try:
-                destination = self.get_thumbnail(source, name, type, item['width'])
-            except Exception:
-                print_exc()
-                report_exc_info()
-            if not destination:
-                log(2, 'Failure')
-                continue
-            k = Key(self.bucket)
-            k.key = n
-            k.set_contents_from_filename(destination)
-            remove(destination)
-            log(2, 'Success (#2)')
-        remove(source)
+            _, source = mkstemp()
+            key.get_contents_to_filename(source)
+            for item in items:
+                n = '{prefix}_{suffix}'.format(prefix=item['name'], suffix=name)
+                log(1, n)
+                k = self.bucket.get_key(n)
+                if k:
+                    log(2, 'Success (#1)')
+                    continue
+                destination = None
+                try:
+                    destination = self.get_thumbnail(source, name, type, item['width'])
+                except Exception:
+                    print_exc()
+                    report_exc_info()
+                if not destination:
+                    log(2, 'Failure')
+                    continue
+                k = Key(self.bucket)
+                k.key = n
+                k.set_contents_from_filename(destination)
+                remove(destination)
+                log(2, 'Success (#2)')
+            remove(source)
 
     def get_thumbnail(self, source, name, type, width):
         if type.startswith('image'):
