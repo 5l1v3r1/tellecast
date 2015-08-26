@@ -1827,7 +1827,7 @@ def get_badge(user_id):
 
 
 def get_hash(items):
-    return '-'.join(map(str, sorted([item.id for item in items])))
+    return '-'.join(map(str, [item.id for item in items]))
 
 
 def get_items(items, count):
