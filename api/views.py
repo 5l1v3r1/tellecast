@@ -1808,9 +1808,13 @@ class SlaveTells(ViewSet):
                 - video/mpeg
                 - video/x-mpeg
 
-        + contents
+        + contents_original
             - Type: string
             - Status: mandatory
+
+        + contents_preview
+            - Type: string
+            - Status: optional
 
         + description
             - Type: string
@@ -1909,9 +1913,13 @@ class SlaveTells(ViewSet):
                 - video/mpeg
                 - video/x-mpeg
 
-        + contents
+        + contents_original
             - Type: string
             - Status: mandatory
+
+        + contents_preview
+            - Type: string
+            - Status: optional
 
         + description
             - Type: string
@@ -2019,9 +2027,13 @@ class SlaveTells(ViewSet):
                 - video/mpeg
                 - video/x-mpeg
 
-        + contents
+        + contents_original
             - Type: string
             - Status: mandatory
+
+        + contents_preview
+            - Type: string
+            - Status: optional
 
         + description
             - Type: string
@@ -2367,7 +2379,11 @@ class Users(ViewSet):
             - Type: string
             - Status: mandatory
 
-        + photo
+        + photo_original
+            - Type: string
+            - Status: optional
+
+        + photo_preview
             - Type: string
             - Status: optional
 
@@ -2463,9 +2479,13 @@ class Users(ViewSet):
             - Type: integer
             - Status: optional
 
-        + string
+        + string_original
             - Type: string
             - Status: mandatory
+
+        + string_preview
+            - Type: string
+            - Status: optional
 
         + description
             - Type: string
@@ -2542,9 +2562,13 @@ class Users(ViewSet):
             - Type: integer
             - Status: mandatory
 
-        + string
+        + string_original
             - Type: string
             - Status: mandatory
+
+        + string_preview
+            - Type: string
+            - Status: optional
 
         + position
             - Type: integer
@@ -3979,7 +4003,11 @@ def register(request):
         - Type: string
         - Status: mandatory
 
-    + photo
+    + photo_original
+        - Type: string
+        - Status: optional
+
+    + photo_preview
         - Type: string
         - Status: optional
 

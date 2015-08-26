@@ -1093,7 +1093,7 @@ class SlaveTells(TransactionTestCase):
         dictionary = {
             'master_tell_id': master_tell_id,
             'type': 'image/*',
-            'contents': '1',
+            'contents_original': '1',
             'description': '1',
         }
 
@@ -1102,7 +1102,7 @@ class SlaveTells(TransactionTestCase):
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['type'] == dictionary['type']
-        assert response.data['contents'] == dictionary['contents']
+        assert response.data['contents_original'] == dictionary['contents_original']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 1
         assert response.data['is_editable'] is True
@@ -1157,7 +1157,7 @@ class SlaveTells(TransactionTestCase):
         assert response.data == []
         assert response.status_code == 200
 
-        dictionary['contents'] = '2'
+        dictionary['contents_original'] = '2'
         dictionary['description'] = '2'
 
         response = self.client.put('/api/slave-tells/{id}/'.format(id=id), dictionary, format='json')
@@ -1165,7 +1165,7 @@ class SlaveTells(TransactionTestCase):
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['type'] == dictionary['type']
-        assert response.data['contents'] == dictionary['contents']
+        assert response.data['contents_original'] == dictionary['contents_original']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 1
         assert response.data['is_editable'] is True

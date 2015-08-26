@@ -163,6 +163,7 @@ class RecommendedTell(ModelSerializer):
 
 class UserPhoto(ModelSerializer):
 
+    string_preview = CharField(allow_blank=True, required=False)
     description = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
 
@@ -170,7 +171,8 @@ class UserPhoto(ModelSerializer):
 
         fields = (
             'id',
-            'string',
+            'string_original',
+            'string_preview',
             'description',
             'position',
         )
@@ -233,13 +235,15 @@ class UserSocialProfile(ModelSerializer):
 
 class UserStatusAttachment(ModelSerializer):
 
+    string_preview = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
 
     class Meta:
 
         fields = (
             'id',
-            'string',
+            'string_original',
+            'string_preview',
             'position',
         )
         model = models.UserStatusAttachment
@@ -313,6 +317,7 @@ class SlaveTell(ModelSerializer):
     master_tell_id = IntegerField()
     created_by_id = IntegerField()
     owned_by_id = IntegerField()
+    contents_preview = CharField(allow_blank=True, required=False)
     is_editable = BooleanField(default=True)
     position = IntegerField(required=False)
 
@@ -327,7 +332,8 @@ class SlaveTell(ModelSerializer):
             'first_name',
             'last_name',
             'type',
-            'contents',
+            'contents_original',
+            'contents_preview',
             'description',
             'position',
             'is_editable',
@@ -375,7 +381,8 @@ class MasterTell(ModelSerializer):
 
 class User(ModelSerializer):
 
-    photo = CharField(allow_blank=True, required=False)
+    photo_original = CharField(allow_blank=True, required=False)
+    photo_preview = CharField(allow_blank=True, required=False)
     first_name = CharField(allow_blank=True, required=False)
     last_name = CharField(allow_blank=True, required=False)
     date_of_birth = DateField(required=False)
@@ -398,7 +405,8 @@ class User(ModelSerializer):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -436,10 +444,15 @@ class User(ModelSerializer):
                 if id == instance.id or instance.settings_['show_email']:
                     dictionary[field.field_name] = instance.email
                 continue
-            if field.field_name == 'photo':
+            if field.field_name == 'photo_original':
                 dictionary[field.field_name] = None
                 if id == instance.id or instance.settings_['show_photo']:
-                    dictionary[field.field_name] = instance.photo
+                    dictionary[field.field_name] = instance.photo_original
+                continue
+            if field.field_name == 'photo_preview':
+                dictionary[field.field_name] = None
+                if id == instance.id or instance.settings_['show_photo']:
+                    dictionary[field.field_name] = instance.photo_preview
                 continue
             if field.field_name == 'last_name':
                 dictionary[field.field_name] = None
@@ -488,7 +501,8 @@ class UsersProfile(User):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -515,7 +529,8 @@ class BlockUser(User):
 
         fields = (
             'id',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'location',
@@ -606,7 +621,8 @@ class MessageUser(User):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -920,7 +936,8 @@ class AuthenticateResponse(User):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -1010,7 +1027,8 @@ class HomeConnectionsResponseItemsUser(User):
 
         fields = (
             'id',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'location',
@@ -1277,7 +1295,8 @@ class RadarGetResponseItems(User):
 
         fields = (
             'id',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'gender',
@@ -1318,7 +1337,8 @@ class RegisterRequestUserPhoto(UserPhoto):
     class Meta:
 
         fields = (
-            'string',
+            'string_original',
+            'string_preview',
             'description',
             'position',
         )
@@ -1351,7 +1371,8 @@ class RegisterRequestUserStatusAttachment(UserStatusAttachment):
     class Meta:
 
         fields = (
-            'string',
+            'string_original',
+            'string_preview',
             'position',
         )
         model = models.UserStatusAttachment
@@ -1397,7 +1418,8 @@ class RegisterRequestSlaveTell(SlaveTell):
             'first_name',
             'last_name',
             'type',
-            'contents',
+            'contents_original',
+            'contents_preview',
             'description',
             'position',
             'is_editable',
@@ -1445,7 +1467,8 @@ class RecommendedTellsResponse(RecommendedTell):
 class RegisterRequest(User):
 
     email = EmailField()
-    photo = CharField(allow_blank=True, required=False)
+    photo_original = CharField(allow_blank=True, required=False)
+    photo_preview = CharField(allow_blank=True, required=False)
     first_name = CharField(allow_blank=True, required=False)
     last_name = CharField(allow_blank=True, required=False)
     date_of_birth = DateField(required=False)
@@ -1476,7 +1499,8 @@ class RegisterRequest(User):
 
         fields = (
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -1546,7 +1570,8 @@ class RegisterResponse(User):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -1615,7 +1640,8 @@ class SlaveTellsRequest(SlaveTell):
             'first_name',
             'last_name',
             'type',
-            'contents',
+            'contents_original',
+            'contents_preview',
             'description',
             'position',
             'is_editable',
@@ -1700,7 +1726,8 @@ class UsersRequest(User):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',
@@ -1725,7 +1752,8 @@ class UsersResponse(User):
         fields = (
             'id',
             'email',
-            'photo',
+            'photo_original',
+            'photo_preview',
             'first_name',
             'last_name',
             'date_of_birth',

@@ -399,7 +399,8 @@ class SlaveTell(ModelAdmin):
         'first_name',
         'last_name',
         'type',
-        'contents',
+        'contents_original',
+        'contents_preview',
         'description',
         'position',
         'is_editable',
@@ -428,7 +429,8 @@ class SlaveTell(ModelAdmin):
         'photo',
         'first_name',
         'last_name',
-        'contents',
+        'contents_original',
+        'contents_preview',
         'description',
     )
 
@@ -509,7 +511,8 @@ class User(ModelAdmin):
 
     fields = (
         'email',
-        'photo',
+        'photo_original',
+        'photo_preview',
         'first_name',
         'last_name',
         'date_of_birth',
@@ -538,7 +541,8 @@ class User(ModelAdmin):
     )
     search_fields = (
         'email',
-        'photo',
+        'photo_original',
+        'photo_preview',
         'first_name',
         'last_name',
         'date_of_birth',
@@ -600,14 +604,16 @@ class UserPhoto(ModelAdmin):
 
     fields = (
         'user',
-        'string',
+        'string_original',
+        'string_preview',
         'description',
         'position',
     )
     list_display = (
         'id',
         'user',
-        'string',
+        'string_original',
+        'string_preview',
         'description',
         'position',
     )
@@ -615,7 +621,8 @@ class UserPhoto(ModelAdmin):
         'user',
     )
     search_fields = (
-        'string',
+        'string_original',
+        'string_preview',
     )
 
 
@@ -698,20 +705,23 @@ class UserStatusAttachment(ModelAdmin):
 
     fields = (
         'user_status',
-        'string',
+        'string_original',
+        'string_preview',
         'position',
     )
     list_display = (
         'id',
         'user_status',
-        'string',
+        'string_original',
+        'string_preview',
         'position',
     )
     list_filter = (
         'user_status',
     )
     search_fields = (
-        'string',
+        'string_original',
+        'string_preview',
     )
 
 

@@ -309,7 +309,14 @@ class Tellzone(Model):
 class User(Model):
 
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
-    photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
+    photo_original = CharField(
+        ugettext_lazy('Photo :: Original'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
+    photo_preview = CharField(ugettext_lazy('Photo :: Preview'), blank=True, db_index=True, max_length=255, null=True)
     first_name = CharField(ugettext_lazy('First Name'), blank=True, db_index=True, max_length=255, null=True)
     last_name = CharField(ugettext_lazy('Last Name'), blank=True, db_index=True, max_length=255, null=True)
     date_of_birth = DateField(ugettext_lazy('Date of Birth'), blank=True, db_index=True, null=True)
@@ -358,7 +365,8 @@ class User(Model):
     def insert(cls, data):
         user = User.objects.create(
             email=data['email'],
-            photo=data['photo'] if 'photo' in data else None,
+            photo_original=data['photo_original'] if 'photo_original' in data else None,
+            photo_preview=data['photo_preview'] if 'photo_preview' in data else None,
             first_name=data['first_name'] if 'first_name' in data else None,
             last_name=data['last_name'] if 'last_name' in data else None,
             date_of_birth=data['date_of_birth'] if 'date_of_birth' in data else None,
@@ -458,7 +466,8 @@ class User(Model):
     def update(self, data):
         if 'email' in data:
             self.email = data['email']
-        self.photo = data['photo'] if 'photo' in data else None
+        self.photo_original = data['photo_original'] if 'photo_original' in data else None
+        self.photo_preview = data['photo_preview'] if 'photo_preview' in data else None
         self.first_name = data['first_name'] if 'first_name' in data else None
         self.last_name = data['last_name'] if 'last_name' in data else None
         self.date_of_birth = data['date_of_birth'] if 'date_of_birth' in data else None
@@ -481,11 +490,14 @@ class User(Model):
         if 'photos' in data:
             for photo in data['photos']:
                 user_photo = self.photos.get_queryset().filter(
-                    Q(id=photo['id'] if 'id' in photo else 0) | Q(string=photo['string'] if 'string' in photo else ''),
+                    Q(id=photo['id'] if 'id' in photo else 0) |
+                    Q(string_original=photo['string_original'] if 'string_original' in photo else ''),
                 ).first()
                 if user_photo:
-                    if 'string' in photo:
-                        user_photo.string = photo['string']
+                    if 'string_original' in photo:
+                        user_photo.string_original = photo['string_original']
+                    if 'string_preview' in photo:
+                        user_photo.string_preview = photo['string_preview']
                     if 'description' in photo:
                         user_photo.description = photo['description']
                     if 'position' in photo:
@@ -564,20 +576,23 @@ class User(Model):
                 for attachment in data['status']['attachments']:
                     user_status_attachment = UserStatusAttachment.objects.get_queryset().filter(
                         Q(id=attachment['id'] if 'id' in attachment else 0) |
-                        Q(string=attachment['string'] if 'string' in attachment else ''),
+                        Q(string_original=attachment['string_original'] if 'string_original' in attachment else ''),
                         user_status_id=user_status.id,
                     ).first()
                     if user_status_attachment:
-                        if 'string' in attachment:
-                            user_status_attachment.string = attachment['string']
+                        if 'string_original' in attachment:
+                            user_status_attachment.string_original = attachment['string_original']
+                        if 'string_preview' in attachment:
+                            user_status_attachment.string_preview = attachment['string_preview']
                         if 'position' in attachment:
                             user_status_attachment.position = attachment['position']
                         user_status_attachment.save()
                     else:
                         user_status_attachment = UserStatusAttachment.objects.create(
                             user_status_id=user_status.id,
-                            string=attachment['string'] if 'string' in attachment else '',
-                            position=attachment['position'] if 'position' in attachment else 0,
+                            string_original=attachment['string_original'] if 'string_original' in attachment else None,
+                            string_preview=attachment['string_preview'] if 'string_preview' in attachment else None,
+                            position=attachment['position'] if 'position' in attachment else None,
                         )
                     ids.append(user_status_attachment.id)
         UserStatusAttachment.objects.get_queryset().filter(user_status__user_id=self.id).exclude(id__in=ids).delete()
@@ -740,7 +755,20 @@ class UserLocation(Model):
 class UserPhoto(Model):
 
     user = ForeignKey(User, related_name='photos')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    string_original = CharField(
+        ugettext_lazy('String :: Original'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
+    string_preview = CharField(
+        ugettext_lazy('String :: Preview'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
@@ -757,7 +785,8 @@ class UserPhoto(Model):
     def insert(cls, user_id, data):
         return UserPhoto.objects.create(
             user_id=user_id,
-            string=data['string'] if 'string' in data else None,
+            string_original=data['string_original'] if 'string_original' in data else None,
+            string_preview=data['string_preview'] if 'string_preview' in data else None,
             description=data['description'] if 'description' in data else None,
             position=data['position'] if 'position' in data else None,
         )
@@ -895,7 +924,20 @@ class UserStatus(Model):
 class UserStatusAttachment(Model):
 
     user_status = ForeignKey(UserStatus, related_name='attachments')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    string_original = CharField(
+        ugettext_lazy('String :: Original'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
+    string_preview = CharField(
+        ugettext_lazy('String :: Preview'),
+        blank=True,
+        db_index=True,
+        max_length=255,
+        null=True,
+    )
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
@@ -911,7 +953,8 @@ class UserStatusAttachment(Model):
     def insert(cls, user_status_id, data):
         return UserStatusAttachment.objects.create(
             user_status_id=user_status_id,
-            string=data['string'] if 'string' in data else None,
+            string_original=data['string_original'] if 'string_original' in data else None,
+            string_preview=data['string_preview'] if 'string_preview' in data else None,
             position=data['position'] if 'position' in data else None,
         )
 
@@ -1459,7 +1502,8 @@ class SlaveTell(Model):
         db_index=True,
         max_length=255,
     )
-    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    contents_original = TextField(ugettext_lazy('Contents :: Original'), blank=True, db_index=True, null=True)
+    contents_preview = TextField(ugettext_lazy('Contents :: Preview'), blank=True, db_index=True, null=True)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     is_editable = BooleanField(ugettext_lazy('Is Editable?'), db_index=True, default=True)
@@ -1485,7 +1529,8 @@ class SlaveTell(Model):
             first_name=data['first_name'] if 'first_name' in data else None,
             last_name=data['last_name'] if 'last_name' in data else None,
             type=data['type'] if 'type' in data else None,
-            contents=data['contents'] if 'contents' in data else None,
+            contents_original=data['contents_original'] if 'contents_original' in data else None,
+            contents_preview=data['contents_preview'] if 'contents_preview' in data else None,
             description=data['description'] if 'description' in data else None,
             position=data['position'] if 'position' in data else None,
             is_editable=data['is_editable'] if 'is_editable' in data else None,
@@ -1508,8 +1553,10 @@ class SlaveTell(Model):
             self.last_name = data['last_name']
         if 'type' in data:
             self.type = data['type']
-        if 'contents' in data:
-            self.contents = data['contents']
+        if 'contents_original' in data:
+            self.contents_original = data['contents_original']
+        if 'contents_preview' in data:
+            self.contents_preview = data['contents_preview']
         if 'description' in data:
             self.description = data['description']
         if 'position' in data:
@@ -1728,7 +1775,12 @@ def share_user_post_save(instance, **kwargs):
                         'last_name': instance.user_source.last_name if instance.user_source.settings_[
                             'show_last_name'
                         ] else None,
-                        'photo': instance.user_source.photo if instance.user_source.settings_['show_photo'] else None,
+                        'photo_original': instance.user_source.photo_original if instance.user_source.settings_[
+                            'show_photo'
+                        ] else None,
+                        'photo_preview': instance.user_source.photo_preview if instance.user_source.settings_[
+                            'show_photo'
+                        ] else None,
                     },
                     'user_destination': {
                         'id': instance.object.id,
@@ -1736,7 +1788,12 @@ def share_user_post_save(instance, **kwargs):
                         'last_name': instance.object.last_name if instance.object.settings_[
                             'show_last_name'
                         ] else None,
-                        'photo': instance.object.photo if instance.object.settings_['show_photo'] else None,
+                        'photo_original': instance.object.photo_original if instance.object.settings_[
+                            'show_photo'
+                        ] else None,
+                        'photo_preview': instance.object.photo_preview if instance.object.settings_[
+                            'show_photo'
+                        ] else None,
                     },
                 },
             )
@@ -1769,7 +1826,12 @@ def tellcard_post_save(instance, **kwargs):
                     'last_name': instance.user_source.last_name if instance.user_source.settings_[
                         'show_last_name'
                     ] else None,
-                    'photo': instance.user_source.photo if instance.user_source.settings_['show_photo'] else None,
+                    'photo_original': instance.user_source.photo_original if instance.user_source.settings_[
+                        'show_photo'
+                    ] else None,
+                    'photo_preview': instance.user_source.photo_preview if instance.user_source.settings_[
+                        'show_photo'
+                    ] else None,
                 },
             )
             string = u'{name} saved your tellcard'.format(

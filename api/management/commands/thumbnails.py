@@ -41,9 +41,24 @@ class Command(BaseCommand):
                 ),
             )
             if slave_tell.type.startswith('image'):
-                log(0, 'slave_tells :: {id} :: contents'.format(id=slave_tell.id))
+                log(0, 'slave_tells :: {id} :: contents_original'.format(id=slave_tell.id))
                 self.process(
-                    slave_tell.contents,
+                    slave_tell.contents_original,
+                    slave_tell.type,
+                    (
+                        {
+                            'name': 'large',
+                            'width': 1920,
+                        },
+                        {
+                            'name': 'small',
+                            'width': 685,
+                        },
+                    ),
+                )
+                log(0, 'slave_tells :: {id} :: contents_preview'.format(id=slave_tell.id))
+                self.process(
+                    slave_tell.contents_preview,
                     slave_tell.type,
                     (
                         {
@@ -57,9 +72,24 @@ class Command(BaseCommand):
                     ),
                 )
         for user in models.User.objects.get_queryset():
-            log(0, 'users :: {id} :: photo'.format(id=user.id))
+            log(0, 'users :: {id} :: photo_original'.format(id=user.id))
             self.process(
-                user.photo,
+                user.photo_original,
+                'image/*',
+                (
+                    {
+                        'name': 'large',
+                        'width': 1920,
+                    },
+                    {
+                        'name': 'small',
+                        'width': 320,
+                    },
+                ),
+            )
+            log(0, 'users :: {id} :: photo_preview'.format(id=user.id))
+            self.process(
+                user.photo_preview,
                 'image/*',
                 (
                     {
@@ -75,13 +105,34 @@ class Command(BaseCommand):
         for user_photo in models.UserPhoto.objects.get_queryset():
             log(
                 0,
-                'users :: {users_id} :: photos :: {users_photos_id} :: string'.format(
+                'users :: {users_id} :: photos :: {users_photos_id} :: string_original'.format(
                     users_id=user_photo.user_id,
                     users_photos_id=user_photo.id,
                 ),
             )
             self.process(
-                user_photo.string,
+                user_photo.string_original,
+                'image/*',
+                (
+                    {
+                        'name': 'large',
+                        'width': 1920,
+                    },
+                    {
+                        'name': 'small',
+                        'width': 320,
+                    },
+                ),
+            )
+            log(
+                0,
+                'users :: {users_id} :: photos :: {users_photos_id} :: string_preview'.format(
+                    users_id=user_photo.user_id,
+                    users_photos_id=user_photo.id,
+                ),
+            )
+            self.process(
+                user_photo.string_preview,
                 'image/*',
                 (
                     {
@@ -99,7 +150,7 @@ class Command(BaseCommand):
                 0,
                 (
                     'users :: {users_id} :: statuses :: {users_statuses_id} :: attachments :: '
-                    '{users_statuses_attachments_id} :: string'
+                    '{users_statuses_attachments_id} :: string_original'
                 ).format(
                     users_id=user_status_attachment.user_status.user_id,
                     users_statuses_id=user_status_attachment.user_status_id,
@@ -107,7 +158,32 @@ class Command(BaseCommand):
                 ),
             )
             self.process(
-                user_status_attachment.string,
+                user_status_attachment.string_original,
+                'image/*',
+                (
+                    {
+                        'name': 'large',
+                        'width': 1920,
+                    },
+                    {
+                        'name': 'small',
+                        'width': 685,
+                    },
+                ),
+            )
+            log(
+                0,
+                (
+                    'users :: {users_id} :: statuses :: {users_statuses_id} :: attachments :: '
+                    '{users_statuses_attachments_id} :: string_preview'
+                ).format(
+                    users_id=user_status_attachment.user_status.user_id,
+                    users_statuses_id=user_status_attachment.user_status_id,
+                    users_statuses_attachments_id=user_status_attachment.id,
+                ),
+            )
+            self.process(
+                user_status_attachment.string_preview,
                 'image/*',
                 (
                     {
@@ -129,37 +205,36 @@ class Command(BaseCommand):
         if not name:
             log(1, 'not name (#2)')
             return
-        for name in [name, 'preview_{name}'.format(name=name)]:
-            log(1, 'name = {name}'.format(name=name))
-            log(1, 'type = {type}'.format(type=type))
-            key = self.bucket.get_key(name)
-            if not key:
-                log(1, 'not key')
+        log(1, 'name = {name}'.format(name=name))
+        log(1, 'type = {type}'.format(type=type))
+        key = self.bucket.get_key(name)
+        if not key:
+            log(1, 'not key')
+            return
+        _, source = mkstemp()
+        key.get_contents_to_filename(source)
+        for item in items:
+            n = '{prefix}_{suffix}'.format(prefix=item['name'], suffix=name)
+            log(1, n)
+            k = self.bucket.get_key(n)
+            if k:
+                log(2, 'Success (#1)')
                 continue
-            _, source = mkstemp()
-            key.get_contents_to_filename(source)
-            for item in items:
-                n = '{prefix}_{suffix}'.format(prefix=item['name'], suffix=name)
-                log(1, n)
-                k = self.bucket.get_key(n)
-                if k:
-                    log(2, 'Success (#1)')
-                    continue
-                destination = None
-                try:
-                    destination = self.get_thumbnail(source, name, type, item['width'])
-                except Exception:
-                    print_exc()
-                    report_exc_info()
-                if not destination:
-                    log(2, 'Failure')
-                    continue
-                k = Key(self.bucket)
-                k.key = n
-                k.set_contents_from_filename(destination)
-                remove(destination)
-                log(2, 'Success (#2)')
-            remove(source)
+            destination = None
+            try:
+                destination = self.get_thumbnail(source, name, type, item['width'])
+            except Exception:
+                print_exc()
+                report_exc_info()
+            if not destination:
+                log(2, 'Failure')
+                continue
+            k = Key(self.bucket)
+            k.key = n
+            k.set_contents_from_filename(destination)
+            remove(destination)
+            log(2, 'Success (#2)')
+        remove(source)
 
     def get_thumbnail(self, source, name, type, width):
         if type.startswith('image'):
