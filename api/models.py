@@ -354,7 +354,8 @@ class User(Model):
     def settings_(self):
         dictionary = UserSetting.dictionary
         for setting in self.settings.get_queryset():
-            dictionary[setting.key] = True if setting.value == 'True' else False
+            if setting.key in dictionary:
+                dictionary[setting.key] = True if setting.value == 'True' else False
         return dictionary
 
     @cached_property
@@ -378,9 +379,10 @@ class User(Model):
         )
         if 'settings' in data:
             for key, value in data['settings'].items():
+                value = 'True' if value else 'False'
                 user_setting = user.settings.get_queryset().filter(key=key).first()
                 if user_setting:
-                    user_setting.value = 'True' if value else 'False'
+                    user_setting.value = value
                     user_setting.save()
                 else:
                     UserSetting.objects.create(user_id=user.id, key=key, value=value)
@@ -512,9 +514,10 @@ class User(Model):
     def update_settings(self, data):
         if 'settings' in data:
             for key, value in data['settings'].items():
+                value = 'True' if value else 'False'
                 user_setting = self.settings.get_queryset().filter(key=key).first()
                 if user_setting:
-                    user_setting.value = 'True' if value else 'False'
+                    user_setting.value = value
                     user_setting.save()
                 else:
                     UserSetting.objects.create(user_id=self.id, key=key, value=value)
@@ -1643,7 +1646,7 @@ class Tellcard(Model):
 def user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         for key, value in UserSetting.dictionary.items():
-            UserSetting.objects.create(user_id=instance.id, key=key, value=value)
+            UserSetting.objects.create(user_id=instance.id, key=key, value='True' if value else 'False')
 
 
 @receiver(pre_save, sender=UserPhoto)
