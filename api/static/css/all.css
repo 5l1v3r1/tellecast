@@ -1,3 +1,80 @@
+#left-nav li,
+#result_list th,
+#result_list th.text,
+#result_list th .text a,
+#result_list td,
+#result_list td a {
+    white-space: nowrap !important;
+}
+
 .table-overview th {
     text-align: left !important;
+}
+
+.action-checkbox,
+.action-checkbox-column,
+.field-is_active,
+.field-is_casting,
+.field-is_editable,
+.field-is_signed_in,
+.field-is_staff,
+.field-is_superuser,
+.field-is_visible,
+.field-user_destination_is_hidden,
+.field-user_source_is_hidden,
+.field-value,
+.is_active-column .text,
+.is_active-column a,
+.is_casting-column .text,
+.is_casting-column a,
+.is_editable-column .text,
+.is_editable-column a,
+.is_signed_in-column .text,
+.is_signed_in-column a,
+.is_staff-column .text,
+.is_staff-column a,
+.is_superuser-column .text,
+.is_superuser-column a,
+.is_visible-column .text,
+.is_visible-column a,
+.user_destination_is_hidden-column .text,
+.user_destination_is_hidden-column a,
+.user_source_is_hidden-column .text,
+.user_source_is_hidden-column a,
+.value-column .text,
+.value-column a {
+    text-align: center !important;
+}
+
+.accuracies_horizontal-column .text,
+.accuracies_horizontal-column a,
+.accuracies_vertical-column .text,
+.accuracies_vertical-column a,
+.attachments_-column .text,
+.attachments_-column a,
+.bearing-column .text,
+.bearing-column a,
+.field-accuracies_horizontal,
+.field-accuracies_vertical,
+.field-attachments_,
+.field-bearing,
+.field-id,
+.field-master_tell,
+.field-master_tells_,
+.field-position,
+.field-slave_tells_,
+.field-users_,
+.id-column .text,
+.id-column a,
+.master_tell-column .text,
+.master_tell-column a,
+.master_tells_-column .text,
+.master_tells_-column a,
+.position-column .text,
+.position-column a,
+.slave_tells_-column .text,
+.slave_tells_-column a,
+.users_-column .text,
+.users_-column a {
+    text-align: right !important;
 }
