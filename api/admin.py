@@ -533,6 +533,7 @@ class User(ModelAdmin):
         'is_signed_in',
         'inserted_at',
         'updated_at',
+        'token',
     )
     list_filter = (
         'is_signed_in',
