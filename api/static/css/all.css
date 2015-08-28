@@ -9,6 +9,7 @@
 
 .table-overview th {
     text-align: left !important;
+    white-space: nowrap !important;
 }
 
 .action-checkbox,
