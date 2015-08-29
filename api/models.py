@@ -1704,25 +1704,29 @@ def master_tell_pre_save(instance, **kwargs):
 @receiver(post_save, sender=Message)
 def message_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
-        current_app.send_task(
-            'api.tasks.push_notifications',
-            (
-                instance.user_destination_id,
-                {
-                    'aps': {
-                        'alert': {
-                            'body': instance.contents,
-                            'title': 'New message from user',
+        if (
+            (instance.type != 'Message' and instance.user_destination.settings_['notifications_invitations']) or
+            (instance.type == 'Message' and instance.user_destination.settings_['notifications_messages'])
+        ):
+            current_app.send_task(
+                'api.tasks.push_notifications',
+                (
+                    instance.user_destination_id,
+                    {
+                        'aps': {
+                            'alert': {
+                                'body': instance.contents,
+                                'title': 'New message from user',
+                            },
+                            'badge': get_badge(instance.user_destination_id),
                         },
-                        'badge': get_badge(instance.user_destination_id),
+                        'type': 'message',
                     },
-                    'type': 'message',
-                },
-            ),
-            queue='api.tasks.push_notifications',
-            routing_key='api.tasks.push_notifications',
-            serializer='json',
-        )
+                ),
+                queue='api.tasks.push_notifications',
+                routing_key='api.tasks.push_notifications',
+                serializer='json',
+            )
     current_app.send_task(
         'api.management.commands.websockets',
         (
@@ -1768,38 +1772,39 @@ def notification_post_save(instance, **kwargs):
 def share_user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         if instance.user_destination_id:
-            Notification.objects.create(
-                user_id=instance.user_destination_id,
-                type='B',
-                contents={
-                    'user_source': {
-                        'id': instance.user_source.id,
-                        'first_name': instance.user_source.first_name,
-                        'last_name': instance.user_source.last_name if instance.user_source.settings_[
-                            'show_last_name'
-                        ] else None,
-                        'photo_original': instance.user_source.photo_original if instance.user_source.settings_[
-                            'show_photo'
-                        ] else None,
-                        'photo_preview': instance.user_source.photo_preview if instance.user_source.settings_[
-                            'show_photo'
-                        ] else None,
+            if instance.user_destination.settings_['notifications_shared_profiles']:
+                Notification.objects.create(
+                    user_id=instance.user_destination_id,
+                    type='B',
+                    contents={
+                        'user_source': {
+                            'id': instance.user_source.id,
+                            'first_name': instance.user_source.first_name,
+                            'last_name': instance.user_source.last_name if instance.user_source.settings_[
+                                'show_last_name'
+                            ] else None,
+                            'photo_original': instance.user_source.photo_original if instance.user_source.settings_[
+                                'show_photo'
+                            ] else None,
+                            'photo_preview': instance.user_source.photo_preview if instance.user_source.settings_[
+                                'show_photo'
+                            ] else None,
+                        },
+                        'user_destination': {
+                            'id': instance.object.id,
+                            'first_name': instance.object.first_name,
+                            'last_name': instance.object.last_name if instance.object.settings_[
+                                'show_last_name'
+                            ] else None,
+                            'photo_original': instance.object.photo_original if instance.object.settings_[
+                                'show_photo'
+                            ] else None,
+                            'photo_preview': instance.object.photo_preview if instance.object.settings_[
+                                'show_photo'
+                            ] else None,
+                        },
                     },
-                    'user_destination': {
-                        'id': instance.object.id,
-                        'first_name': instance.object.first_name,
-                        'last_name': instance.object.last_name if instance.object.settings_[
-                            'show_last_name'
-                        ] else None,
-                        'photo_original': instance.object.photo_original if instance.object.settings_[
-                            'show_photo'
-                        ] else None,
-                        'photo_preview': instance.object.photo_preview if instance.object.settings_[
-                            'show_photo'
-                        ] else None,
-                    },
-                },
-            )
+                )
 
 
 @receiver(pre_save, sender=SlaveTell)
@@ -1820,55 +1825,56 @@ def tellcard_post_save(instance, **kwargs):
             ('created' in kwargs and kwargs['created']) or
             ('update_fields' in kwargs and kwargs['update_fields'] and 'saved_at' in kwargs['update_fields'])
         ):
-            Notification.objects.create(
-                user_id=instance.user_destination_id,
-                type='A',
-                contents={
-                    'id': instance.user_source.id,
-                    'first_name': instance.user_source.first_name,
-                    'last_name': instance.user_source.last_name if instance.user_source.settings_[
-                        'show_last_name'
-                    ] else None,
-                    'photo_original': instance.user_source.photo_original if instance.user_source.settings_[
-                        'show_photo'
-                    ] else None,
-                    'photo_preview': instance.user_source.photo_preview if instance.user_source.settings_[
-                        'show_photo'
-                    ] else None,
-                },
-            )
-            string = u'{name} saved your tellcard'.format(
-                name=' '.join(
-                    filter(
-                        None,
-                        [
-                            instance.user_source.first_name,
-                            instance.user_source.last_name if instance.user_source.settings_[
-                                'show_last_name'
-                            ] else None,
-                        ]
-                    )
-                ),
-            )
-            current_app.send_task(
-                'api.tasks.push_notifications',
-                (
-                    instance.user_destination_id,
-                    {
-                        'aps': {
-                            'alert': {
-                                'body': string,
-                                'title': string,
-                            },
-                            'badge': get_badge(instance.user_destination_id),
-                        },
-                        'type': 'tellcard',
+            if instance.user_destination.settings_['notifications_saved_you']:
+                Notification.objects.create(
+                    user_id=instance.user_destination_id,
+                    type='A',
+                    contents={
+                        'id': instance.user_source.id,
+                        'first_name': instance.user_source.first_name,
+                        'last_name': instance.user_source.last_name if instance.user_source.settings_[
+                            'show_last_name'
+                        ] else None,
+                        'photo_original': instance.user_source.photo_original if instance.user_source.settings_[
+                            'show_photo'
+                        ] else None,
+                        'photo_preview': instance.user_source.photo_preview if instance.user_source.settings_[
+                            'show_photo'
+                        ] else None,
                     },
-                ),
-                queue='api.tasks.push_notifications',
-                routing_key='api.tasks.push_notifications',
-                serializer='json',
-            )
+                )
+                string = u'{name} saved your tellcard'.format(
+                    name=' '.join(
+                        filter(
+                            None,
+                            [
+                                instance.user_source.first_name,
+                                instance.user_source.last_name if instance.user_source.settings_[
+                                    'show_last_name'
+                                ] else None,
+                            ]
+                        )
+                    ),
+                )
+                current_app.send_task(
+                    'api.tasks.push_notifications',
+                    (
+                        instance.user_destination_id,
+                        {
+                            'aps': {
+                                'alert': {
+                                    'body': string,
+                                    'title': string,
+                                },
+                                'badge': get_badge(instance.user_destination_id),
+                            },
+                            'type': 'tellcard',
+                        },
+                    ),
+                    queue='api.tasks.push_notifications',
+                    routing_key='api.tasks.push_notifications',
+                    serializer='json',
+                )
 
 
 @receiver(post_save, sender=UserLocation)
