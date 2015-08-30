@@ -1647,6 +1647,18 @@ def user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         for key, value in UserSetting.dictionary.items():
             UserSetting.objects.create(user_id=instance.id, key=key, value='True' if value else 'False')
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'users',
+                'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
 
 
 @receiver(pre_save, sender=UserPhoto)
@@ -1688,6 +1700,18 @@ def block_post_save(instance, **kwargs):
         Q(user_source_id=instance.user_source_id, user_destination_id=instance.user_destination_id) |
         Q(user_source_id=instance.user_destination_id, user_destination_id=instance.user_source_id),
     ).delete()
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'blocks',
+                'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
 
 
 @receiver(pre_save, sender=MasterTell)
@@ -1699,6 +1723,22 @@ def master_tell_pre_save(instance, **kwargs):
             Max('position'),
         )['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(post_save, sender=MasterTell)
+def master_tell_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'users',
+                'body': instance.owned_by_id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
 
 
 @receiver(post_save, sender=Message)
@@ -1816,6 +1856,22 @@ def slave_tell_pre_save(instance, **kwargs):
             Max('position'),
         )['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(post_save, sender=SlaveTell)
+def slave_tell_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'users',
+                'body': instance.owned_by_id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
 
 
 @receiver(post_save, sender=Tellcard)

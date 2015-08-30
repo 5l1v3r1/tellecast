@@ -108,6 +108,18 @@ class RabbitMQHandler(object):
         try:
             message = loads(body)['args'][0]
             print 'message', message
+            if message['subject'] == 'blocks':
+                instance = self.get_instance(models.Block, id=message['body'])
+                if instance:
+                    for key, value in clients.items():
+                        if value == instance.user_destination_id:
+                            key.write_message(
+                                dumps({
+                                    'subject': 'blocks',
+                                    'body': instance.user_source_id,
+                                })
+                            )
+                            print 'key.write_message()'
             if message['subject'] == 'messages':
                 instance = self.get_instance(models.Message, id=message['body'])
                 if instance:
@@ -146,6 +158,24 @@ class RabbitMQHandler(object):
                                         instance,
                                         context=get_context(instance.user),
                                     ).data,
+                                })
+                            )
+                            print 'key.write_message()'
+            if message['subject'] == 'users':
+                instance = self.get_instance(models.User, id=message['body'])
+                if instance:
+                    ids = models.Tellcard.objects.get_queryset().filter(
+                        user_destination_id=instance.id
+                    ).values_list(
+                        'user_source_id',
+                        flat=True,
+                    )
+                    for key, value in clients.items():
+                        if value in ids:
+                            key.write_message(
+                                dumps({
+                                    'subject': 'users',
+                                    'body': instance.id,
                                 })
                             )
                             print 'key.write_message()'
