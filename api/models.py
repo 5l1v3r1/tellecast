@@ -1651,7 +1651,7 @@ def user_post_save(instance, **kwargs):
         'api.management.commands.websockets',
         (
             {
-                'subject': 'users',
+                'subject': 'profile',
                 'body': instance.id,
             },
         ),
@@ -1731,7 +1731,7 @@ def master_tell_post_save(instance, **kwargs):
         'api.management.commands.websockets',
         (
             {
-                'subject': 'users',
+                'subject': 'profile',
                 'body': instance.owned_by_id,
             },
         ),
@@ -1864,7 +1864,7 @@ def slave_tell_post_save(instance, **kwargs):
         'api.management.commands.websockets',
         (
             {
-                'subject': 'users',
+                'subject': 'profile',
                 'body': instance.owned_by_id,
             },
         ),

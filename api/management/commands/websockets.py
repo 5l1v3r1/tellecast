@@ -161,7 +161,7 @@ class RabbitMQHandler(object):
                                 })
                             )
                             print 'key.write_message()'
-            if message['subject'] == 'users':
+            if message['subject'] == 'profile':
                 instance = self.get_instance(models.User, id=message['body'])
                 if instance:
                     ids = models.Tellcard.objects.get_queryset().filter(
@@ -174,7 +174,7 @@ class RabbitMQHandler(object):
                         if value in ids:
                             key.write_message(
                                 dumps({
-                                    'subject': 'users',
+                                    'subject': 'profile',
                                     'body': instance.id,
                                 })
                             )
