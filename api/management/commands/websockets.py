@@ -9,8 +9,7 @@ from django.db.models import Q
 from django.test.client import RequestFactory
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
-from retry import retry
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return, sleep
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.web import Application
@@ -103,13 +102,14 @@ class RabbitMQHandler(object):
         except Exception:
             print_exc()
 
+    @coroutine
     def on_channel_basic_consume(self, channel, method, properties, body):
         print 'RabbitMQHandler.on_channel_basic_consume()'
         try:
             message = loads(body)['args'][0]
             print 'message', message
             if message['subject'] == 'blocks':
-                instance = self.get_instance(models.Block, id=message['body'])
+                instance = yield self.get_instance(models.Block, id=message['body'])
                 if instance:
                     for key, value in clients.items():
                         if value == instance.user_destination_id:
@@ -121,7 +121,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'messages':
-                instance = self.get_instance(models.Message, id=message['body'])
+                instance = yield self.get_instance(models.Message, id=message['body'])
                 if instance:
                     for key, value in clients.items():
                         if value == instance.user_source_id:
@@ -147,7 +147,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'notifications':
-                instance = self.get_instance(models.Notification, id=message['body'])
+                instance = yield self.get_instance(models.Notification, id=message['body'])
                 if instance:
                     for key, value in clients.items():
                         if value == instance.user_id:
@@ -162,7 +162,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'profile':
-                instance = self.get_instance(models.User, id=message['body'])
+                instance = yield self.get_instance(models.User, id=message['body'])
                 if instance:
                     ids = models.Tellcard.objects.get_queryset().filter(
                         user_destination_id=instance.id
@@ -180,7 +180,7 @@ class RabbitMQHandler(object):
                             )
                             print 'key.write_message()'
             if message['subject'] == 'users_locations':
-                users_locations_new = self.get_instance(models.UserLocation, id=message['body'])
+                users_locations_new = yield self.get_instance(models.UserLocation, id=message['body'])
                 if users_locations_new:
                     if users_locations_new.point:
                         for key, value in clients.items():
@@ -261,6 +261,7 @@ class RabbitMQHandler(object):
                                             'body': serializers.RadarGetResponse(
                                                 [
                                                     {
+                                                        'hash': models.get_hash(items),
                                                         'items': items,
                                                         'position': position + 1,
                                                     }
@@ -288,12 +289,18 @@ class RabbitMQHandler(object):
         except Exception:
             print_exc()
 
-    @retry(tries=3, delay=1)
+    @coroutine
     def get_instance(self, model, id):
-        instance = model.objects.get_queryset().filter(id=id).first()
-        if not instance:
-            raise Exception
-        return instance
+        attempts = 0
+        while True:
+            instance = model.objects.get_queryset().filter(id=id).first()
+            if instance:
+                raise Return(instance)
+            attempts += 1
+            if attempts >= 3:
+                raise Return(None)
+            yield sleep(1)
+        raise Return(None)
 
 
 class WebSocketHandler(WebSocketHandler):
