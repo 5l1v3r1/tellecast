@@ -27,6 +27,7 @@ itsdangerous==0.24
 jsonfield==1.0.3
 kombu==3.0.24
 mixer==5.1.2
+newrelic==2.54.0.41
 numpy==1.9.2
 oauthlib==0.7.2
 pika==0.9.14
