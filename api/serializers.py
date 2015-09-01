@@ -295,7 +295,7 @@ class UserTellzone(ModelSerializer):
         return models.UserTellzone.insert_or_update(get_user_id(self.context), self.validated_data)
 
     def delete(self):
-        return models.UserTellzone.delete(get_user_id(self.context), self.validated_data)
+        return models.UserTellzone.remove(get_user_id(self.context), self.validated_data)
 
 
 class UserURL(ModelSerializer):
@@ -561,7 +561,7 @@ class Block(ModelSerializer):
         )
 
     def delete(self):
-        return models.Block.delete(get_user_id(self.context), self.validated_data['user_destination_id'])
+        return models.Block.remove(get_user_id(self.context), self.validated_data['user_destination_id'])
 
 
 class DevicesAPNSRequest(DeviceAPNS):
@@ -917,7 +917,7 @@ class Tellcard(ModelSerializer):
         return models.Tellcard.insert_or_update(get_user_id(self.context), self.validated_data)
 
     def delete(self):
-        return models.Tellcard.delete(get_user_id(self.context), self.validated_data)
+        return models.Tellcard.remove(get_user_id(self.context), self.validated_data)
 
 
 class Ads(Ad):

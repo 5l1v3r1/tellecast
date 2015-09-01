@@ -1001,7 +1001,7 @@ class UserTellzone(Model):
         return user_tellzone
 
     @classmethod
-    def delete(cls, user_id, data):
+    def remove(cls, user_id, data):
         user_tellzone = UserTellzone.objects.get_queryset().filter(
             user_id=user_id,
             tellzone_id=data['tellzone_id'],
@@ -1084,7 +1084,7 @@ class Block(Model):
         return block
 
     @classmethod
-    def delete(cls, user_source_id, user_destination_id):
+    def remove(cls, user_source_id, user_destination_id):
         return Block.objects.get_queryset().filter(
             user_source_id=user_source_id,
             user_destination_id=user_destination_id,
@@ -1621,7 +1621,7 @@ class Tellcard(Model):
         return tellcard
 
     @classmethod
-    def delete(cls, user_source_id, data):
+    def remove(cls, user_source_id, data):
         tellcard = Tellcard.objects.get_queryset().filter(
             user_source_id=user_source_id,
             user_destination_id=data['user_destination_id'],
