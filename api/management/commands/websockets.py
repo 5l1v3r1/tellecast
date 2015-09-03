@@ -7,6 +7,7 @@ from django.contrib.gis.measure import D
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.test.client import RequestFactory
+from geopy.distance import vincenty
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
 from tornado.gen import coroutine, Return, sleep
@@ -243,48 +244,52 @@ class RabbitMQHandler(object):
                                 print 'k.write_message()'
                     users_locations_old = models.UserLocation.objects.get_queryset().filter(
                         id__lt=message['body'],
-                        user_id=users_locations_new.user_id
+                        user_id=users_locations_new.user_id,
                     ).first()
                     if users_locations_old:
-                        users = models.get_users(
-                            users_locations_old.user.id,
-                            users_locations_old.point,
-                            999999999,
-                            include_user_id=False
-                        )
-                        for key, value in users.items():
-                            for k, v in clients.items():
-                                if v == key:
-                                    k.write_message(
-                                        dumps({
-                                            'subject': 'users_locations_get',
-                                            'body': serializers.RadarGetResponse(
-                                                [
-                                                    {
-                                                        'hash': models.get_hash(items),
-                                                        'items': items,
-                                                        'position': position + 1,
-                                                    }
-                                                    for position, items in enumerate(
-                                                        models.get_items(
-                                                            [
-                                                                user[0]
-                                                                for user in sorted(
-                                                                    users.values(),
-                                                                    key=lambda user: (user[2], user[0].id,)
-                                                                )
-                                                                if user[0].id != key
-                                                            ],
-                                                            5
+                        if vincenty(
+                            (users_locations_new.point.x, users_locations_new.point.y),
+                            (users_locations_old.point.x, users_locations_old.point.y)
+                        ).m > 999999999:
+                            users = models.get_users(
+                                users_locations_old.user.id,
+                                users_locations_old.point,
+                                999999999,
+                                False,
+                            )
+                            for key, value in users.items():
+                                for k, v in clients.items():
+                                    if v == key:
+                                        k.write_message(
+                                            dumps({
+                                                'subject': 'users_locations_get',
+                                                'body': serializers.RadarGetResponse(
+                                                    [
+                                                        {
+                                                            'hash': models.get_hash(items),
+                                                            'items': items,
+                                                            'position': position + 1,
+                                                        }
+                                                        for position, items in enumerate(
+                                                            models.get_items(
+                                                                [
+                                                                    user[0]
+                                                                    for user in sorted(
+                                                                        users.values(),
+                                                                        key=lambda user: (user[2], user[0].id,)
+                                                                    )
+                                                                    if user[0].id != key
+                                                                ],
+                                                                5
+                                                            )
                                                         )
-                                                    )
-                                                ],
-                                                context=get_context(value[0]),
-                                                many=True,
-                                            ).data,
-                                        })
-                                    )
-                                    print 'k.write_message()'
+                                                    ],
+                                                    context=get_context(value[0]),
+                                                    many=True,
+                                                ).data,
+                                            })
+                                        )
+                                        print 'k.write_message()'
             self.channel.basic_ack(method.delivery_tag)
         except Exception:
             print_exc()
