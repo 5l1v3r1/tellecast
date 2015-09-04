@@ -1979,7 +1979,7 @@ def get_users(user_id, point, radius, include_user_id):
                 ST_Distance(
                     ST_Transform(ST_GeomFromText(%s, 4326), 2163),
                     ST_Transform(api_users_locations.point, 2163)
-                ) * 3.28084
+                ) * 3.28084 AS distance
             FROM api_users_locations
             INNER JOIN api_users ON api_users.id = api_users_locations.user_id
             INNER JOIN (
@@ -2007,7 +2007,7 @@ def get_users(user_id, point, radius, include_user_id):
                 api_users.is_signed_in IS TRUE
                 AND
                 api_blocks.id IS NULL
-            ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
+            ORDER BY distance ASC, api_users_locations.user_id DESC
             ''',
             (
                 'POINT({x} {y})'.format(x=point.x, y=point.y),
