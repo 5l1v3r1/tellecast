@@ -2007,7 +2007,7 @@ def get_users(user_id, point, radius, include_user_id):
                 api_users.is_signed_in IS TRUE
                 AND
                 api_blocks.id IS NULL
-            ORDER BY distance ASC, api_users_locations.user_id DESC
+            ORDER BY distance ASC, api_users_locations.user_id ASC
             ''',
             (
                 'POINT({x} {y})'.format(x=point.x, y=point.y),
