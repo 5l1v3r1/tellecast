@@ -224,15 +224,7 @@ class RabbitMQHandler(object):
                                                 }
                                                 for position, items in enumerate(
                                                     models.get_items(
-                                                        [
-                                                            user[0]
-                                                            for user in sorted(
-                                                                users.values(),
-                                                                key=lambda user: (user[2], user[0].id,)
-                                                            )
-                                                            if user[0].id != key
-                                                        ],
-                                                        5
+                                                        [user[0] for user in users.values() if user[0].id != key], 5
                                                     )
                                                 )
                                             ],
@@ -274,10 +266,7 @@ class RabbitMQHandler(object):
                                                             models.get_items(
                                                                 [
                                                                     user[0]
-                                                                    for user in sorted(
-                                                                        users.values(),
-                                                                        key=lambda user: (user[2], user[0].id,)
-                                                                    )
+                                                                    for user in users.values()
                                                                     if user[0].id != key
                                                                 ],
                                                                 5
