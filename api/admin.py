@@ -1,18 +1,104 @@
 # -*- coding: utf-8 -*-
 
 from django.apps import apps
-from django.contrib.admin import ModelAdmin, site
+from django.contrib import messages
+from django.contrib.admin import helpers, ModelAdmin, site
+from django.contrib.admin.options import IS_POPUP_VAR, TO_FIELD_VAR
+from django.contrib.admin.exceptions import DisallowedModelAdminToField
+from django.contrib.admin.utils import model_ngettext, unquote
 from django.contrib.auth.admin import UserAdmin as AdministratorAdmin
 from django.contrib.auth.models import User as Administrator
 from django.contrib.gis.forms.widgets import BaseGeometryWidget
 from django.contrib.gis.geos import GEOSGeometry
-from django.utils.translation import ugettext_lazy
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.template.response import TemplateResponse
+from django.utils.encoding import force_text
+from django.utils.html import escape
+from django.utils.translation import ugettext as _, ugettext_lazy
 from social.apps.django_app.default.admin import UserSocialAuthOption
 from social.apps.django_app.default.models import UserSocialAuth
 
 from api import models
 
 BaseGeometryWidget.display_raw = True
+
+
+def delete_selected(modeladmin, request, queryset):
+    if not modeladmin.has_delete_permission(request):
+        raise PermissionDenied
+    if request.POST.get('post'):
+        count = queryset.count()
+        if count:
+            for object in queryset:
+                modeladmin.log_deletion(request, object, force_text(object))
+            queryset.delete()
+            modeladmin.message_user(
+                request,
+                _('Successfully deleted {count} {items}.').format(
+                    count=count, items=model_ngettext(modeladmin.opts, count),
+                ),
+                messages.SUCCESS,
+            )
+        return None
+    context = dict(
+        modeladmin.admin_site.each_context(request),
+        action_checkbox_name=helpers.ACTION_CHECKBOX_NAME,
+        objects_name=force_text(modeladmin.model._meta.verbose_name)
+        if len(queryset) == 1 else force_text(modeladmin.model._meta.verbose_name_plural),
+        opts=modeladmin.model._meta,
+        queryset=queryset,
+        title=_('Are you sure?'),
+    )
+    request.current_app = modeladmin.admin_site.name
+    return TemplateResponse(
+        request,
+        modeladmin.delete_selected_confirmation_template or [
+            'admin/{app_label}/{model_name}/delete_selected_confirmation.html'.format(
+                app_label=modeladmin.model._meta.app_label, model_name=modeladmin.model._meta.model_name,
+            ),
+            'admin/{app_label}/delete_selected_confirmation.html'.format(app_label=modeladmin.model._meta.app_label),
+            'admin/delete_selected_confirmation.html',
+        ],
+        context,
+    )
+
+delete_selected.short_description = ugettext_lazy('Delete selected %(verbose_name_plural)s')
+
+
+def delete_view(self, request, object_id, extra_context=None):
+    to_field = request.POST.get(TO_FIELD_VAR, request.GET.get(TO_FIELD_VAR))
+    if to_field and not self.to_field_allowed(request, to_field):
+        raise DisallowedModelAdminToField('The field {to_field} cannot be referenced.'.format(to_field=to_field))
+    object = self.get_object(request, unquote(object_id), to_field)
+    if not self.has_delete_permission(request, object):
+        raise PermissionDenied
+    if object is None:
+        raise Http404(_('{name} object with primary key {key} does not exist.').format(
+            name=force_text(self.model._meta.verbose_name), key=escape(object_id),
+        ))
+    if request.POST:
+        object_display = force_text(object)
+        self.log_deletion(request, object, object_display)
+        self.delete_model(request, object)
+        return self.response_delete(
+            request,
+            object_display,
+            object.serializable_value(str(to_field) if to_field else self.model._meta.pk.attname),
+        )
+    context = dict(
+        self.admin_site.each_context(request),
+        app_label=self.model._meta.app_label,
+        is_popup=IS_POPUP_VAR in request.POST or IS_POPUP_VAR in request.GET,
+        object=object,
+        object_name=force_text(self.model._meta.verbose_name),
+        opts=self.model._meta,
+        preserved_filters=self.get_preserved_filters(request),
+        title=_('Are you sure?'),
+        to_field=to_field,
+    )
+    context.update(extra_context or {})
+    return self.render_delete_form(request, context)
 
 
 @property
@@ -30,6 +116,8 @@ site.unregister(UserSocialAuth)
 
 delattr(AdministratorAdmin, 'form')
 
+AdministratorAdmin.actions = [delete_selected]
+AdministratorAdmin.delete_view = delete_view
 AdministratorAdmin.fieldsets = ()
 AdministratorAdmin.fields = (
     'username',
@@ -63,6 +151,8 @@ AdministratorAdmin.list_filter = (
 )
 AdministratorAdmin.search_fields = ()
 
+UserSocialAuthOption.actions = [delete_selected]
+UserSocialAuthOption.delete_view = delete_view
 UserSocialAuthOption.fields = (
     'uid',
     'user',
@@ -89,6 +179,7 @@ site.register(UserSocialAuth, UserSocialAuthOption)
 
 class Ad(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'slot',
         'type',
@@ -115,9 +206,12 @@ class Ad(ModelAdmin):
         'target',
     )
 
+Ad.delete_view = delete_view
+
 
 class Block(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user_source',
         'user_destination',
@@ -135,9 +229,12 @@ class Block(ModelAdmin):
     )
     search_fields = ()
 
+Block.delete_view = delete_view
+
 
 class DeviceAPNS(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'name',
@@ -159,10 +256,13 @@ class DeviceAPNS(ModelAdmin):
         'device_id',
         'registration_id',
     )
+
+DeviceAPNS.delete_view = delete_view
 
 
 class DeviceGCM(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'name',
@@ -185,9 +285,12 @@ class DeviceGCM(ModelAdmin):
         'registration_id',
     )
 
+DeviceGCM.delete_view = delete_view
+
 
 class MasterTell(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'created_by',
         'owned_by',
@@ -222,9 +325,12 @@ class MasterTell(ModelAdmin):
     slave_tells_.allow_tags = True
     slave_tells_.short_description = 'Slave Tells'
 
+MasterTell.delete_view = delete_view
+
 
 class Message(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user_source',
         'user_source_is_hidden',
@@ -272,9 +378,12 @@ class Message(ModelAdmin):
     attachments_.allow_tags = True
     attachments_.short_description = 'Slave Tells'
 
+Message.delete_view = delete_view
+
 
 class MessageAttachment(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'message',
         'string',
@@ -292,10 +401,13 @@ class MessageAttachment(ModelAdmin):
     search_fields = (
         'string',
     )
+
+MessageAttachment.delete_view = delete_view
 
 
 class Notification(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'type',
@@ -318,10 +430,13 @@ class Notification(ModelAdmin):
     search_fields = (
         'contents',
     )
+
+Notification.delete_view = delete_view
 
 
 class RecommendedTell(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'type',
         'contents',
@@ -344,10 +459,13 @@ class RecommendedTell(ModelAdmin):
         'contents',
         'photo',
     )
+
+RecommendedTell.delete_view = delete_view
 
 
 class Report(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user_source',
         'user_destination',
@@ -364,10 +482,13 @@ class Report(ModelAdmin):
         'timestamp',
     )
     search_fields = ()
+
+Report.delete_view = delete_view
 
 
 class ShareUser(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user_source',
         'user_destination',
@@ -388,9 +509,12 @@ class ShareUser(ModelAdmin):
     )
     search_fields = ()
 
+ShareUser.delete_view = delete_view
+
 
 class SlaveTell(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'master_tell',
         'created_by',
@@ -434,9 +558,12 @@ class SlaveTell(ModelAdmin):
         'description',
     )
 
+SlaveTell.delete_view = delete_view
+
 
 class Tellcard(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user_source',
         'user_destination',
@@ -464,9 +591,12 @@ class Tellcard(ModelAdmin):
     )
     search_fields = ()
 
+Tellcard.delete_view = delete_view
+
 
 class Tellzone(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'name',
         'photo',
@@ -506,9 +636,12 @@ class Tellzone(ModelAdmin):
     users_.allow_tags = True
     users_.short_description = 'Users'
 
+Tellzone.delete_view = delete_view
+
 
 class User(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'email',
         'photo_original',
@@ -565,9 +698,12 @@ class User(ModelAdmin):
     slave_tells_.allow_tags = True
     slave_tells_.short_description = 'Slave Tells'
 
+User.delete_view = delete_view
+
 
 class UserLocation(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'tellzone',
@@ -599,10 +735,13 @@ class UserLocation(ModelAdmin):
     search_fields = (
         'location',
     )
+
+UserLocation.delete_view = delete_view
 
 
 class UserPhoto(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'string_original',
@@ -625,10 +764,13 @@ class UserPhoto(ModelAdmin):
         'string_original',
         'string_preview',
     )
+
+UserPhoto.delete_view = delete_view
 
 
 class UserSetting(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'key',
@@ -651,10 +793,13 @@ class UserSetting(ModelAdmin):
     search_fields = (
         'value',
     )
+
+UserSetting.delete_view = delete_view
 
 
 class UserSocialProfile(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'netloc',
@@ -673,10 +818,13 @@ class UserSocialProfile(ModelAdmin):
     search_fields = (
         'url',
     )
+
+UserSocialProfile.delete_view = delete_view
 
 
 class UserStatus(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'string',
@@ -700,10 +848,13 @@ class UserStatus(ModelAdmin):
         'url',
         'notes',
     )
+
+UserStatus.delete_view = delete_view
 
 
 class UserStatusAttachment(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user_status',
         'string_original',
@@ -725,9 +876,12 @@ class UserStatusAttachment(ModelAdmin):
         'string_preview',
     )
 
+UserStatusAttachment.delete_view = delete_view
+
 
 class UserTellzone(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'tellzone',
@@ -749,9 +903,12 @@ class UserTellzone(ModelAdmin):
     )
     search_fields = ()
 
+UserTellzone.delete_view = delete_view
+
 
 class UserURL(ModelAdmin):
 
+    actions = [delete_selected]
     fields = (
         'user',
         'string',
@@ -769,6 +926,8 @@ class UserURL(ModelAdmin):
     search_fields = (
         'string',
     )
+
+UserURL.delete_view = delete_view
 
 
 apps.get_app_config('api').verbose_name = ugettext_lazy('API')
