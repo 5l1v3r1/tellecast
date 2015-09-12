@@ -1693,10 +1693,6 @@ def user_url_pre_save(instance, **kwargs):
 
 @receiver(post_save, sender=Block)
 def block_post_save(instance, **kwargs):
-    Tellcard.objects.get_queryset().filter(
-        Q(user_source_id=instance.user_source_id, user_destination_id=instance.user_destination_id) |
-        Q(user_source_id=instance.user_destination_id, user_destination_id=instance.user_source_id),
-    ).delete()
     current_app.send_task(
         'api.management.commands.websockets',
         (
@@ -1741,6 +1737,8 @@ def master_tell_post_save(instance, **kwargs):
 @receiver(post_save, sender=Message)
 def message_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
+        if instance.type == 'Response - Blocked':
+            Block.insert_or_update(instance.user_source.id, instance.user_destination_id, False)
         if (
             (instance.type != 'Message' and instance.user_destination.settings_['notifications_invitations']) or
             (instance.type == 'Message' and instance.user_destination.settings_['notifications_messages'])
