@@ -408,7 +408,6 @@ class WebSocketHandler(WebSocketHandler):
                     Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=user.id),
                     type__in=[
                         'Response - Accepted',
-                        'Response - Deferred',
                         'Response - Rejected',
                         'Message',
                     ],

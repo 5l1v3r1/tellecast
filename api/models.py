@@ -627,7 +627,7 @@ class User(Model):
             Q(user_source_id=id, user_destination_id=self.id) | Q(user_source_id=self.id, user_destination_id=id),
             type='Message',
         ).count():
-            return 6
+            return 2
         message = Message.objects.get_queryset().filter(
             Q(user_source_id=id, user_destination_id=self.id) | Q(user_source_id=self.id, user_destination_id=id),
         ).order_by(
@@ -639,17 +639,15 @@ class User(Model):
             if message.user_source_id == id:
                 return 1
             if message.user_source_id == self.id:
-                return 2
-        if message.type == 'Response - Deferred':
-            return 3
+                return 1
         if message.type == 'Response - Rejected':
-            return 4
+            return 0
         if message.type == 'Response - Blocked':
-            return 5
+            return 3
         if message.type == 'Response - Accepted':
-            return 6
+            return 2
         if message.type == 'Message':
-            return 6
+            return 2
         return 0
 
     def has_permission(self, instance=None):
@@ -1261,7 +1259,6 @@ class Message(Model):
             ('Request', 'Request',),
             ('Response - Accepted', 'Response - Accepted',),
             ('Response - Blocked', 'Response - Blocked',),
-            ('Response - Deferred', 'Response - Deferred',),
             ('Response - Rejected', 'Response - Rejected',),
         ),
         db_index=True,

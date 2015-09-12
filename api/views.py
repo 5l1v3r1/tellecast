@@ -916,7 +916,6 @@ class Messages(ViewSet):
                 - Request
                 - Response - Accepted
                 - Response - Blocked
-                - Response - Deferred
                 - Response - Rejected
 
         + contents
@@ -1007,7 +1006,6 @@ class Messages(ViewSet):
             Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
             type__in=[
                 'Response - Accepted',
-                'Response - Deferred',
                 'Response - Rejected',
                 'Message',
             ],
