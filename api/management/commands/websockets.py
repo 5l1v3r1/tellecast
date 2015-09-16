@@ -95,6 +95,7 @@ class RabbitMQHandler(object):
     def on_channel_queue_bind(self, frame):
         print 'RabbitMQHandler.on_channel_queue_bind()'
         try:
+            self.channel.basic_qos(prefetch_count=1)
             self.channel.basic_consume(
                 self.on_channel_basic_consume,
                 queue='api.management.commands.websockets',
@@ -279,7 +280,7 @@ class RabbitMQHandler(object):
                                             })
                                         )
                                         print 'k.write_message()'
-            self.channel.basic_ack(method.delivery_tag)
+            self.channel.basic_ack(delivery_tag=method.delivery_tag)
         except Exception:
             print_exc()
 
