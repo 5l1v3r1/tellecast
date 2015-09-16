@@ -349,7 +349,7 @@ class WebSocketHandler(WebSocketHandler):
 
     @coroutine
     def on_message(self, message):
-        print self, 'WebSocketHandler.on_message()'
+        print clients[self] if self in clients else 0, 'WebSocketHandler.on_message()'
         try:
             pass
             # print 'message', message
@@ -580,11 +580,7 @@ class Command(BaseCommand):
                 debug=settings.DEBUG,
             )
         )
-        if settings.DEBUG:
-            server.listen(settings.TORNADO['port'], address=settings.TORNADO['address'])
-        else:
-            server.bind(settings.TORNADO['port'], address=settings.TORNADO['address'])
-            server.start(0)
+        server.listen(settings.TORNADO['port'], address=settings.TORNADO['address'])
         IOLoop.current().add_callback(RabbitMQHandler)
         IOLoop.instance().start()
 
