@@ -108,7 +108,7 @@ class RabbitMQHandler(object):
 
     @coroutine
     def on_channel_basic_consume(self, channel, method, properties, body):
-        # print 'RabbitMQHandler.on_channel_basic_consume()'
+        print self, 'RabbitMQHandler.on_channel_basic_consume()'
         try:
             message = loads(body)['args'][0]
             # print 'message', message
@@ -349,7 +349,7 @@ class WebSocketHandler(WebSocketHandler):
 
     @coroutine
     def on_message(self, message):
-        # print 'WebSocketHandler.on_message()'
+        print self, 'WebSocketHandler.on_message()'
         try:
             pass
             # print 'message', message
