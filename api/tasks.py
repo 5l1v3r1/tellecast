@@ -7,8 +7,10 @@ from os import environ
 from traceback import print_exc
 
 from celery import Celery
+from celery.signals import task_failure
+from django.conf import settings
 from kombu import Exchange, Queue
-from rollbar import report_exc_info
+from rollbar import init, report_exc_info
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
@@ -42,6 +44,18 @@ celery.conf.update(
     CELERYD_TASK_SOFT_TIME_LIMIT=3600,
     CELERYD_TASK_TIME_LIMIT=7200,
 )
+
+init(
+    settings.ROLLBAR['access_token'],
+    branch=settings.ROLLBAR['branch'],
+    environment=settings.ROLLBAR['environment'],
+    root=settings.ROLLBAR['root'],
+)
+
+
+@task_failure.connect
+def handle_task_failure(**kwargs):
+    report_exc_info(extra_data=kwargs)
 
 
 @celery.task
