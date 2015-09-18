@@ -1645,10 +1645,33 @@ def user_post_save(instance, **kwargs):
         for key, value in UserSetting.dictionary.items():
             UserSetting.objects.create(user_id=instance.id, key=key, value='True' if value else 'False')
     current_app.send_task(
+        'api.tasks.thumbnails_1',
+        ('User', instance.id,),
+        queue='api.tasks.thumbnails',
+        routing_key='api.tasks.thumbnails',
+        serializer='json',
+    )
+    current_app.send_task(
         'api.management.commands.websockets',
         (
             {
                 'subject': 'profile',
+                'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
+
+
+@receiver(post_save, sender=UserLocation)
+def user_location_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'users_locations',
                 'body': instance.id,
             },
         ),
@@ -1669,6 +1692,17 @@ def user_photo_pre_save(instance, **kwargs):
         instance.position = position + 1 if position else 1
 
 
+@receiver(post_save, sender=UserPhoto)
+def user_photo_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.tasks.thumbnails_1',
+        ('UserPhoto', instance.id,),
+        queue='api.tasks.thumbnails',
+        routing_key='api.tasks.thumbnails',
+        serializer='json',
+    )
+
+
 @receiver(pre_save, sender=UserStatusAttachment)
 def user_status_attachment_pre_save(instance, **kwargs):
     if not instance.position:
@@ -1678,6 +1712,17 @@ def user_status_attachment_pre_save(instance, **kwargs):
             Max('position'),
         )['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(post_save, sender=UserStatusAttachment)
+def user_status_attachment_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.tasks.thumbnails_1',
+        ('UserStatusAttachment', instance.id,),
+        queue='api.tasks.thumbnails',
+        routing_key='api.tasks.thumbnails',
+        serializer='json',
+    )
 
 
 @receiver(pre_save, sender=UserURL)
@@ -1856,6 +1901,13 @@ def slave_tell_pre_save(instance, **kwargs):
 @receiver(post_save, sender=SlaveTell)
 def slave_tell_post_save(instance, **kwargs):
     current_app.send_task(
+        'api.tasks.thumbnails_1',
+        ('SlaveTell', instance.id,),
+        queue='api.tasks.thumbnails',
+        routing_key='api.tasks.thumbnails',
+        serializer='json',
+    )
+    current_app.send_task(
         'api.management.commands.websockets',
         (
             {
@@ -1926,22 +1978,6 @@ def tellcard_post_save(instance, **kwargs):
                     routing_key='api.tasks.push_notifications',
                     serializer='json',
                 )
-
-
-@receiver(post_save, sender=UserLocation)
-def user_location_post_save(instance, **kwargs):
-    current_app.send_task(
-        'api.management.commands.websockets',
-        (
-            {
-                'subject': 'users_locations',
-                'body': instance.id,
-            },
-        ),
-        queue='api.management.commands.websockets',
-        routing_key='api.management.commands.websockets',
-        serializer='json',
-    )
 
 
 def get_badge(user_id):
