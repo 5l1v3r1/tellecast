@@ -351,16 +351,16 @@ class User(Model):
         verbose_name_plural = 'Users'
 
     @cached_property
+    def token(self):
+        return TimestampSigner(settings.SECRET_KEY).sign(str(self.id))
+
+    @property
     def settings_(self):
         dictionary = UserSetting.dictionary
         for setting in self.settings.get_queryset():
             if setting.key in dictionary:
                 dictionary[setting.key] = True if setting.value == 'True' else False
         return dictionary
-
-    @cached_property
-    def token(self):
-        return TimestampSigner(settings.SECRET_KEY).sign(str(self.id))
 
     @classmethod
     def insert(cls, data):
