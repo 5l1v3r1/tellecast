@@ -2591,6 +2591,10 @@ class Users(ViewSet):
             - Type: integer
             - Status: optional
 
+        + is_visible
+            - Type: boolean (default = True)
+            - Status: optional
+
         Note: If you want to unset/remove a value, skip the corresponding key.
 
             Example 1:

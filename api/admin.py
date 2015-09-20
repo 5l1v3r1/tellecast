@@ -913,15 +913,18 @@ class UserURL(ModelAdmin):
         'user',
         'string',
         'position',
+        'is_visible',
     )
     list_display = (
         'id',
         'user',
         'string',
         'position',
+        'is_visible',
     )
     list_filter = (
         'user',
+        'is_visible',
     )
     search_fields = (
         'string',

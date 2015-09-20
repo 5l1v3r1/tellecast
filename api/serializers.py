@@ -301,6 +301,7 @@ class UserTellzone(ModelSerializer):
 class UserURL(ModelSerializer):
 
     position = IntegerField(required=False)
+    is_visible = BooleanField(default=True, required=False)
 
     class Meta:
 
@@ -308,6 +309,7 @@ class UserURL(ModelSerializer):
             'id',
             'string',
             'position',
+            'is_visible',
         )
         model = models.UserURL
 
@@ -1405,6 +1407,7 @@ class RegisterRequestUserURL(UserURL):
         fields = (
             'string',
             'position',
+            'is_visible',
         )
         model = models.UserURL
 

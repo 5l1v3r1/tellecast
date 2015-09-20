@@ -613,6 +613,8 @@ class User(Model):
                         user_url.string = url['string']
                     if 'position' in url:
                         user_url.position = url['position']
+                    if 'is_visible' in url:
+                        user_url.is_visible = url['is_visible']
                     user_url.save()
                 else:
                     user_url = UserURL.insert(self.id, url)
@@ -1025,6 +1027,7 @@ class UserURL(Model):
     user = ForeignKey(User, related_name='urls')
     string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
+    is_visible = BooleanField(ugettext_lazy('Is Visible?'), db_index=True, default=True)
 
     class Meta:
 
@@ -1041,6 +1044,7 @@ class UserURL(Model):
             user_id=user_id,
             string=data['string'] if 'string' in data else None,
             position=data['position'] if 'position' in data else None,
+            is_visible=data['is_visible'] if 'is_visible' in data else None,
         )
 
     def __str__(self):
