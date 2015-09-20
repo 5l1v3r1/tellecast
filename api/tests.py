@@ -1369,6 +1369,11 @@ class Users(TransactionTestCase):
                     'url': '1',
                 },
             ],
+            'urls': [
+                {
+                    'string': 'http://tellecast.com',
+                },
+            ],
         }
 
         response = self.client.put('/api/users/{id}/'.format(id=self.user.id), dictionary, format='json')
@@ -1376,7 +1381,12 @@ class Users(TransactionTestCase):
         assert response.data['first_name'] == dictionary['first_name']
         assert response.data['last_name'] == dictionary['last_name']
         assert len(response.data['social_profiles']) == 2
+        assert len(response.data['urls']) == 1
+        assert response.data['urls'][0]['position'] == 1
+        assert response.data['urls'][0]['is_visible'] == True
         assert response.status_code == 200
+
+        dictionary['urls'][0]['is_visible'] = False
 
         del dictionary['social_profiles'][0]['url']
 
@@ -1385,6 +1395,8 @@ class Users(TransactionTestCase):
         assert response.data['first_name'] == dictionary['first_name']
         assert response.data['last_name'] == dictionary['last_name']
         assert len(response.data['social_profiles']) == 1
+        assert response.data['urls'][0]['position'] == 1
+        assert response.data['urls'][0]['is_visible'] == False
         assert response.status_code == 200
 
         response = self.client.get('/api/users/{id}/profile/'.format(id=self.user.id), format='json')
