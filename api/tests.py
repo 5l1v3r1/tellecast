@@ -1383,7 +1383,7 @@ class Users(TransactionTestCase):
         assert len(response.data['social_profiles']) == 2
         assert len(response.data['urls']) == 1
         assert response.data['urls'][0]['position'] == 1
-        assert response.data['urls'][0]['is_visible'] == True
+        assert response.data['urls'][0]['is_visible'] == True  # noqa
         assert response.status_code == 200
 
         dictionary['urls'][0]['is_visible'] = False
@@ -1396,7 +1396,7 @@ class Users(TransactionTestCase):
         assert response.data['last_name'] == dictionary['last_name']
         assert len(response.data['social_profiles']) == 1
         assert response.data['urls'][0]['position'] == 1
-        assert response.data['urls'][0]['is_visible'] == False
+        assert response.data['urls'][0]['is_visible'] == False  # noqa
         assert response.status_code == 200
 
         response = self.client.get('/api/users/{id}/profile/'.format(id=self.user.id), format='json')
