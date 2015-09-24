@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from traceback import print_exc
+from datetime import datetime
+from logging import CRITICAL, DEBUG, Formatter, StreamHandler, getLogger
 
 from django.conf import settings
 from django.contrib.gis.measure import D
@@ -10,6 +11,7 @@ from django.test.client import RequestFactory
 from geopy.distance import vincenty
 from pika import TornadoConnection, URLParameters
 from rest_framework.request import Request
+from rollbar import init, report_exc_info, report_message
 from tornado.gen import coroutine, Return, sleep
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
@@ -17,15 +19,31 @@ from tornado.web import Application
 from tornado.websocket import WebSocketHandler
 from ujson import dumps, loads
 
-from api import models, serializers, views
+from api import models, serializers
 
-clients = {}
+formatter = Formatter('%(asctime)s [%(levelname)8s] %(message)s')
+
+stream_handler = StreamHandler()
+stream_handler.setLevel(DEBUG)
+stream_handler.setFormatter(formatter)
+
+logger = getLogger(__name__)
+logger.setLevel(DEBUG)
+logger.addHandler(stream_handler)
+
+init(
+    settings.ROLLBAR['access_token'],
+    branch=settings.ROLLBAR['branch'],
+    environment=settings.ROLLBAR['environment'],
+    root=settings.ROLLBAR['root'],
+)
 
 
-class RabbitMQHandler(object):
+class RabbitMQ(object):
 
     @coroutine
-    def __init__(self):
+    def __init__(self, application, *args, **kwargs):
+        self.application = application
         try:
             self.connection = TornadoConnection(
                 parameters=URLParameters(settings.BROKER),
@@ -34,56 +52,37 @@ class RabbitMQHandler(object):
                 on_open_error_callback=self.on_connection_open_error,
             )
         except Exception:
-            print_exc()
+            report_exc_info()
 
     def on_connection_open(self, connection):
-        # print 'RabbitMQHandler.on_connection_open()'
         try:
             self.channel = connection.channel(on_open_callback=self.on_channel_open)
         except Exception:
-            print_exc()
+            report_exc_info()
 
     def on_connection_open_error(self, connection, error_message):
-        # print 'RabbitMQHandler.on_connection_open_error()'
-        try:
-            pass
-            # print 'error_message', error_message
-        except Exception:
-            print_exc()
+        report_message(error_message)
 
     def on_connection_close(self, connection, reply_code, reply_text):
-        # print 'RabbitMQHandler.on_connection_close()'
-        try:
-            pass
-            # print 'reply_code', reply_code
-            # print 'reply_text', reply_text
-        except Exception:
-            print_exc()
+        report_message(reply_text)
 
     def on_channel_open(self, channel):
-        # print 'RabbitMQHandler.on_channel_open()'
         try:
             self.channel.exchange_declare(
-                self.on_channel_exchange_declare,
-                durable=True,
-                exchange='api.management.commands.websockets',
+                self.on_channel_exchange_declare, durable=True, exchange='api.management.commands.websockets',
             )
         except Exception:
-            print_exc()
+            report_exc_info()
 
     def on_channel_exchange_declare(self, frame):
-        # print 'RabbitMQHandler.on_channel_exchange_declare()'
         try:
             self.channel.queue_declare(
-                self.on_channel_queue_declare,
-                durable=True,
-                queue='api.management.commands.websockets',
+                self.on_channel_queue_declare, durable=True, queue='api.management.commands.websockets',
             )
         except Exception:
-            print_exc()
+            report_exc_info()
 
     def on_channel_queue_declare(self, frame):
-        # print 'RabbitMQHandler.on_channel_queue_declare()'
         try:
             self.channel.queue_bind(
                 self.on_channel_queue_bind,
@@ -92,199 +91,148 @@ class RabbitMQHandler(object):
                 routing_key='api.management.commands.websockets',
             )
         except Exception:
-            print_exc()
+            report_exc_info()
 
     def on_channel_queue_bind(self, frame):
-        # print 'RabbitMQHandler.on_channel_queue_bind()'
         try:
             self.channel.basic_qos(prefetch_count=1)
             self.channel.basic_consume(
-                self.on_channel_basic_consume,
-                queue='api.management.commands.websockets',
-                no_ack=False,
+                self.on_channel_basic_consume, queue='api.management.commands.websockets', no_ack=False,
             )
         except Exception:
-            print_exc()
+            report_exc_info()
 
     @coroutine
     def on_channel_basic_consume(self, channel, method, properties, body):
-        print self, 'RabbitMQHandler.on_channel_basic_consume()'
+        self.channel.basic_ack(delivery_tag=method.delivery_tag)
         try:
             message = loads(body)['args'][0]
-            # print 'message', message
-            if message['subject'] == 'blocks':
-                instance = yield self.get_instance(models.Block, id=message['body'])
-                if instance:
-                    for key, value in clients.items():
-                        if value == instance.user_destination_id:
-                            key.write_message(
-                                dumps({
-                                    'subject': 'blocks',
-                                    'body': instance.user_source_id,
-                                })
-                            )
-                            # print 'key.write_message()'
-            if message['subject'] == 'messages':
-                instance = yield self.get_instance(models.Message, id=message['body'])
-                if instance:
-                    for key, value in clients.items():
-                        if value == instance.user_source_id:
-                            key.write_message(
-                                dumps({
-                                    'subject': 'messages',
-                                    'body': serializers.MessagesGetResponse(
-                                        instance,
-                                        context=get_context(instance.user_source),
-                                    ).data,
-                                })
-                            )
-                            # print 'key.write_message()'
-                        if value == instance.user_destination_id:
-                            key.write_message(
-                                dumps({
-                                    'subject': 'messages',
-                                    'body': serializers.MessagesGetResponse(
-                                        instance,
-                                        context=get_context(instance.user_destination),
-                                    ).data,
-                                })
-                            )
-                            # print 'key.write_message()'
-            if message['subject'] == 'notifications':
-                instance = yield self.get_instance(models.Notification, id=message['body'])
-                if instance:
-                    for key, value in clients.items():
-                        if value == instance.user_id:
-                            key.write_message(
-                                dumps({
-                                    'subject': 'notifications',
-                                    'body': serializers.NotificationsGetResponse(
-                                        instance,
-                                        context=get_context(instance.user),
-                                    ).data,
-                                })
-                            )
-                            # print 'key.write_message()'
-            if message['subject'] == 'profile':
-                instance = yield self.get_instance(models.User, id=message['body'])
-                if instance:
-                    ids = models.Tellcard.objects.get_queryset().filter(
-                        user_destination_id=instance.id
-                    ).values_list(
-                        'user_source_id',
-                        flat=True,
-                    )
-                    for key, value in clients.items():
-                        if value in ids:
-                            key.write_message(
-                                dumps({
-                                    'subject': 'profile',
-                                    'body': instance.id,
-                                })
-                            )
-                            # print 'key.write_message()'
-            if message['subject'] == 'users_locations':
-                users_locations_new = yield self.get_instance(models.UserLocation, id=message['body'])
-                if users_locations_new:
-                    if users_locations_new.point:
-                        for key, value in clients.items():
-                            if value == users_locations_new.user_id:
-                                key.write_message(
-                                    dumps({
-                                        'subject': 'users_locations_post',
-                                        'body': serializers.RadarPostResponse(
-                                            models.Tellzone.objects.get_queryset().filter(
-                                                point__distance_lte=(
-                                                    users_locations_new.point, D(ft=models.Tellzone.radius()),
-                                                ),
-                                            ).distance(
-                                                users_locations_new.point,
-                                            ),
-                                            context=get_context(users_locations_new.user),
-                                            many=True,
-                                        ).data,
-                                    })
-                                )
-                                # print 'key.write_message()'
-                    users = models.get_users(
-                        users_locations_new.user.id,
-                        users_locations_new.point,
-                        999999999,
-                        True,
-                    )
-                    for key, value in users.items():
-                        for k, v in clients.items():
-                            if v == key:
-                                k.write_message(
-                                    dumps({
-                                        'subject': 'users_locations_get',
-                                        'body': serializers.RadarGetResponse(
-                                            [
-                                                {
-                                                    'hash': models.get_hash(items),
-                                                    'items': items,
-                                                    'position': position + 1,
-                                                }
-                                                for position, items in enumerate(
-                                                    models.get_items(
-                                                        [user[0] for user in users.values() if user[0].id != key], 5
-                                                    )
-                                                )
-                                            ],
-                                            context=get_context(value[0]),
-                                            many=True,
-                                        ).data,
-                                    })
-                                )
-                                # print 'k.write_message()'
-                    users_locations_old = models.UserLocation.objects.get_queryset().filter(
-                        id__lt=message['body'],
-                        user_id=users_locations_new.user_id,
-                    ).first()
-                    if users_locations_old:
-                        if vincenty(
-                            (users_locations_new.point.x, users_locations_new.point.y),
-                            (users_locations_old.point.x, users_locations_old.point.y)
-                        ).m > 999999999:
-                            users = models.get_users(
-                                users_locations_old.user.id,
-                                users_locations_old.point,
-                                999999999,
-                                False,
-                            )
-                            for key, value in users.items():
-                                for k, v in clients.items():
-                                    if v == key:
-                                        k.write_message(
-                                            dumps({
-                                                'subject': 'users_locations_get',
-                                                'body': serializers.RadarGetResponse(
-                                                    [
-                                                        {
-                                                            'hash': models.get_hash(items),
-                                                            'items': items,
-                                                            'position': position + 1,
-                                                        }
-                                                        for position, items in enumerate(
-                                                            models.get_items(
-                                                                [
-                                                                    user[0]
-                                                                    for user in users.values()
-                                                                    if user[0].id != key
-                                                                ],
-                                                                5
-                                                            )
-                                                        )
-                                                    ],
-                                                    context=get_context(value[0]),
-                                                    many=True,
-                                                ).data,
-                                            })
-                                        )
-                                        # print 'k.write_message()'
-            self.channel.basic_ack(delivery_tag=method.delivery_tag)
         except Exception:
-            print_exc()
+            report_exc_info()
+        if not message or 'subject' not in message or 'body' not in message:
+            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [   ] {subject:s}'.format(
+                clients=len(self.application.clients.values()), source='RabbitMQ', subject='if not message',
+            ))
+            raise Return(None)
+        try:
+            start = datetime.now()
+            if message['subject'] == 'blocks':
+                yield self.blocks(message['body'])
+            elif message['subject'] == 'messages':
+                yield self.messages(message['body'])
+            elif message['subject'] == 'notifications':
+                yield self.notifications(message['body'])
+            elif message['subject'] == 'profile':
+                yield self.profile(message['body'])
+            elif message['subject'] == 'users_locations':
+                yield self.users_locations(message['body'])
+            logger.log(DEBUG, '{clients:>3d} {source:>9s} [IN ] [{seconds:>9.2f}] {subject:s}'.format(
+                clients=len(self.application.clients.values()),
+                source='RabbitMQ',
+                seconds=(datetime.now() - start).total_seconds(),
+                subject=message['subject'],
+            ))
+        except Exception:
+            report_exc_info()
+        raise Return(None)
+
+    @coroutine
+    def blocks(self, data):
+        instance = yield self.get_instance(models.Block, id=data)
+        if not instance:
+            raise Return(None)
+        for user in [key for key, value in self.application.clients.items() if value == instance.user_destination_id]:
+            user.write_message(dumps({
+                'subject': 'blocks',
+                'body': instance.user_source_id,
+            }))
+        raise Return(None)
+
+    @coroutine
+    def messages(self, data):
+        instance = yield self.get_instance(models.Message, id=data)
+        if not instance:
+            raise Return(None)
+        for user in [key for key, value in self.application.clients.items() if value == instance.user_source_id]:
+            body = yield self.get_message(instance, instance.user_source)
+            user.write_message(dumps({
+                'subject': 'messages',
+                'body': body,
+            }))
+        for user in [key for key, value in self.application.clients.items() if value == instance.user_destination_id]:
+            body = yield self.get_message(instance, instance.user_destination)
+            user.write_message(dumps({
+                'subject': 'messages',
+                'body': body,
+            }))
+        raise Return(None)
+
+    @coroutine
+    def notifications(self, data):
+        instance = yield self.get_instance(models.Notification, id=data)
+        if not instance:
+            raise Return(None)
+        for user in [key for key, value in self.application.clients.items() if value == instance.user_id]:
+            body = yield self.get_notification(instance)
+            user.write_message(dumps({
+                'subject': 'notifications',
+                'body': body,
+            }))
+        raise Return(None)
+
+    @coroutine
+    def profile(self, data):
+        instance = yield self.get_instance(models.User, id=data)
+        if not instance:
+            raise Return(None)
+        ids = yield self.get_tellcard_ids(instance.id)
+        for user in [key for key, value in self.application.clients.items() if value in ids]:
+            user.write_message(dumps({
+                'subject': 'profile',
+                'body': instance.id,
+            }))
+        raise Return(None)
+
+    @coroutine
+    def users_locations(self, data):
+        users_locations_new = yield self.get_instance(models.UserLocation, id=data)
+        if not users_locations_new:
+            raise Return(None)
+        if not users_locations_new.point:
+            raise Return(None)
+        for user in [key for key, value in self.application.clients.items() if value == users_locations_new.user_id]:
+            body = yield self.get_radar_post(users_locations_new)
+            user.write_message(dumps({
+                'subject': 'users_locations_post',
+                'body': body,
+            }))
+        users = yield self.get_users(users_locations_new.user.id, users_locations_new.point, 999999999, True)
+        for key, value in users.items():
+            for k, v in self.application.clients.items():
+                if v == key:
+                    body = yield self.get_radar_get(key, value, users)
+                    k.write_message(dumps({
+                        'subject': 'users_locations_get',
+                        'body': body,
+                    }))
+        users_locations_old = yield self.get_user_location(data, users_locations_new.user_id)
+        if not users_locations_old:
+            raise Return(None)
+        if not vincenty(
+            (users_locations_new.point.x, users_locations_new.point.y),
+            (users_locations_old.point.x, users_locations_old.point.y)
+        ).m > 999999999:
+            raise Return(None)
+        users = yield self.get_users(users_locations_old.user.id, users_locations_old.point, 999999999, False)
+        for key, value in users.items():
+            for k, v in self.application.clients.items():
+                if v == key:
+                    body = yield self.get_radar_get(key, value, users)
+                    k.write_message(dumps({
+                        'subject': 'users_locations_get',
+                        'body': body,
+                    }))
+        raise Return(None)
 
     @coroutine
     def get_instance(self, model, id):
@@ -299,271 +247,353 @@ class RabbitMQHandler(object):
             yield sleep(1)
         raise Return(None)
 
+    @coroutine
+    def get_message(self, instance, user):
+        data = serializers.MessagesGetResponse(instance, context=get_context(user)).data
+        raise Return(data)
 
-class WebSocketHandler(WebSocketHandler):
+    @coroutine
+    def get_notification(self, instance):
+        data = serializers.NotificationsGetResponse(instance, context=get_context(instance.user)).data
+        raise Return(data)
+
+    @coroutine
+    def get_radar_get(self, key, value, users):
+        data = serializers.RadarGetResponse(
+            [
+                {
+                    'hash': models.get_hash(items),
+                    'items': items,
+                    'position': position + 1,
+                }
+                for position, items in enumerate(
+                    models.get_items([user[0] for user in users.values() if user[0].id != key], 5)
+                )
+            ],
+            context=get_context(value[0]),
+            many=True,
+        ).data
+        raise Return(data)
+
+    @coroutine
+    def get_radar_post(self, user_location):
+        data = serializers.RadarPostResponse(
+            models.Tellzone.objects.get_queryset().filter(
+                point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
+            ).distance(user_location.point),
+            context=get_context(user_location.user),
+            many=True,
+        ).data
+        raise Return(data)
+
+    @coroutine
+    def get_tellcard_ids(self, id):
+        ids = models.Tellcard.objects.get_queryset().filter(
+            user_destination_id=id,
+        ).values_list('user_source_id', flat=True)
+        raise Return(ids)
+
+    @coroutine
+    def get_users(self, user_id, point, radius, status):
+        users = models.get_users(user_id, point, radius, status)
+        raise Return(users)
+
+    @coroutine
+    def get_user_location(self, one, two):
+        user_location = models.UserLocation.objects.get_queryset().filter(id__lt=one, user_id=two).first()
+        raise Return(user_location)
+
+
+class WebSocket(WebSocketHandler):
+
+    def __init__(self, application, request, **kwargs):
+        self.application = application
+        super(WebSocket, self).__init__(application, request, **kwargs)
 
     def check_origin(self, origin):
-        # print 'WebSocketHandler.check_origin()'
         return True
 
     def open(self):
-        # print 'WebSocketHandler.open()'
         self.stream.set_nodelay(True)
 
-    def send_error(self, *args, **kwargs):
-        super(WebSocketHandler, self).send_error(*args, **kwargs)
-        # print 'WebSocketHandler.send_error()'
-        try:
-            pass
-            # print 'args', args
-            # print 'kwargs', kwargs
-            # print 'status_code', args[0]
-            # print 'exc_info', kwargs['exc_info']
-        except Exception:
-            print_exc()
-
     def write_message(self, message, binary=False):
-        super(WebSocketHandler, self).write_message(message, binary)
-        # print 'WebSocketHandler.write_message()'
         try:
-            pass
-            # print 'message', message
+            message = loads(message)
+            logger.log(DEBUG, '{clients:>3d} {source:>9s} [OUT] [         ] {subject:s}'.format(
+                clients=len(self.application.clients.values()), source='WebSocket', subject=message['subject']),
+            )
         except Exception:
-            print_exc()
+            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [OUT] [         ] {subject:s}'.format(
+                clients=len(self.application.clients.values()), source='WebSocket', subject=message['subject']),
+            )
+            report_exc_info()
+        super(WebSocket, self).write_message(message, binary=binary)
 
     def on_close(self):
-        # print 'WebSocketHandler.on_close()'
-        del clients[self]
-
-    def on_connection_close(self):
-        super(WebSocketHandler, self).on_connection_close()
-        # print 'WebSocketHandler.on_connection_close()'
-
-    def on_pong(self, data):
-        # print 'WebSocketHandler.on_pong()'
-        try:
-            pass
-            # print 'data', data
-        except Exception:
-            print_exc()
+        del self.application.clients[self]
 
     @coroutine
     def on_message(self, message):
-        print clients[self] if self in clients else 0, 'WebSocketHandler.on_message()'
-        try:
-            pass
-            # print 'message', message
-        except Exception:
-            print_exc()
         try:
             message = loads(message)
-            if message['subject'] == 'messages':
-                if self not in clients:
-                    # print 'if self not in clients'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'if self not in clients',
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                user = models.User.objects.filter(id=clients[self]).first()
-                if not user:
-                    # print 'if not user'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'if not user',
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                serializer = serializers.MessagesPostRequest(context=get_context(user), data=message['body'])
-                if not serializer.is_valid(raise_exception=False):
-                    # print 'if not serializer.is_valid(raise_exception=False)'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': serializer.errors,
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                if views.is_blocked(user.id, serializer.validated_data['user_destination_id']):
-                    # print 'if is_blocked()'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'Invalid `user_destination_id`',
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                if user.id == serializer.validated_data['user_destination_id']:
-                    # print 'if user.id == serializer.validated_data[\'user_destination_id\']'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'Invalid `user_destination_id`',
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                if not models.Message.objects.get_queryset().filter(
-                    Q(user_source_id=user.id, user_destination_id=serializer.validated_data['user_destination_id']) |
-                    Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=user.id),
-                    type__in=[
-                        'Response - Accepted',
-                        'Response - Rejected',
-                        'Message',
-                    ],
-                ).count():
-                    message = models.Message.objects.get_queryset().filter(
-                        Q(
-                            user_source_id=user.id,
-                            user_destination_id=serializer.validated_data['user_destination_id'],
-                        ) |
-                        Q(
-                            user_source_id=serializer.validated_data['user_destination_id'],
-                            user_destination_id=user.id,
-                        ),
-                    ).order_by(
-                        '-inserted_at',
-                        '-id',
-                    ).first()
-                    if message:
-                        if message.user_source_id == user.id:
-                            if message.type == 'Request':
-                                # print 'if message.type == \'Request\''
-                                self.write_message(dumps({
-                                    'subject': 'messages',
-                                    'body': {
-                                        'errors': 'HTTP_409_CONFLICT',
-                                    },
-                                }))
-                                # print 'self.write_message()'
-                                return
-                            if message.type == 'Response - Blocked':
-                                # print 'if message.type == \'Response - Blocked\''
-                                self.write_message(dumps({
-                                    'subject': 'messages',
-                                    'body': {
-                                        'errors': 'HTTP_403_FORBIDDEN',
-                                    },
-                                }))
-                                # print 'self.write_message()'
-                                return
-                        if message.user_destination_id == user.id:
-                            if message.type == 'Request' and serializer.validated_data['type'] == 'Message':
-                                # print (
-                                #     'if message.type == \'Request\' and '
-                                #     'serializer.validated_data[\'type\'] == \'Message\''
-                                # )
-                                self.write_message(dumps({
-                                    'subject': 'messages',
-                                    'body': {
-                                        'errors': 'HTTP_403_FORBIDDEN',
-                                    },
-                                }))
-                                # print 'self.write_message()'
-                                return
-                            if message.type == 'Response - Blocked':
-                                # print 'if message.type == \'Response - Blocked\''
-                                self.write_message(dumps({
-                                    'subject': 'messages',
-                                    'body': {
-                                        'errors': 'HTTP_403_FORBIDDEN',
-                                    },
-                                }))
-                                # print 'self.write_message()'
-                                return
-                    else:
-                        if not serializer.validated_data['type'] == 'Request':
-                            # print 'if not serializer.validated_data[\'type\'] == \'Request\''
-                            self.write_message(dumps({
-                                'subject': 'messages',
-                                'body': {
-                                    'errors': 'HTTP_403_FORBIDDEN',
-                                },
-                            }))
-                            # print 'self.write_message()'
-                            return
-                serializer.insert()
-                return
-            if message['subject'] == 'users':
-                user = None
-                try:
-                    user = models.User.objects.filter(id=message['body'].split('.')[0]).first()
-                except Exception:
-                    # print 'except Exception'
-                    print_exc()
-                    self.write_message(dumps({
-                        'subject': 'users',
-                        'body': False,
-                    }))
-                    # print 'self.write_message()'
-                    return
-                if not user:
-                    # print 'if not user'
-                    self.write_message(dumps({
-                        'subject': 'users',
-                        'body': False,
-                    }))
-                    # print 'self.write_message()'
-                    return
-                if not user.is_valid(message['body']):
-                    # print 'if not user.is_valid(message[\'body\'])'
-                    self.write_message(dumps({
-                        'subject': 'users',
-                        'body': False,
-                    }))
-                    # print 'self.write_message()'
-                    return
-                clients[self] = user.id
-                self.write_message(dumps({
-                    'subject': 'users',
-                    'body': True,
-                }))
-                # print 'self.write_message()'
-                return
-            if message['subject'] == 'users_locations_post':
-                if self not in clients:
-                    # print 'if self not in clients'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'if self not in clients',
-                        },
-                    }))
-                    # print 'if self not in clients'
-                    return
-                user = models.User.objects.filter(id=clients[self]).first()
-                if not user:
-                    # print 'if not user'
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'if not user',
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                serializer = serializers.RadarPostRequest(context=get_context(user), data=message['body'])
-                if not serializer.is_valid(raise_exception=False):
-                    # print 'if not serializer.is_valid(raise_exception=False)'
-                    self.write_message(dumps({
-                        'subject': 'users_locations_post',
-                        'body': {
-                            'errors': serializer.errors,
-                        },
-                    }))
-                    # print 'self.write_message()'
-                    return
-                serializer.insert()
-                return
         except Exception:
-            print_exc()
+            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [IN ] {subject:s}'.format(
+                clients=len(self.application.clients.values()), source='WebSocket', subject='message = loads(message)',
+            ))
+            report_exc_info()
+        if not message:
+            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [IN ] {subject:s}'.format(
+                clients=len(self.application.clients.values()), source='WebSocket', subject='if not message',
+            ))
+            raise Return(None)
+        if 'subject' not in message or 'body' not in message:
+            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [IN ] {subject:s}'.format(
+                clients=len(self.application.clients.values()),
+                source='WebSocket',
+                subject='if \'subject\' not in message or \'body\' not in message',
+            ))
+            raise Return(None)
+        try:
+            start = datetime.now()
+            if message['subject'] == 'messages':
+                yield self.messages(message['body'])
+            elif message['subject'] == 'users':
+                yield self.users(message['body'])
+            elif message['subject'] == 'users_locations_post':
+                yield self.users_locations_post(message['body'])
+            logger.log(DEBUG, '{clients:>3d} {source:>9s} [IN ] [{seconds:>9.2f}] {subject:s}'.format(
+                clients=len(self.application.clients.values()),
+                source='WebSocket',
+                seconds=(datetime.now() - start).total_seconds(),
+                subject=message['subject'],
+            ))
+        except Exception:
+            report_exc_info()
+        raise Return(None)
+
+    @coroutine
+    def messages(self, data):
+        if self not in self.application.clients:
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': 'if self not in clients',
+                },
+            }))
+            raise Return(None)
+        user = yield self.get_user(self.application.clients[self])
+        if not user:
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': 'if not user',
+                },
+            }))
+            raise Return(None)
+        yield self.set_messages(user, data)
+        raise Return(None)
+
+    @coroutine
+    def users(self, data):
+        user = models.User.objects.filter(id=data.split('.')[0]).first()
+        if not user:
+            self.write_message(dumps({
+                'subject': 'users',
+                'body': False,
+            }))
+            raise Return(None)
+        if not user.is_valid(data):
+            self.write_message(dumps({
+                'subject': 'users',
+                'body': False,
+            }))
+            raise Return(None)
+        self.application.clients[self] = user.id
+        self.write_message(dumps({
+            'subject': 'users',
+            'body': True,
+        }))
+        raise Return(None)
+
+    @coroutine
+    def users_locations_post(self, data):
+        if self not in self.application.clients:
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': 'if self not in self.application.clients',
+                },
+            }))
+            raise Return(None)
+        user = yield self.get_user(self.application.clients[self])
+        if not user:
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': 'if not user',
+                },
+            }))
+            raise Return(None)
+        yield self.set_users_locations_post(user, data)
+        raise Return(None)
+
+    @coroutine
+    def get_blocks(self, one, two):
+        count = models.Block.objects.get_queryset().filter(
+            Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
+        ).count()
+        raise Return(count)
+
+    @coroutine
+    def get_messages(self, one, two):
+        count = models.Message.objects.get_queryset().filter(
+            Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
+            type__in=['Response - Accepted', 'Response - Rejected', 'Message'],
+        ).count()
+        raise Return(count)
+
+    @coroutine
+    def get_message(self, one, two):
+        message = models.Message.objects.get_queryset().filter(
+            Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
+        ).order_by('-inserted_at', '-id').first()
+        raise Return(message)
+
+    @coroutine
+    def get_user(self, id):
+        user = models.User.objects.filter(id=id).first()
+        raise Return(user)
+
+    @coroutine
+    def set_message(self, user_id, data):
+        message = models.Message.objects.create(
+            user_source_id=user_id,
+            user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
+            user_destination_id=data['user_destination_id'],
+            user_destination_is_hidden=data['user_destination_is_hidden']
+            if 'user_destination_is_hidden' in data else None,
+            user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
+            master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
+            type=data['type'] if 'type' in data else None,
+            contents=data['contents'] if 'contents' in data else None,
+            status=data['status'] if 'status' in data else 'Unread',
+        )
+        raise Return(message)
+
+    @coroutine
+    def set_message_attachment(self, message_id, attachment):
+        models.MessageAttachment.insert(message_id, attachment)
+        raise Return(None)
+
+    @coroutine
+    def set_messages(self, user, data):
+        serializer = serializers.MessagesPostRequest(context=get_context(user), data=data)
+        if not serializer.is_valid(raise_exception=False):
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': serializer.errors,
+                },
+            }))
+            raise Return(None)
+        data = serializer.validated_data
+        if user.id == data['user_destination_id']:
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': 'Invalid `user_destination_id`',
+                },
+            }))
+            raise Return(None)
+        count = yield self.get_blocks(user.id, data['user_destination_id'])
+        if count:
+            self.write_message(dumps({
+                'subject': 'messages',
+                'body': {
+                    'errors': 'Invalid `user_destination_id`',
+                },
+            }))
+            raise Return(None)
+        count = yield self.get_messages(user.id, data['user_destination_id'])
+        if not count:
+            message = yield self.get_message(user.id, data['user_destination_id'])
+            if message:
+                if message.user_source_id == user.id:
+                    if message.type == 'Request':
+                        self.write_message(dumps({
+                            'subject': 'messages',
+                            'body': {
+                                'errors': 'HTTP_409_CONFLICT',
+                            },
+                        }))
+                        raise Return(None)
+                    if message.type == 'Response - Blocked':
+                        self.write_message(dumps({
+                            'subject': 'messages',
+                            'body': {
+                                'errors': 'HTTP_403_FORBIDDEN',
+                            },
+                        }))
+                        raise Return(None)
+                if message.user_destination_id == user.id:
+                    if message.type == 'Request' and data['type'] == 'Message':
+                        self.write_message(dumps({
+                            'subject': 'messages',
+                            'body': {
+                                'errors': 'HTTP_403_FORBIDDEN',
+                            },
+                        }))
+                        raise Return(None)
+                    if message.type == 'Response - Blocked':
+                        self.write_message(dumps({
+                            'subject': 'messages',
+                            'body': {
+                                'errors': 'HTTP_403_FORBIDDEN',
+                            },
+                        }))
+                        raise Return(None)
+            else:
+                if not data['type'] == 'Request':
+                    self.write_message(dumps({
+                        'subject': 'messages',
+                        'body': {
+                            'errors': 'HTTP_403_FORBIDDEN',
+                        },
+                    }))
+                    raise Return(None)
+        message = yield self.set_message(user.id, data)
+        if 'attachments' in data:
+            for attachment in data['attachments']:
+                yield self.set_message_attachment(message.id, attachment)
+        raise Return(None)
+
+    @coroutine
+    def set_user_location(self, user_id, data):
+        models.UserLocation.objects.create(
+            user_id=user_id,
+            tellzone_id=data['tellzone_id'] if 'tellzone_id' in data else None,
+            location=data['location'] if 'location' in data else None,
+            point=data['point'] if 'point' in data else None,
+            accuracies_horizontal=data['accuracies_horizontal'] if 'accuracies_horizontal' in data else None,
+            accuracies_vertical=data['accuracies_vertical'] if 'accuracies_vertical' in data else None,
+            bearing=data['bearing'] if 'bearing' in data else None,
+            is_casting=data['is_casting'] if 'is_casting' in data else None,
+        )
+        raise Return(None)
+
+    @coroutine
+    def set_users_locations_post(self, user, data):
+        serializer = serializers.RadarPostRequest(context=get_context(user), data=data)
+        if not serializer.is_valid(raise_exception=False):
+            self.write_message(dumps({
+                'subject': 'users_locations_post',
+                'body': {
+                    'errors': serializer.errors,
+                },
+            }))
+            raise Return(None)
+        yield self.set_user_location(user.id, serializer.validated_data)
+        raise Return(None)
 
 
 class Command(BaseCommand):
@@ -571,17 +601,24 @@ class Command(BaseCommand):
     help = 'WebSockets'
 
     def handle(self, *args, **kwargs):
-        server = HTTPServer(
-            Application(
-                [
-                    ('/websockets/', WebSocketHandler),
-                ],
-                autoreload=settings.DEBUG,
-                debug=settings.DEBUG,
-            )
+        application = Application(
+            [
+                ('/websockets/', WebSocket),
+            ],
+            autoreload=settings.DEBUG,
+            debug=settings.DEBUG,
         )
+        application.clients = {}
+        server = HTTPServer(application)
         server.listen(settings.TORNADO['port'], address=settings.TORNADO['address'])
-        IOLoop.current().add_callback(RabbitMQHandler)
+        '''
+        if settings.DEBUG:
+            server.listen(settings.TORNADO['port'], address=settings.TORNADO['address'])
+        else:
+            server.bind(settings.TORNADO['port'], address=settings.TORNADO['address'])
+            server.start(0)
+        '''
+        IOLoop.current().add_callback(RabbitMQ, application)
         IOLoop.instance().start()
 
 
