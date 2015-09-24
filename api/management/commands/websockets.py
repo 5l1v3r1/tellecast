@@ -42,8 +42,7 @@ init(
 class RabbitMQ(object):
 
     @coroutine
-    def __init__(self, application, *args, **kwargs):
-        self.application = application
+    def __init__(self, *args, **kwargs):
         try:
             self.connection = TornadoConnection(
                 parameters=URLParameters(settings.BROKER),
@@ -110,8 +109,8 @@ class RabbitMQ(object):
         except Exception:
             report_exc_info()
         if not message or 'subject' not in message or 'body' not in message:
-            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [   ] {subject:s}'.format(
-                clients=len(self.application.clients.values()), source='RabbitMQ', subject='if not message',
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [   ] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()), source='RabbitMQ', subject='if not message',
             ))
             raise Return(None)
         try:
@@ -126,8 +125,8 @@ class RabbitMQ(object):
                 yield self.profile(message['body'])
             elif message['subject'] == 'users_locations':
                 yield self.users_locations(message['body'])
-            logger.log(DEBUG, '{clients:>3d} {source:>9s} [IN ] [{seconds:>9.2f}] {subject:s}'.format(
-                clients=len(self.application.clients.values()),
+            logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()),
                 source='RabbitMQ',
                 seconds=(datetime.now() - start).total_seconds(),
                 subject=message['subject'],
@@ -141,7 +140,7 @@ class RabbitMQ(object):
         instance = yield self.get_instance(models.Block, id=data)
         if not instance:
             raise Return(None)
-        for user in [key for key, value in self.application.clients.items() if value == instance.user_destination_id]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_destination_id]:
             user.write_message(dumps({
                 'subject': 'blocks',
                 'body': instance.user_source_id,
@@ -153,13 +152,13 @@ class RabbitMQ(object):
         instance = yield self.get_instance(models.Message, id=data)
         if not instance:
             raise Return(None)
-        for user in [key for key, value in self.application.clients.items() if value == instance.user_source_id]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_source_id]:
             body = yield self.get_message(instance, instance.user_source)
             user.write_message(dumps({
                 'subject': 'messages',
                 'body': body,
             }))
-        for user in [key for key, value in self.application.clients.items() if value == instance.user_destination_id]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_destination_id]:
             body = yield self.get_message(instance, instance.user_destination)
             user.write_message(dumps({
                 'subject': 'messages',
@@ -172,7 +171,7 @@ class RabbitMQ(object):
         instance = yield self.get_instance(models.Notification, id=data)
         if not instance:
             raise Return(None)
-        for user in [key for key, value in self.application.clients.items() if value == instance.user_id]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_id]:
             body = yield self.get_notification(instance)
             user.write_message(dumps({
                 'subject': 'notifications',
@@ -186,7 +185,7 @@ class RabbitMQ(object):
         if not instance:
             raise Return(None)
         ids = yield self.get_tellcard_ids(instance.id)
-        for user in [key for key, value in self.application.clients.items() if value in ids]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value in ids]:
             user.write_message(dumps({
                 'subject': 'profile',
                 'body': instance.id,
@@ -200,7 +199,7 @@ class RabbitMQ(object):
             raise Return(None)
         if not users_locations_new.point:
             raise Return(None)
-        for user in [key for key, value in self.application.clients.items() if value == users_locations_new.user_id]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value == users_locations_new.user_id]:
             body = yield self.get_radar_post(users_locations_new)
             user.write_message(dumps({
                 'subject': 'users_locations_post',
@@ -208,9 +207,10 @@ class RabbitMQ(object):
             }))
         users = yield self.get_users(users_locations_new.user.id, users_locations_new.point, 999999999, True)
         for key, value in users.items():
-            for k, v in self.application.clients.items():
+            for k, v in IOLoop.current().clients.items():
                 if v == key:
                     body = yield self.get_radar_get(key, value, users)
+                    print self.get_radar_get.cache_info()
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
@@ -225,9 +225,9 @@ class RabbitMQ(object):
             raise Return(None)
         users = yield self.get_users(users_locations_old.user.id, users_locations_old.point, 999999999, False)
         for key, value in users.items():
-            for k, v in self.application.clients.items():
+            for k, v in IOLoop.current().clients.items():
                 if v == key:
-                    body = yield self.get_radar_get(key, value, users)
+                    body = yield self.get_radar_get(key, value, users.items())
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
@@ -306,10 +306,6 @@ class RabbitMQ(object):
 
 class WebSocket(WebSocketHandler):
 
-    def __init__(self, application, request, **kwargs):
-        self.application = application
-        super(WebSocket, self).__init__(application, request, **kwargs)
-
     def check_origin(self, origin):
         return True
 
@@ -319,36 +315,36 @@ class WebSocket(WebSocketHandler):
     def write_message(self, message, binary=False):
         try:
             message = loads(message)
-            logger.log(DEBUG, '{clients:>3d} {source:>9s} [OUT] [         ] {subject:s}'.format(
-                clients=len(self.application.clients.values()), source='WebSocket', subject=message['subject']),
+            logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject']),
             )
         except Exception:
-            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [OUT] [         ] {subject:s}'.format(
-                clients=len(self.application.clients.values()), source='WebSocket', subject=message['subject']),
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject']),
             )
             report_exc_info()
         super(WebSocket, self).write_message(message, binary=binary)
 
     def on_close(self):
-        del self.application.clients[self]
+        del IOLoop.current().clients[self]
 
     @coroutine
     def on_message(self, message):
         try:
             message = loads(message)
         except Exception:
-            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [IN ] {subject:s}'.format(
-                clients=len(self.application.clients.values()), source='WebSocket', subject='message = loads(message)',
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='message = loads(message)',
             ))
             report_exc_info()
         if not message:
-            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [IN ] {subject:s}'.format(
-                clients=len(self.application.clients.values()), source='WebSocket', subject='if not message',
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='if not message',
             ))
             raise Return(None)
         if 'subject' not in message or 'body' not in message:
-            logger.log(CRITICAL, '{clients:>3d} {source:>9s} [IN ] {subject:s}'.format(
-                clients=len(self.application.clients.values()),
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()),
                 source='WebSocket',
                 subject='if \'subject\' not in message or \'body\' not in message',
             ))
@@ -361,8 +357,8 @@ class WebSocket(WebSocketHandler):
                 yield self.users(message['body'])
             elif message['subject'] == 'users_locations_post':
                 yield self.users_locations_post(message['body'])
-            logger.log(DEBUG, '{clients:>3d} {source:>9s} [IN ] [{seconds:>9.2f}] {subject:s}'.format(
-                clients=len(self.application.clients.values()),
+            logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
+                clients=len(IOLoop.current().clients.values()),
                 source='WebSocket',
                 seconds=(datetime.now() - start).total_seconds(),
                 subject=message['subject'],
@@ -373,7 +369,7 @@ class WebSocket(WebSocketHandler):
 
     @coroutine
     def messages(self, data):
-        if self not in self.application.clients:
+        if self not in IOLoop.current().clients:
             self.write_message(dumps({
                 'subject': 'messages',
                 'body': {
@@ -381,7 +377,7 @@ class WebSocket(WebSocketHandler):
                 },
             }))
             raise Return(None)
-        user = yield self.get_user(self.application.clients[self])
+        user = yield self.get_user(IOLoop.current().clients[self])
         if not user:
             self.write_message(dumps({
                 'subject': 'messages',
@@ -408,7 +404,7 @@ class WebSocket(WebSocketHandler):
                 'body': False,
             }))
             raise Return(None)
-        self.application.clients[self] = user.id
+        IOLoop.current().clients[self] = user.id
         self.write_message(dumps({
             'subject': 'users',
             'body': True,
@@ -417,15 +413,15 @@ class WebSocket(WebSocketHandler):
 
     @coroutine
     def users_locations_post(self, data):
-        if self not in self.application.clients:
+        if self not in IOLoop.current().clients:
             self.write_message(dumps({
                 'subject': 'messages',
                 'body': {
-                    'errors': 'if self not in self.application.clients',
+                    'errors': 'if self not in IOLoop.current().clients',
                 },
             }))
             raise Return(None)
-        user = yield self.get_user(self.application.clients[self])
+        user = yield self.get_user(IOLoop.current().clients[self])
         if not user:
             self.write_message(dumps({
                 'subject': 'messages',
@@ -601,25 +597,13 @@ class Command(BaseCommand):
     help = 'WebSockets'
 
     def handle(self, *args, **kwargs):
-        application = Application(
-            [
-                ('/websockets/', WebSocket),
-            ],
-            autoreload=settings.DEBUG,
-            debug=settings.DEBUG,
+        server = HTTPServer(
+            Application([('/websockets/', WebSocket)], autoreload=settings.DEBUG, debug=settings.DEBUG),
         )
-        application.clients = {}
-        server = HTTPServer(application)
         server.listen(settings.TORNADO['port'], address=settings.TORNADO['address'])
-        '''
-        if settings.DEBUG:
-            server.listen(settings.TORNADO['port'], address=settings.TORNADO['address'])
-        else:
-            server.bind(settings.TORNADO['port'], address=settings.TORNADO['address'])
-            server.start(0)
-        '''
-        IOLoop.current().add_callback(RabbitMQ, application)
-        IOLoop.instance().start()
+        IOLoop.current().clients = {}
+        IOLoop.current().add_callback(RabbitMQ)
+        IOLoop.current().start()
 
 
 def get_context(user):
