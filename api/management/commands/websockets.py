@@ -210,7 +210,6 @@ class RabbitMQ(object):
             for k, v in IOLoop.current().clients.items():
                 if v == key:
                     body = yield self.get_radar_get(key, value, users)
-                    print self.get_radar_get.cache_info()
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
