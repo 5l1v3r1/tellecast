@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
 
+from contextlib import closing
 from datetime import datetime
 from logging import CRITICAL, DEBUG, Formatter, StreamHandler, getLogger
 
+from celery import current_app
 from django.conf import settings
-from django.contrib.gis.measure import D
 from django.core.management.base import BaseCommand
-from django.db.models import Q
-from django.test.client import RequestFactory
+from django.db import connection
 from geopy.distance import vincenty
+from itsdangerous import TimestampSigner
+from numpy import array_split
 from pika import TornadoConnection, URLParameters
-from rest_framework.request import Request
 from rollbar import init, report_exc_info, report_message
-from tornado.gen import coroutine, Return, sleep
+from tornado.gen import coroutine, Return
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
 from ujson import dumps, loads
 
-from api import models, serializers
+from api import serializers
 
 formatter = Formatter('%(asctime)s [%(levelname)8s] %(message)s')
 
@@ -136,30 +137,74 @@ class RabbitMQ(object):
         raise Return(None)
 
     @coroutine
-    def blocks(self, data):
-        instance = yield self.get_instance(models.Block, id=data)
-        if not instance:
+    def blocks(self, id):
+        block = yield self.get_block(id)
+        if not block:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_destination_id]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value == block['user_destination_id']]:
             user.write_message(dumps({
                 'subject': 'blocks',
-                'body': instance.user_source_id,
+                'body': block['user_source_id'],
             }))
         raise Return(None)
 
     @coroutine
-    def messages(self, data):
-        instance = yield self.get_instance(models.Message, id=data)
-        if not instance:
+    def messages(self, id):
+        message = yield self.get_message(id)
+        if not message:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_source_id]:
-            body = yield self.get_message(instance, instance.user_source)
+        for user in [key for key, value in IOLoop.current().clients.items() if value == message['user_source_id']]:
+            body = message
+            body['user_destination']['email'] = (
+                body['user_destination']['email']
+                if body['user_destination']['settings']['show_email'] == 'True' else None
+            )
+            body['user_destination']['last_name'] = (
+                body['user_destination']['last_name']
+                if body['user_destination']['settings']['show_last_name'] == 'True' else None
+            )
+            body['user_destination']['phone'] = (
+                body['user_destination']['phone']
+                if body['user_destination']['settings']['show_phone'] == 'True' else None
+            )
+            body['user_destination']['photo_original'] = (
+                body['user_destination']['photo_original']
+                if body['user_destination']['settings']['show_photo'] == 'True' else None
+            )
+            body['user_destination']['photo_preview'] = (
+                body['user_destination']['photo_preview']
+                if body['user_destination']['settings']['show_photo'] == 'True' else None
+            )
+            del body['user_source']['settings']
+            del body['user_destination']['settings']
             user.write_message(dumps({
                 'subject': 'messages',
                 'body': body,
             }))
-        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_destination_id]:
-            body = yield self.get_message(instance, instance.user_destination)
+        for user in [key for key, value in IOLoop.current().clients.items() if value == message['user_destination_id']]:
+            body = message
+            body['user_source']['email'] = (
+                body['user_source']['email']
+                if body['user_source']['settings']['show_email'] == 'True' else None
+            )
+            body['user_source']['last_name'] = (
+                body['user_source']['last_name']
+                if body['user_source']['settings']['show_last_name'] == 'True' else None
+            )
+            body['user_source']['phone'] = (
+                body['user_source']['phone']
+                if body['user_source']['settings']['show_phone'] == 'True' else None
+            )
+            body['user_source']['photo_original'] = (
+                body['user_source']['photo_original']
+                if body['user_source']['settings']['show_photo'] == 'True' else None
+            )
+            body['user_source']['photo_preview'] = (
+                body['user_source']['photo_preview']
+                if body['user_source']['settings']['show_photo'] == 'True' else None
+            )
+            del body['user_source']['settings']
+            del body['user_destination']['settings']
             user.write_message(dumps({
                 'subject': 'messages',
                 'body': body,
@@ -167,66 +212,65 @@ class RabbitMQ(object):
         raise Return(None)
 
     @coroutine
-    def notifications(self, data):
-        instance = yield self.get_instance(models.Notification, id=data)
-        if not instance:
+    def notifications(self, id):
+        notification = yield self.get_notification(id)
+        if not notification:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == instance.user_id]:
-            body = yield self.get_notification(instance)
+        for user in [key for key, value in IOLoop.current().clients.items() if value == notification['user_id']]:
             user.write_message(dumps({
                 'subject': 'notifications',
-                'body': body,
+                'body': notification,
             }))
         raise Return(None)
 
     @coroutine
-    def profile(self, data):
-        instance = yield self.get_instance(models.User, id=data)
-        if not instance:
+    def profile(self, id):
+        profile = yield self.get_profile(id)
+        if not profile:
             raise Return(None)
-        ids = yield self.get_tellcard_ids(instance.id)
-        for user in [key for key, value in IOLoop.current().clients.items() if value in ids]:
+        for user in [key for key, value in IOLoop.current().clients.items() if value in profile['ids']]:
             user.write_message(dumps({
                 'subject': 'profile',
-                'body': instance.id,
+                'body': profile['id'],
             }))
         raise Return(None)
 
     @coroutine
     def users_locations(self, data):
-        users_locations_new = yield self.get_instance(models.UserLocation, id=data)
+        users_locations_new = yield self.get_user_location_1(data)
         if not users_locations_new:
             raise Return(None)
-        if not users_locations_new.point:
-            raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == users_locations_new.user_id]:
+        for user in [
+            key for key, value in IOLoop.current().clients.items() if value == users_locations_new['user_id']
+        ]:
             body = yield self.get_radar_post(users_locations_new)
             user.write_message(dumps({
                 'subject': 'users_locations_post',
                 'body': body,
             }))
-        users = yield self.get_users(users_locations_new.user.id, users_locations_new.point, 999999999, True)
-        for key, value in users.items():
+        users = yield self.get_users(users_locations_new['user_id'], users_locations_new['point'], 999999999, True)
+        body = yield self.get_radar_get(users[0], [u for u in users])
+        for user in users:
             for k, v in IOLoop.current().clients.items():
-                if v == key:
-                    body = yield self.get_radar_get(key, value, users)
+                if v == user['id']:
+                    body = yield self.get_radar_get(user, [u for u in users if u['id'] != user['id']])
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
                     }))
-        users_locations_old = yield self.get_user_location(data, users_locations_new.user_id)
+        users_locations_old = yield self.get_user_location_2(data, users_locations_new['user_id'])
         if not users_locations_old:
             raise Return(None)
         if not vincenty(
-            (users_locations_new.point.x, users_locations_new.point.y),
-            (users_locations_old.point.x, users_locations_old.point.y)
+            (users_locations_new['point']['longitude'], users_locations_new['point']['latitude']),
+            (users_locations_old['point']['longitude'], users_locations_old['point']['latitude'])
         ).m > 999999999:
             raise Return(None)
-        users = yield self.get_users(users_locations_old.user.id, users_locations_old.point, 999999999, False)
-        for key, value in users.items():
+        users = yield self.get_users(users_locations_old['user_id'], users_locations_old['point'], 999999999, False)
+        for user in users:
             for k, v in IOLoop.current().clients.items():
-                if v == key:
-                    body = yield self.get_radar_get(key, value, users.items())
+                if v == user['id']:
+                    body = yield self.get_radar_get(user, [u for u in users if u['id'] != user['id']])
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
@@ -234,73 +278,606 @@ class RabbitMQ(object):
         raise Return(None)
 
     @coroutine
-    def get_instance(self, model, id):
-        attempts = 0
-        while True:
-            instance = model.objects.get_queryset().filter(id=id).first()
-            if instance:
-                raise Return(instance)
-            attempts += 1
-            if attempts >= 3:
-                raise Return(None)
-            yield sleep(1)
-        raise Return(None)
+    def get_block(self, id):
+        block = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute('SELECT user_source_id, user_destination_id FROM api_blocks WHERE id = %s', (id,))
+                record = cursor.fetchone()
+                if record:
+                    block = {
+                        'user_source_id': record[0],
+                        'user_destination_id': record[1],
+                    }
+        except Exception:
+            report_exc_info()
+        raise Return(block)
 
     @coroutine
-    def get_message(self, instance, user):
-        data = serializers.MessagesGetResponse(instance, context=get_context(user)).data
-        raise Return(data)
+    def get_message(self, id):
+        message = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT
+                        api_messages.id AS message_id,
+                        api_messages.user_source_id AS message_user_source_id,
+                        api_messages.user_source_is_hidden AS message_user_source_is_hidden,
+                        api_messages.user_destination_id AS message_user_destination_id,
+                        api_messages.user_destination_is_hidden AS message_user_destination_is_hidden,
+                        api_messages.type AS message_type,
+                        api_messages.contents AS message_contents,
+                        api_messages.status AS message_status,
+                        api_messages.inserted_at AS message_inserted_at,
+                        api_messages.updated_at AS message_updated_at,
+                        api_messages_attachments.id AS message_attachment_id,
+                        api_messages_attachments.string AS message_attachment_string,
+                        api_messages_attachments.position AS message_attachment_position,
+                        api_users_source.email AS user_source_email,
+                        api_users_source.photo_original AS user_source_photo_original,
+                        api_users_source.photo_preview AS user_source_photo_preview,
+                        api_users_source.first_name AS user_source_first_name,
+                        api_users_source.last_name AS user_source_last_name,
+                        api_users_source.date_of_birth AS user_source_date_of_birth,
+                        api_users_source.gender AS user_source_gender,
+                        api_users_source.location AS user_source_location,
+                        api_users_source.description AS user_source_description,
+                        api_users_source.phone AS user_source_phone,
+                        api_users_settings_source.key AS user_setting_source_key,
+                        api_users_settings_source.value AS user_setting_source_value,
+                        api_users_destination.email AS user_destination_email,
+                        api_users_destination.photo_original AS user_destination_photo_original,
+                        api_users_destination.photo_preview AS user_destination_photo_preview,
+                        api_users_destination.first_name AS user_destination_first_name,
+                        api_users_destination.last_name AS user_destination_last_name,
+                        api_users_destination.date_of_birth AS user_destination_date_of_birth,
+                        api_users_destination.gender AS user_destination_gender,
+                        api_users_destination.location AS user_destination_location,
+                        api_users_destination.description AS user_destination_description,
+                        api_users_destination.phone AS user_destination_phone,
+                        api_users_settings_destination.key AS user_setting_destination_key,
+                        api_users_settings_destination.value AS user_setting_destination_value,
+                        api_users_statuses.id AS user_status_id,
+                        api_users_statuses.string AS user_status_string,
+                        api_users_statuses.title AS user_status_title,
+                        api_users_statuses.url AS user_status_url,
+                        api_users_statuses.notes AS user_status_notes,
+                        api_users_statuses_attachments.id AS user_status_attachment_id,
+                        api_users_statuses_attachments.string_original AS user_status_attachment_string_original,
+                        api_users_statuses_attachments.string_preview AS user_status_attachment_string_preview,
+                        api_users_statuses_attachments.position AS user_status_attachment_position,
+                        api_master_tells.id AS master_tell_id,
+                        api_master_tells.created_by_id AS master_tell_created_by_id,
+                        api_master_tells.owned_by_id AS master_tell_owned_by_id,
+                        api_master_tells.contents AS master_tell_contents,
+                        api_master_tells.position AS master_tell_position,
+                        api_master_tells.is_visible AS master_tell_is_visible,
+                        api_master_tells.inserted_at AS master_tell_inserted_at,
+                        api_master_tells.updated_at AS master_tell_updated_at
+                    FROM api_messages
+                    LEFT OUTER JOIN api_messages_attachments
+                        ON api_messages_attachments.message_id = api_messages.id
+                    INNER JOIN api_users AS api_users_source
+                        ON api_users_source.id = api_messages.user_source_id
+                    LEFT OUTER JOIN api_users_settings AS api_users_settings_source
+                        ON api_users_settings_source.user_id = api_messages.user_source_id
+                    INNER JOIN api_users AS api_users_destination
+                        ON api_users_destination.id = api_messages.user_destination_id
+                    LEFT OUTER JOIN api_users_settings AS api_users_settings_destination
+                        ON api_users_settings_destination.user_id = api_messages.user_destination_id
+                    LEFT OUTER JOIN api_users_statuses
+                        ON api_users_statuses.id = api_messages.user_status_id
+                    LEFT OUTER JOIN api_users_statuses_attachments
+                        ON api_users_statuses_attachments.user_status_id = api_messages.user_status_id
+                    LEFT OUTER JOIN api_master_tells
+                        ON api_master_tells.id = api_messages.master_tell_id
+                    WHERE api_messages.id = %s
+                    ''',
+                    (id,),
+                )
+                columns = [column.name for column in cursor.description]
+                for record in cursor.fetchall():
+                    record = dict(zip(columns, record))
+                    if 'id' not in message:
+                        message['id'] = record['message_id']
+                    if 'user_source_id' not in message:
+                        message['user_source_id'] = record['message_user_source_id']
+                    if 'user_source_is_hidden' not in message:
+                        message['user_source_is_hidden'] = record['message_user_source_is_hidden']
+                    if 'user_destination_id' not in message:
+                        message['user_destination_id'] = record['message_user_destination_id']
+                    if 'user_destination_is_hidden' not in message:
+                        message['user_destination_is_hidden'] = record['message_user_destination_is_hidden']
+                    if 'type' not in message:
+                        message['type'] = record['message_type']
+                    if 'contents' not in message:
+                        message['contents'] = record['message_contents']
+                    if 'status' not in message:
+                        message['status'] = record['message_status']
+                    if 'inserted_at' not in message:
+                        message['inserted_at'] = record['message_inserted_at'].isoformat()
+                    if 'updated_at' not in message:
+                        message['updated_at'] = record['message_updated_at'].isoformat()
+                    if 'attachments' not in message:
+                        message['attachments'] = {}
+                    if record['message_attachment_id']:
+                        if record['message_attachment_id'] not in message['attachments']:
+                            message['attachments'][record['message_attachment_id']] = {
+                                'id': record['message_attachment_id'],
+                                'string': record['message_attachment_string'],
+                                'position': record['message_attachment_position'],
+                            }
+                    if 'user_source' not in message:
+                        message['user_source'] = {
+                            'id': record['message_user_source_id'],
+                            'email': record['user_source_email'],
+                            'photo_original': record['user_source_photo_original'],
+                            'photo_preview': record['user_source_photo_preview'],
+                            'first_name': record['user_source_first_name'],
+                            'last_name': record['user_source_last_name'],
+                            'date_of_birth': record['user_source_date_of_birth'].isoformat(),
+                            'gender': record['user_source_gender'],
+                            'location': record['user_source_location'],
+                            'description': record['user_source_description'],
+                            'phone': record['user_source_phone'],
+                        }
+                    if 'settings' not in message['user_source']:
+                        message['user_source']['settings'] = {}
+                    if record['user_setting_source_key']:
+                        if record['user_setting_source_key'] not in message['user_source']['settings']:
+                            message['user_source']['settings'][
+                                record['user_setting_source_key']
+                            ] = record['user_setting_source_value']
+                    if 'user_destination' not in message:
+                        message['user_destination'] = {
+                            'id': record['message_user_destination_id'],
+                            'email': record['user_destination_email'],
+                            'photo_original': record['user_destination_photo_original'],
+                            'photo_preview': record['user_destination_photo_preview'],
+                            'first_name': record['user_destination_first_name'],
+                            'last_name': record['user_destination_last_name'],
+                            'date_of_birth': record['user_destination_date_of_birth'].isoformat(),
+                            'gender': record['user_destination_gender'],
+                            'location': record['user_destination_location'],
+                            'description': record['user_destination_description'],
+                            'phone': record['user_destination_phone'],
+                        }
+                    if 'settings' not in message['user_destination']:
+                        message['user_destination']['settings'] = {}
+                    if record['user_setting_destination_key']:
+                        if record['user_setting_destination_key'] not in message['user_destination']['settings']:
+                            message['user_destination']['settings'][
+                                record['user_setting_destination_key']
+                            ] = record['user_setting_destination_value']
+                    if 'master_tell' not in message:
+                        message['master_tell'] = {}
+                    if record['master_tell_id']:
+                        if 'id' not in message['master_tell']:
+                            message['master_tell']['id'] = record['master_tell_id']
+                        if 'created_by_id' not in message['master_tell']:
+                            message['master_tell']['created_by_id'] = record['master_tell_created_by_id']
+                        if 'owned_by_id' not in message['master_tell']:
+                            message['master_tell']['owned_by_id'] = record['master_tell_owned_by_id']
+                        if 'contents' not in message['master_tell']:
+                            message['master_tell']['contents'] = record['master_tell_contents']
+                        if 'position' not in message['master_tell']:
+                            message['master_tell']['position'] = record['master_tell_position']
+                        if 'is_visible' not in message['master_tell']:
+                            message['master_tell']['is_visible'] = record['master_tell_is_visible']
+                        if 'inserted_at' not in message['master_tell']:
+                            message['master_tell']['inserted_at'] = record['master_tell_inserted_at'].isoformat()
+                        if 'updated_at' not in message['master_tell']:
+                            message['master_tell']['updated_at'] = record['master_tell_updated_at'].isoformat()
+                    if 'user_status' not in message:
+                        message['user_status'] = {}
+                    if record['user_status_id']:
+                        if 'id' not in message['user_status']:
+                            message['user_status']['id'] = record['user_status_id']
+                        if 'string' not in message['user_status']:
+                            message['user_status']['string'] = record['user_status_string']
+                        if 'title' not in message['user_status']:
+                            message['user_status']['title'] = record['user_status_title']
+                        if 'url' not in message['user_status']:
+                            message['user_status']['url'] = record['user_status_url']
+                        if 'notes' not in message['user_status']:
+                            message['user_status']['notes'] = record['user_status_notes']
+                        if 'attachments' not in message['user_status']:
+                            message['user_status']['attachments'] = {}
+                        if record['user_status_attachment_id'] not in message['user_status']['attachments']:
+                            message['user_status']['attachments'][record['user_status_attachment_id']] = {
+                                'id': record['user_status_attachment_id'],
+                                'string_original': record['user_status_attachment_string_original'],
+                                'string_preview': record['user_status_attachment_string_preview'],
+                                'position': record['user_status_attachment_position'],
+                            }
+        except Exception:
+            report_exc_info()
+        if message:
+            if message['attachments']:
+                message['attachments'] = sorted(message['attachments'].values(), key=lambda item: item['position'])
+            if message['user_status']['attachments']:
+                message['user_status']['attachments'] = sorted(
+                    message['user_status']['attachments'].values(), key=lambda item: item['position'],
+                )
+        raise Return(message)
 
     @coroutine
-    def get_notification(self, instance):
-        data = serializers.NotificationsGetResponse(instance, context=get_context(instance.user)).data
-        raise Return(data)
+    def get_notification(self, id):
+        notification = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute('SELECT id, type, contents, status, timestamp FROM api_notifications WHERE id = %s', (id,))
+                record = cursor.fetchone()
+                if record:
+                    notification = {
+                        'id': record[0],
+                        'type': record[1],
+                        'contents': loads(record[2]),
+                        'status': record[3],
+                        'timestamp': record[4].isoformat(' '),
+                    }
+        except Exception:
+            report_exc_info()
+        raise Return(notification)
 
     @coroutine
-    def get_radar_get(self, key, value, users):
-        data = serializers.RadarGetResponse(
+    def get_profile(self, id):
+        profile = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute('SELECT user_source_id FROM api_tellcards WHERE user_destination_id = %s', (id,))
+                for record in cursor.fetchall():
+                    if 'id' not in profile:
+                        profile['id'] = id
+                    if 'ids' not in profile:
+                        profile['ids'] = []
+                    profile['ids'].append(record[0])
+        except Exception:
+            report_exc_info()
+        raise Return(profile)
+
+    @coroutine
+    def get_user_location_1(self, id):
+        user_location = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute('SELECT user_id, ST_AsGeoJSON(point) FROM api_users_locations WHERE id = %s', (id,))
+                record = cursor.fetchone()
+                if record:
+                    point = loads(record[1])
+                    user_location = {
+                        'user_id': record[0],
+                        'point': {
+                            'latitude': point['coordinates'][1],
+                            'longitude': point['coordinates'][0],
+                        },
+                    }
+        except Exception:
+            report_exc_info()
+        raise Return(user_location)
+
+    @coroutine
+    def get_user_location_2(self, one, two):
+        user_location = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT user_id, ST_AsGeoJSON(point)
+                    FROM api_users_locations
+                    WHERE id < %s AND user_id = %s LIMIT 1 OFFSET 0
+                    ''',
+                    (one, two,),
+                )
+                record = cursor.fetchone()
+                if record:
+                    point = loads(record[1])
+                    user_location = {
+                        'user_id': record[0],
+                        'point': {
+                            'latitude': point['coordinates'][1],
+                            'longitude': point['coordinates'][0],
+                        },
+                    }
+        except Exception:
+            report_exc_info()
+        raise Return(user_location)
+
+    @coroutine
+    def get_radar_get(self, user, users):
+        for key, value in enumerate(users):
+            users[key]['email'] = (
+                users[key]['email'] if users[key]['settings']['show_email'] == 'True' else None
+            )
+            users[key]['last_name'] = (
+                users[key]['last_name'] if users[key]['settings']['show_last_name'] == 'True' else None
+            )
+            users[key]['phone'] = (
+                users[key]['phone'] if users[key]['settings']['show_phone'] == 'True' else None
+            )
+            users[key]['photo_original'] = (
+                users[key]['photo_original'] if users[key]['settings']['show_photo'] == 'True' else None
+            )
+            users[key]['photo_preview'] = (
+                users[key]['photo_preview'] if users[key]['settings']['show_photo'] == 'True' else None
+            )
+            del users[key]['settings']
+        raise Return(
             [
                 {
-                    'hash': models.get_hash(items),
+                    'hash': '-'.join(map(str, [item['id'] for item in items])),
                     'items': items,
                     'position': position + 1,
                 }
-                for position, items in enumerate(
-                    models.get_items([user[0] for user in users.values() if user[0].id != key], 5)
-                )
-            ],
-            context=get_context(value[0]),
-            many=True,
-        ).data
-        raise Return(data)
+                for position, items in enumerate([u.tolist() for u in array_split(users, 5)])
+            ]
+        )
 
     @coroutine
     def get_radar_post(self, user_location):
-        data = serializers.RadarPostResponse(
-            models.Tellzone.objects.get_queryset().filter(
-                point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
-            ).distance(user_location.point),
-            context=get_context(user_location.user),
-            many=True,
-        ).data
-        raise Return(data)
-
-    @coroutine
-    def get_tellcard_ids(self, id):
-        ids = models.Tellcard.objects.get_queryset().filter(
-            user_destination_id=id,
-        ).values_list('user_source_id', flat=True)
-        raise Return(ids)
+        tellzones = []
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT id, name
+                    FROM api_tellzones
+                    WHERE ST_DWithin(ST_Transform(point, 2163), ST_Transform(ST_GeomFromText(%s, 4326), 2163), 91.44)
+                    ''',
+                    (
+                        'POINT({longitude} {latitude})'.format(
+                            longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
+                        ),
+                    ),
+                )
+                for record in cursor.fetchall():
+                    tellzones.append({
+                        'id': record[0],
+                        'name': record[1],
+                    })
+        except Exception:
+            report_exc_info()
+        raise Return(tellzones)
 
     @coroutine
     def get_users(self, user_id, point, radius, status):
-        users = models.get_users(user_id, point, radius, status)
+        users = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT
+                        api_users.id AS id,
+                        api_users.photo_original AS photo_original,
+                        api_users.photo_preview AS photo_preview,
+                        api_users.first_name AS first_name,
+                        api_users.last_name AS last_name,
+                        api_users.gender AS gender,
+                        api_users.location AS location,
+                        api_users.description AS description,
+                        api_users_photos.id AS photo_id,
+                        api_users_photos.string_original AS photo_string_original,
+                        api_users_photos.string_preview AS photo_string_preview,
+                        api_users_photos.description AS photo_description,
+                        api_users_photos.position AS photo_position,
+                        api_users_settings.key AS user_setting_key,
+                        api_users_settings.value AS user_setting_value,
+                        api_users_statuses.id AS user_status_id,
+                        api_users_statuses.string AS user_status_string,
+                        api_users_statuses.title AS user_status_title,
+                        api_users_statuses.url AS user_status_url,
+                        api_users_statuses.notes AS user_status_notes,
+                        api_users_statuses_attachments.id AS user_status_attachment_id,
+                        api_users_statuses_attachments.string_original AS user_status_attachment_string_original,
+                        api_users_statuses_attachments.string_preview AS user_status_attachment_string_preview,
+                        api_users_statuses_attachments.position AS user_status_attachment_position,
+                        api_master_tells.id AS master_tell_id,
+                        api_master_tells.created_by_id AS master_tell_created_by_id,
+                        api_master_tells.owned_by_id AS master_tell_owned_by_id,
+                        api_master_tells.contents AS master_tell_contents,
+                        api_master_tells.position AS master_tell_position,
+                        api_master_tells.is_visible AS master_tell_is_visible,
+                        api_master_tells.inserted_at AS master_tell_inserted_at,
+                        api_master_tells.updated_at AS master_tell_updated_at,
+                        api_slave_tells.id AS slave_tell_id,
+                        api_slave_tells.master_tell_id AS slave_tell_master_tell_id,
+                        api_slave_tells.created_by_id AS slave_tell_created_by_id,
+                        api_slave_tells.owned_by_id AS slave_tell_owned_by_id,
+                        api_slave_tells.photo AS slave_tell_photo,
+                        api_slave_tells.first_name AS slave_tell_first_name,
+                        api_slave_tells.last_name AS slave_tell_last_name,
+                        api_slave_tells.type AS slave_tell_type,
+                        api_slave_tells.contents_original AS slave_tell_contents_original,
+                        api_slave_tells.contents_preview AS slave_tell_contents_preview,
+                        api_slave_tells.description AS slave_tell_description,
+                        api_slave_tells.position AS slave_tell_position,
+                        api_slave_tells.is_editable AS slave_tell_is_editable,
+                        api_slave_tells.inserted_at AS slave_tell_inserted_at,
+                        api_slave_tells.updated_at AS slave_tell_updated_at,
+                        ST_AsGeoJSON(api_users_locations.point) AS point,
+                        ST_Distance(
+                            ST_Transform(api_users_locations.point, 2163),
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163)
+                        ) * 3.28084 AS distance
+                    FROM api_users_locations
+                    INNER JOIN (
+                        SELECT MAX(api_users_locations.id) AS id
+                        FROM api_users_locations
+                        GROUP BY api_users_locations.user_id
+                    ) api_users_locations_ ON api_users_locations_.id = api_users_locations.id
+                    INNER JOIN api_users ON api_users.id = api_users_locations.user_id
+                    LEFT OUTER JOIN api_blocks
+                        ON
+                            (
+                                api_blocks.user_source_id = %s
+                                AND
+                                api_blocks.user_destination_id = api_users_locations.user_id
+                            )
+                            OR
+                            (
+                                api_blocks.user_source_id = api_users_locations.user_id
+                                AND
+                                api_blocks.user_destination_id = %s
+                            )
+                    LEFT OUTER JOIN api_users_settings AS api_users_settings
+                        ON api_users_settings.user_id = api_users.id
+                    LEFT OUTER JOIN api_users_photos
+                        ON api_users_photos.user_id = api_users.id
+                    LEFT OUTER JOIN api_users_statuses
+                        ON api_users_statuses.user_id = api_users.id
+                    LEFT OUTER JOIN api_users_statuses_attachments
+                        ON api_users_statuses_attachments.user_status_id = api_users_statuses.user_id
+                    LEFT OUTER JOIN api_master_tells
+                        ON api_master_tells.owned_by_id = api_users.id
+                    LEFT OUTER JOIN api_slave_tells
+                        ON api_slave_tells.master_tell_id = api_master_tells.id
+                    WHERE
+                        (api_users_locations.user_id != %s OR %s = true)
+                        AND
+                        ST_DWithin(
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                            ST_Transform(api_users_locations.point, 2163),
+                            %s
+                        )
+                        AND
+                        api_users_locations.is_casting IS TRUE
+                        AND
+                        api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
+                        AND
+                        api_users.is_signed_in IS TRUE
+                        AND
+                        api_blocks.id IS NULL
+                    ORDER BY distance ASC, api_users_locations.user_id ASC
+                    ''',
+                    (
+                        'POINT({longitude} {latitude})'.format(
+                            longitude=point['longitude'], latitude=point['latitude'],
+                        ),
+                        user_id,
+                        user_id,
+                        user_id,
+                        status,
+                        'POINT({longitude} {latitude})'.format(
+                            longitude=point['longitude'], latitude=point['latitude'],
+                        ),
+                        radius,
+                    )
+                )
+                columns = [column.name for column in cursor.description]
+                for record in cursor.fetchall():
+                    record = dict(zip(columns, record))
+                    if record['id'] not in users:
+                        users[record['id']] = {}
+                    if 'id' not in users[record['id']]:
+                        users[record['id']]['id'] = record['id']
+                    if 'photo_original' not in users[record['id']]:
+                        users[record['id']]['photo_original'] = record['photo_original']
+                    if 'photo_preview' not in users[record['id']]:
+                        users[record['id']]['photo_preview'] = record['photo_preview']
+                    if 'first_name' not in users[record['id']]:
+                        users[record['id']]['first_name'] = record['first_name']
+                    if 'last_name' not in users[record['id']]:
+                        users[record['id']]['last_name'] = record['last_name']
+                    if 'gender' not in users[record['id']]:
+                        users[record['id']]['gender'] = record['gender']
+                    if 'location' not in users[record['id']]:
+                        users[record['id']]['location'] = record['location']
+                    if 'description' not in users[record['id']]:
+                        users[record['id']]['description'] = record['description']
+                    if 'point' not in users[record['id']]:
+                        point = loads(record['point'])
+                        users[record['id']]['point'] = {
+                            'latitude': point['coordinates'][1],
+                            'longitude': point['coordinates'][0],
+                        }
+                    if 'distance' not in users[record['id']]:
+                        users[record['id']]['distance'] = record['distance']
+                    if 'settings' not in users[record['id']]:
+                        users[record['id']]['settings'] = {}
+                    if record['user_setting_key']:
+                        if record['user_setting_key'] not in users[record['id']]['settings']:
+                            users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
+                    if 'user_status' not in users[record['id']]:
+                        users[record['id']]['user_status'] = {}
+                    if record['user_status_id']:
+                        if 'id' not in users[record['id']]['user_status']:
+                            users[record['id']]['user_status']['id'] = record['user_status_id']
+                        if 'string' not in users[record['id']]['user_status']:
+                            users[record['id']]['user_status']['string'] = record['user_status_string']
+                        if 'title' not in users[record['id']]['user_status']:
+                            users[record['id']]['user_status']['title'] = record['user_status_title']
+                        if 'url' not in users[record['id']]['user_status']:
+                            users[record['id']]['user_status']['url'] = record['user_status_url']
+                        if 'notes' not in users[record['id']]['user_status']:
+                            users[record['id']]['user_status']['notes'] = record['user_status_notes']
+                        if 'attachments' not in users[record['id']]['user_status']:
+                            users[record['id']]['user_status']['attachments'] = {}
+                        if record['user_status_attachment_id'] not in users[
+                            record['id']
+                        ]['user_status']['attachments']:
+                            users[record['id']]['user_status']['attachments'][record['user_status_attachment_id']] = {
+                                'id': record['user_status_attachment_id'],
+                                'string_original': record['user_status_attachment_string_original'],
+                                'string_preview': record['user_status_attachment_string_preview'],
+                                'position': record['user_status_attachment_position'],
+                            }
+                    if 'master_tells' not in users[record['id']]:
+                        users[record['id']]['master_tells'] = {}
+                    if record['master_tell_id']:
+                        if record['master_tell_id'] not in users[record['id']]['master_tells']:
+                            users[record['id']]['master_tells'][record['master_tell_id']] = {
+                                'id': record['master_tell_id'],
+                                'created_by_id': record['master_tell_created_by_id'],
+                                'owned_by_id': record['master_tell_owned_by_id'],
+                                'contents': record['master_tell_contents'],
+                                'position': record['master_tell_position'],
+                                'is_visible': record['master_tell_is_visible'],
+                                'inserted_at': record['master_tell_inserted_at'].isoformat(),
+                                'updated_at': record['master_tell_updated_at'].isoformat(),
+                            }
+                        if 'slave_tells' not in users[record['id']]['master_tells'][record['master_tell_id']]:
+                            users[record['id']]['master_tells'][record['master_tell_id']]['slave_tells'] = {}
+                        if record['slave_tell_id']:
+                            if record['slave_tell_id'] not in users[record['id']]['master_tells'][
+                                record['master_tell_id']
+                            ]['slave_tells']:
+                                users[record['id']]['master_tells'][record['master_tell_id']]['slave_tells'][
+                                    record['slave_tell_id']
+                                ] = {
+                                    'id': record['slave_tell_id'],
+                                    'master_tell_id': record['slave_tell_master_tell_id'],
+                                    'created_by_id': record['slave_tell_created_by_id'],
+                                    'owned_by_id': record['slave_tell_owned_by_id'],
+                                    'photo': record['slave_tell_photo'],
+                                    'first_name': record['slave_tell_first_name'],
+                                    'last_name': record['slave_tell_last_name'],
+                                    'type': record['slave_tell_type'],
+                                    'contents_original': record['slave_tell_contents_original'],
+                                    'contents_preview': record['slave_tell_contents_preview'],
+                                    'description': record['slave_tell_description'],
+                                    'position': record['slave_tell_position'],
+                                    'is_editable': record['slave_tell_is_editable'],
+                                    'inserted_at': record['slave_tell_inserted_at'].isoformat(),
+                                    'updated_at': record['slave_tell_updated_at'].isoformat(),
+                                }
+        except Exception:
+            report_exc_info()
+        for key, value in users.items():
+            if users[key]['user_status']:
+                users[key]['user_status']['attachments'] = sorted(
+                    users[key]['user_status']['attachments'].values(), key=lambda item: item['position'],
+                )
+            if users[key]['master_tells']:
+                for k, v in users[key]['master_tells'].items():
+                    users[key]['master_tells'][k]['slave_tells'] = sorted(
+                        users[key]['master_tells'][k]['slave_tells'].values(), key=lambda item: item['position'],
+                    )
+                users[key]['master_tells'] = sorted(
+                    users[key]['master_tells'].values(), key=lambda item: item['position'],
+                )
+        users = sorted(users.values(), key=lambda item: (item['distance'], item['id'],))
         raise Return(users)
-
-    @coroutine
-    def get_user_location(self, one, two):
-        user_location = models.UserLocation.objects.get_queryset().filter(id__lt=one, user_id=two).first()
-        raise Return(user_location)
 
 
 class WebSocket(WebSocketHandler):
@@ -315,12 +892,12 @@ class WebSocket(WebSocketHandler):
         try:
             message = loads(message)
             logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
-                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject']),
-            )
+                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject'],
+            ))
         except Exception:
             logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
-                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject']),
-            )
+                clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject'],
+            ))
             report_exc_info()
         super(WebSocket, self).write_message(message, binary=binary)
 
@@ -376,34 +953,26 @@ class WebSocket(WebSocketHandler):
                 },
             }))
             raise Return(None)
-        user = yield self.get_user(IOLoop.current().clients[self])
-        if not user:
-            self.write_message(dumps({
-                'subject': 'messages',
-                'body': {
-                    'errors': 'if not user',
-                },
-            }))
-            raise Return(None)
-        yield self.set_messages(user, data)
+        yield self.set_messages(IOLoop.current().clients[self], data)
         raise Return(None)
 
     @coroutine
     def users(self, data):
-        user = models.User.objects.filter(id=data.split('.')[0]).first()
-        if not user:
+        id = data.split('.')[0]
+        if str(id) != TimestampSigner(settings.SECRET_KEY).unsign(data):
             self.write_message(dumps({
                 'subject': 'users',
                 'body': False,
             }))
             raise Return(None)
-        if not user.is_valid(data):
+        id = yield self.get_id(id)
+        if not id:
             self.write_message(dumps({
                 'subject': 'users',
                 'body': False,
             }))
             raise Return(None)
-        IOLoop.current().clients[self] = user.id
+        IOLoop.current().clients[self] = id
         self.write_message(dumps({
             'subject': 'users',
             'body': True,
@@ -414,75 +983,163 @@ class WebSocket(WebSocketHandler):
     def users_locations_post(self, data):
         if self not in IOLoop.current().clients:
             self.write_message(dumps({
-                'subject': 'messages',
+                'subject': 'users_locations_post',
                 'body': {
                     'errors': 'if self not in IOLoop.current().clients',
                 },
             }))
             raise Return(None)
-        user = yield self.get_user(IOLoop.current().clients[self])
-        if not user:
-            self.write_message(dumps({
-                'subject': 'messages',
-                'body': {
-                    'errors': 'if not user',
-                },
-            }))
-            raise Return(None)
-        yield self.set_users_locations_post(user, data)
+        yield self.set_users_locations(IOLoop.current().clients[self], data)
         raise Return(None)
 
     @coroutine
     def get_blocks(self, one, two):
-        count = models.Block.objects.get_queryset().filter(
-            Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
-        ).count()
-        raise Return(count)
+        blocks = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT COUNT(id)
+                FROM api_blocks
+                WHERE
+                    (user_source_id = %s AND user_destination_id = %s)
+                    OR
+                    (user_source_id = %s AND user_destination_id = %s)
+                ''',
+                (one, two, two, one,)
+            )
+            blocks = cursor.fetchone()[0]
+        raise Return(blocks)
 
     @coroutine
-    def get_messages(self, one, two):
-        count = models.Message.objects.get_queryset().filter(
-            Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
-            type__in=['Response - Accepted', 'Response - Rejected', 'Message'],
-        ).count()
-        raise Return(count)
-
-    @coroutine
-    def get_message(self, one, two):
-        message = models.Message.objects.get_queryset().filter(
-            Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
-        ).order_by('-inserted_at', '-id').first()
-        raise Return(message)
-
-    @coroutine
-    def get_user(self, id):
-        user = models.User.objects.filter(id=id).first()
-        raise Return(user)
-
-    @coroutine
-    def set_message(self, user_id, data):
-        message = models.Message.objects.create(
-            user_source_id=user_id,
-            user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
-            user_destination_id=data['user_destination_id'],
-            user_destination_is_hidden=data['user_destination_is_hidden']
-            if 'user_destination_is_hidden' in data else None,
-            user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
-            master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
-            type=data['type'] if 'type' in data else None,
-            contents=data['contents'] if 'contents' in data else None,
-            status=data['status'] if 'status' in data else 'Unread',
-        )
-        raise Return(message)
-
-    @coroutine
-    def set_message_attachment(self, message_id, attachment):
-        models.MessageAttachment.insert(message_id, attachment)
+    def get_id(self, id):
+        with closing(connection.cursor()) as cursor:
+            cursor.execute('SELECT id FROM api_users WHERE id = %s', (id,))
+            record = cursor.fetchone()
+            if record:
+                raise Return(record[0])
         raise Return(None)
 
     @coroutine
-    def set_messages(self, user, data):
-        serializer = serializers.MessagesPostRequest(context=get_context(user), data=data)
+    def get_message(self, one, two):
+        message = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT user_source_id, user_destination_id, type
+                FROM api_messages
+                WHERE
+                    (user_source_id = %s AND user_destination_id = %s)
+                    OR
+                    (user_source_id = %s AND user_destination_id = %s)
+                ORDER BY inserted_at DESC, id DESC
+                LIMIT 1
+                OFFSET 0
+                ''',
+                (one, two, two, one,)
+            )
+            record = cursor.fetchone()
+            if record:
+                message = {
+                    'user_source_id': record[0],
+                    'user_destination_id': record[1],
+                    'type': record[2],
+                }
+        raise Return(message)
+
+    @coroutine
+    def get_messages(self, one, two):
+        messages = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT COUNT(id)
+                FROM api_messages
+                WHERE
+                    (
+                        (user_source_id = %s AND user_destination_id = %s)
+                        OR
+                        (user_source_id = %s AND user_destination_id = %s)
+                    )
+                    AND
+                    type IN ('Response - Accepted', 'Response - Rejected', 'Message')
+                ''',
+                (one, two, two, one,)
+            )
+            messages = cursor.fetchone()[0]
+        raise Return(messages)
+
+    @coroutine
+    def set_message(self, user_id, data):
+        message_id = None
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                INSERT INTO api_messages (
+                    user_source_id,
+                    user_source_is_hidden,
+                    user_destination_id,
+                    user_destination_is_hidden,
+                    user_status_id,
+                    master_tell_id,
+                    type,
+                    contents,
+                    status,
+                    inserted_at,
+                    updated_at
+                ) VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    NOW(),
+                    NOW()
+                )
+                ''',
+                (
+                    user_id,
+                    data['user_source_is_hidden'] if 'user_source_is_hidden' in data else False,
+                    data['user_destination_id'] if 'user_destination_id' in data else False,
+                    data['user_destination_is_hidden'] if 'user_destination_is_hidden' in data else False,
+                    data['user_status_id'] if 'user_status_id' in data else None,
+                    data['master_tell_id'] if 'master_tell_id' in data else None,
+                    data['type'] if 'type' in data else None,
+                    data['contents'] if 'contents' in data else None,
+                    data['status'] if 'status' in data else None,
+                )
+            )
+            connection.commit()
+            message_id = cursor.lastrowid
+        with closing(connection.cursor()) as cursor:
+            if 'attachments' in data:
+                for position, _ in enumerate(data['attachments']):
+                    cursor.execute(
+                        '''
+                        INSERT INTO api_messages_attachments (message_id, string, position) VALUES (%s, %s, %s)
+                        ''',
+                        (message_id, data['attachments'][position]['string'], position + 1,)
+                    )
+                    connection.commit()
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'subject': 'messages',
+                    'body': message_id,
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+
+    @coroutine
+    def set_messages(self, user_id, data):
+        serializer = serializers.MessagesPostRequest(data=data)
         if not serializer.is_valid(raise_exception=False):
             self.write_message(dumps({
                 'subject': 'messages',
@@ -492,7 +1149,7 @@ class WebSocket(WebSocketHandler):
             }))
             raise Return(None)
         data = serializer.validated_data
-        if user.id == data['user_destination_id']:
+        if user_id == data['user_destination_id']:
             self.write_message(dumps({
                 'subject': 'messages',
                 'body': {
@@ -500,8 +1157,8 @@ class WebSocket(WebSocketHandler):
                 },
             }))
             raise Return(None)
-        count = yield self.get_blocks(user.id, data['user_destination_id'])
-        if count:
+        blocks = yield self.get_blocks(user_id, data['user_destination_id'])
+        if blocks:
             self.write_message(dumps({
                 'subject': 'messages',
                 'body': {
@@ -509,12 +1166,12 @@ class WebSocket(WebSocketHandler):
                 },
             }))
             raise Return(None)
-        count = yield self.get_messages(user.id, data['user_destination_id'])
-        if not count:
-            message = yield self.get_message(user.id, data['user_destination_id'])
+        messages = yield self.get_messages(user_id, data['user_destination_id'])
+        if not messages:
+            message = yield self.get_message(user_id, data['user_destination_id'])
             if message:
-                if message.user_source_id == user.id:
-                    if message.type == 'Request':
+                if message['user_source_id'] == user_id:
+                    if message['type'] == 'Request':
                         self.write_message(dumps({
                             'subject': 'messages',
                             'body': {
@@ -522,7 +1179,7 @@ class WebSocket(WebSocketHandler):
                             },
                         }))
                         raise Return(None)
-                    if message.type == 'Response - Blocked':
+                    if message['type'] == 'Response - Blocked':
                         self.write_message(dumps({
                             'subject': 'messages',
                             'body': {
@@ -530,8 +1187,8 @@ class WebSocket(WebSocketHandler):
                             },
                         }))
                         raise Return(None)
-                if message.user_destination_id == user.id:
-                    if message.type == 'Request' and data['type'] == 'Message':
+                if message['user_destination_id'] == user_id:
+                    if message['type'] == 'Request' and data['type'] == 'Message':
                         self.write_message(dumps({
                             'subject': 'messages',
                             'body': {
@@ -539,7 +1196,7 @@ class WebSocket(WebSocketHandler):
                             },
                         }))
                         raise Return(None)
-                    if message.type == 'Response - Blocked':
+                    if message['type'] == 'Response - Blocked':
                         self.write_message(dumps({
                             'subject': 'messages',
                             'body': {
@@ -556,29 +1213,54 @@ class WebSocket(WebSocketHandler):
                         },
                     }))
                     raise Return(None)
-        message = yield self.set_message(user.id, data)
-        if 'attachments' in data:
-            for attachment in data['attachments']:
-                yield self.set_message_attachment(message.id, attachment)
+        yield self.set_message(user_id, data)
         raise Return(None)
 
     @coroutine
     def set_user_location(self, user_id, data):
-        models.UserLocation.objects.create(
-            user_id=user_id,
-            tellzone_id=data['tellzone_id'] if 'tellzone_id' in data else None,
-            location=data['location'] if 'location' in data else None,
-            point=data['point'] if 'point' in data else None,
-            accuracies_horizontal=data['accuracies_horizontal'] if 'accuracies_horizontal' in data else None,
-            accuracies_vertical=data['accuracies_vertical'] if 'accuracies_vertical' in data else None,
-            bearing=data['bearing'] if 'bearing' in data else None,
-            is_casting=data['is_casting'] if 'is_casting' in data else None,
-        )
-        raise Return(None)
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                INSERT INTO api_users_locations (
+                    user_id,
+                    tellzone_id,
+                    location,
+                    point,
+                    accuracies_horizontal,
+                    accuracies_vertical,
+                    bearing,
+                    is_casting,
+                    timestamp
+                ) VALUES (%s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW())
+                ''',
+                (
+                    user_id,
+                    data['tellzone_id'],
+                    data['location'],
+                    'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
+                    data['accuracies_horizontal'],
+                    data['accuracies_vertical'],
+                    data['bearing'],
+                    data['is_casting'],
+                )
+            )
+            connection.commit()
+            current_app.send_task(
+                'api.management.commands.websockets',
+                (
+                    {
+                        'subject': 'users_locations',
+                        'body': cursor.lastrowid,
+                    },
+                ),
+                queue='api.management.commands.websockets',
+                routing_key='api.management.commands.websockets',
+                serializer='json',
+            )
 
     @coroutine
-    def set_users_locations_post(self, user, data):
-        serializer = serializers.RadarPostRequest(context=get_context(user), data=data)
+    def set_users_locations(self, user_id, data):
+        serializer = serializers.RadarPostRequest(data=data)
         if not serializer.is_valid(raise_exception=False):
             self.write_message(dumps({
                 'subject': 'users_locations_post',
@@ -587,7 +1269,7 @@ class WebSocket(WebSocketHandler):
                 },
             }))
             raise Return(None)
-        yield self.set_user_location(user.id, serializer.validated_data)
+        yield self.set_user_location(user_id, serializer.validated_data)
         raise Return(None)
 
 
@@ -603,11 +1285,3 @@ class Command(BaseCommand):
         IOLoop.current().clients = {}
         IOLoop.current().add_callback(RabbitMQ)
         IOLoop.current().start()
-
-
-def get_context(user):
-    request = Request(RequestFactory().get('/'))
-    request.user = user
-    return {
-        'request': request,
-    }
