@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from contextlib import closing
+from copy import deepcopy
 from datetime import datetime
 from logging import CRITICAL, DEBUG, Formatter, StreamHandler, getLogger
 
@@ -249,11 +250,10 @@ class RabbitMQ(object):
                 'body': body,
             }))
         users = yield self.get_users(users_locations_new['user_id'], users_locations_new['point'], 999999999, True)
-        body = yield self.get_radar_get(users[0], [u for u in users])
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
-                    body = yield self.get_radar_get(user, [u for u in users if u['id'] != user['id']])
+                    body = yield self.get_radar_get(user, [u for u in deepcopy(users[:]) if u['id'] != user['id']])
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
@@ -270,7 +270,7 @@ class RabbitMQ(object):
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
-                    body = yield self.get_radar_get(user, [u for u in users if u['id'] != user['id']])
+                    body = yield self.get_radar_get(user, [u for u in deepcopy(users[:]) if u['id'] != user['id']])
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
@@ -587,14 +587,8 @@ class RabbitMQ(object):
     @coroutine
     def get_radar_get(self, user, users):
         for key, value in enumerate(users):
-            users[key]['email'] = (
-                users[key]['email'] if users[key]['settings']['show_email'] == 'True' else None
-            )
             users[key]['last_name'] = (
                 users[key]['last_name'] if users[key]['settings']['show_last_name'] == 'True' else None
-            )
-            users[key]['phone'] = (
-                users[key]['phone'] if users[key]['settings']['show_phone'] == 'True' else None
             )
             users[key]['photo_original'] = (
                 users[key]['photo_original'] if users[key]['settings']['show_photo'] == 'True' else None
@@ -793,6 +787,8 @@ class RabbitMQ(object):
                         }
                     if 'distance' not in users[record['id']]:
                         users[record['id']]['distance'] = record['distance']
+                    if 'is_tellcard' not in users[record['id']]:
+                        users[record['id']]['is_tellcard'] = False
                     if 'settings' not in users[record['id']]:
                         users[record['id']]['settings'] = {}
                     if record['user_setting_key']:
@@ -995,147 +991,161 @@ class WebSocket(WebSocketHandler):
     @coroutine
     def get_blocks(self, one, two):
         blocks = 0
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT COUNT(id)
-                FROM api_blocks
-                WHERE
-                    (user_source_id = %s AND user_destination_id = %s)
-                    OR
-                    (user_source_id = %s AND user_destination_id = %s)
-                ''',
-                (one, two, two, one,)
-            )
-            blocks = cursor.fetchone()[0]
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT COUNT(id)
+                    FROM api_blocks
+                    WHERE
+                        (user_source_id = %s AND user_destination_id = %s)
+                        OR
+                        (user_source_id = %s AND user_destination_id = %s)
+                    ''',
+                    (one, two, two, one,)
+                )
+                blocks = cursor.fetchone()[0]
+        except Exception:
+            report_exc_info()
         raise Return(blocks)
 
     @coroutine
     def get_id(self, id):
-        with closing(connection.cursor()) as cursor:
-            cursor.execute('SELECT id FROM api_users WHERE id = %s', (id,))
-            record = cursor.fetchone()
-            if record:
-                raise Return(record[0])
-        raise Return(None)
+        id_ = None
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute('SELECT id FROM api_users WHERE id = %s', (id,))
+                record = cursor.fetchone()
+                if record:
+                    id_ = record[0]
+        except Exception:
+            report_exc_info()
+        raise Return(id_)
 
     @coroutine
     def get_message(self, one, two):
-        message = 0
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT user_source_id, user_destination_id, type
-                FROM api_messages
-                WHERE
-                    (user_source_id = %s AND user_destination_id = %s)
-                    OR
-                    (user_source_id = %s AND user_destination_id = %s)
-                ORDER BY inserted_at DESC, id DESC
-                LIMIT 1
-                OFFSET 0
-                ''',
-                (one, two, two, one,)
-            )
-            record = cursor.fetchone()
-            if record:
-                message = {
-                    'user_source_id': record[0],
-                    'user_destination_id': record[1],
-                    'type': record[2],
-                }
+        message = None
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT user_source_id, user_destination_id, type
+                    FROM api_messages
+                    WHERE
+                        (user_source_id = %s AND user_destination_id = %s)
+                        OR
+                        (user_source_id = %s AND user_destination_id = %s)
+                    ORDER BY inserted_at DESC, id DESC
+                    LIMIT 1
+                    OFFSET 0
+                    ''',
+                    (one, two, two, one,)
+                )
+                record = cursor.fetchone()
+                if record:
+                    message = {
+                        'user_source_id': record[0],
+                        'user_destination_id': record[1],
+                        'type': record[2],
+                    }
+        except Exception:
+            report_exc_info()
         raise Return(message)
 
     @coroutine
     def get_messages(self, one, two):
         messages = 0
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT COUNT(id)
-                FROM api_messages
-                WHERE
-                    (
-                        (user_source_id = %s AND user_destination_id = %s)
-                        OR
-                        (user_source_id = %s AND user_destination_id = %s)
-                    )
-                    AND
-                    type IN ('Response - Accepted', 'Response - Rejected', 'Message')
-                ''',
-                (one, two, two, one,)
-            )
-            messages = cursor.fetchone()[0]
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT COUNT(id)
+                    FROM api_messages
+                    WHERE
+                        (
+                            (user_source_id = %s AND user_destination_id = %s)
+                            OR
+                            (user_source_id = %s AND user_destination_id = %s)
+                        )
+                        AND
+                        type IN ('Response - Accepted', 'Response - Rejected', 'Message')
+                    ''',
+                    (one, two, two, one,)
+                )
+                messages = cursor.fetchone()[0]
+        except Exception:
+            report_exc_info()
         raise Return(messages)
 
     @coroutine
     def set_message(self, user_id, data):
-        message_id = None
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                INSERT INTO api_messages (
-                    user_source_id,
-                    user_source_is_hidden,
-                    user_destination_id,
-                    user_destination_is_hidden,
-                    user_status_id,
-                    master_tell_id,
-                    type,
-                    contents,
-                    status,
-                    inserted_at,
-                    updated_at
-                ) VALUES (
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    NOW(),
-                    NOW()
-                )
-                ''',
-                (
-                    user_id,
-                    data['user_source_is_hidden'] if 'user_source_is_hidden' in data else False,
-                    data['user_destination_id'] if 'user_destination_id' in data else False,
-                    data['user_destination_is_hidden'] if 'user_destination_is_hidden' in data else False,
-                    data['user_status_id'] if 'user_status_id' in data else None,
-                    data['master_tell_id'] if 'master_tell_id' in data else None,
-                    data['type'] if 'type' in data else None,
-                    data['contents'] if 'contents' in data else None,
-                    data['status'] if 'status' in data else None,
-                )
-            )
-            connection.commit()
-            message_id = cursor.lastrowid
-        with closing(connection.cursor()) as cursor:
-            if 'attachments' in data:
-                for position, _ in enumerate(data['attachments']):
-                    cursor.execute(
-                        '''
-                        INSERT INTO api_messages_attachments (message_id, string, position) VALUES (%s, %s, %s)
-                        ''',
-                        (message_id, data['attachments'][position]['string'], position + 1,)
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    INSERT INTO api_messages (
+                        user_source_id,
+                        user_source_is_hidden,
+                        user_destination_id,
+                        user_destination_is_hidden,
+                        user_status_id,
+                        master_tell_id,
+                        type,
+                        contents,
+                        status,
+                        inserted_at,
+                        updated_at
+                    ) VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        NOW(),
+                        NOW()
+                    ) RETURNING id
+                    ''',
+                    (
+                        user_id,
+                        data['user_source_is_hidden'] if 'user_source_is_hidden' in data else False,
+                        data['user_destination_id'] if 'user_destination_id' in data else False,
+                        data['user_destination_is_hidden'] if 'user_destination_is_hidden' in data else False,
+                        data['user_status_id'] if 'user_status_id' in data else None,
+                        data['master_tell_id'] if 'master_tell_id' in data else None,
+                        data['type'] if 'type' in data else None,
+                        data['contents'] if 'contents' in data else None,
+                        data['status'] if 'status' in data else None,
                     )
-                    connection.commit()
-        current_app.send_task(
-            'api.management.commands.websockets',
-            (
-                {
-                    'subject': 'messages',
-                    'body': message_id,
-                },
-            ),
-            queue='api.management.commands.websockets',
-            routing_key='api.management.commands.websockets',
-            serializer='json',
-        )
+                )
+                message_id = cursor.fetchone()[0]
+                if 'attachments' in data:
+                    for position, _ in enumerate(data['attachments']):
+                        cursor.execute(
+                            '''
+                            INSERT INTO api_messages_attachments (message_id, string, position) VALUES (%s, %s, %s)
+                            ''',
+                            (message_id, data['attachments'][position]['string'], position + 1,)
+                        )
+                        connection.commit()
+                current_app.send_task(
+                    'api.management.commands.websockets',
+                    (
+                        {
+                            'subject': 'messages',
+                            'body': message_id,
+                        },
+                    ),
+                    queue='api.management.commands.websockets',
+                    routing_key='api.management.commands.websockets',
+                    serializer='json',
+                )
+        except Exception:
+            report_exc_info()
+        raise Return(None)
 
     @coroutine
     def set_messages(self, user_id, data):
@@ -1218,45 +1228,49 @@ class WebSocket(WebSocketHandler):
 
     @coroutine
     def set_user_location(self, user_id, data):
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                INSERT INTO api_users_locations (
-                    user_id,
-                    tellzone_id,
-                    location,
-                    point,
-                    accuracies_horizontal,
-                    accuracies_vertical,
-                    bearing,
-                    is_casting,
-                    timestamp
-                ) VALUES (%s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW())
-                ''',
-                (
-                    user_id,
-                    data['tellzone_id'],
-                    data['location'],
-                    'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
-                    data['accuracies_horizontal'],
-                    data['accuracies_vertical'],
-                    data['bearing'],
-                    data['is_casting'],
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    INSERT INTO api_users_locations (
+                        user_id,
+                        tellzone_id,
+                        location,
+                        point,
+                        accuracies_horizontal,
+                        accuracies_vertical,
+                        bearing,
+                        is_casting,
+                        timestamp
+                    ) VALUES (%s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW()) RETURNING id
+                    ''',
+                    (
+                        user_id,
+                        data['tellzone_id'],
+                        data['location'],
+                        'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
+                        data['accuracies_horizontal'],
+                        data['accuracies_vertical'],
+                        data['bearing'],
+                        data['is_casting'],
+                    )
                 )
-            )
-            connection.commit()
-            current_app.send_task(
-                'api.management.commands.websockets',
-                (
-                    {
-                        'subject': 'users_locations',
-                        'body': cursor.lastrowid,
-                    },
-                ),
-                queue='api.management.commands.websockets',
-                routing_key='api.management.commands.websockets',
-                serializer='json',
-            )
+                id = cursor.fetchone()[0]
+                current_app.send_task(
+                    'api.management.commands.websockets',
+                    (
+                        {
+                            'subject': 'users_locations',
+                            'body': id,
+                        },
+                    ),
+                    queue='api.management.commands.websockets',
+                    routing_key='api.management.commands.websockets',
+                    serializer='json',
+                )
+        except Exception:
+            report_exc_info()
+        raise Return(None)
 
     @coroutine
     def set_users_locations(self, user_id, data):
