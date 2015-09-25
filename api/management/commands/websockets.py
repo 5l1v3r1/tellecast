@@ -1246,13 +1246,13 @@ class WebSocket(WebSocketHandler):
                     ''',
                     (
                         user_id,
-                        data['tellzone_id'],
-                        data['location'],
+                        data['tellzone_id'] if 'tellzone_id' in data else None,
+                        data['location'] if 'location' in data else None,
                         'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
-                        data['accuracies_horizontal'],
-                        data['accuracies_vertical'],
-                        data['bearing'],
-                        data['is_casting'],
+                        data['accuracies_horizontal'] if 'accuracies_horizontal' in data else None,
+                        data['accuracies_vertical'] if 'accuracies_vertical' in data else None,
+                        data['bearing'] if 'bearing' in data else None,
+                        data['is_casting'] if 'is_casting' in data else None,
                     )
                 )
                 id = cursor.fetchone()[0]
