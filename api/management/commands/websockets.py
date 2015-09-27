@@ -496,12 +496,13 @@ class RabbitMQ(object):
         except Exception:
             report_exc_info()
         if message:
-            if message['attachments']:
+            if 'attachments' in message:
                 message['attachments'] = sorted(message['attachments'].values(), key=lambda item: item['position'])
-            if message['user_status']['attachments']:
-                message['user_status']['attachments'] = sorted(
-                    message['user_status']['attachments'].values(), key=lambda item: item['position'],
-                )
+            if 'user_status' in message:
+                if 'attachments' in message['user_status']:
+                    message['user_status']['attachments'] = sorted(
+                        message['user_status']['attachments'].values(), key=lambda item: item['position'],
+                    )
         raise Return(message)
 
     @coroutine
@@ -862,11 +863,12 @@ class RabbitMQ(object):
         except Exception:
             report_exc_info()
         for key, value in users.items():
-            if users[key]['user_status']:
-                users[key]['user_status']['attachments'] = sorted(
-                    users[key]['user_status']['attachments'].values(), key=lambda item: item['position'],
-                )
-            if users[key]['master_tells']:
+            if 'user_status' in users[key]:
+                if 'attachments' in users[key]['user_status']:
+                    users[key]['user_status']['attachments'] = sorted(
+                        users[key]['user_status']['attachments'].values(), key=lambda item: item['position'],
+                    )
+            if 'master_tells' in users[key]:
                 for k, v in users[key]['master_tells'].items():
                     users[key]['master_tells'][k]['slave_tells'] = sorted(
                         users[key]['master_tells'][k]['slave_tells'].values(), key=lambda item: item['position'],
