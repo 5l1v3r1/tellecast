@@ -1122,7 +1122,7 @@ class WebSocket(WebSocketHandler):
                         data['master_tell_id'] if 'master_tell_id' in data else None,
                         data['type'] if 'type' in data else None,
                         data['contents'] if 'contents' in data else None,
-                        data['status'] if 'status' in data else None,
+                        data['status'] if 'status' in data else 'Unread',
                     )
                 )
                 message_id = cursor.fetchone()[0]
@@ -1232,6 +1232,8 @@ class WebSocket(WebSocketHandler):
 
     @coroutine
     def set_user_location(self, user_id, data):
+        if not data['point'] or not data['point'].x or not data['point'].y:
+            raise Return(None)
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
@@ -1253,10 +1255,10 @@ class WebSocket(WebSocketHandler):
                         data['tellzone_id'] if 'tellzone_id' in data else None,
                         data['location'] if 'location' in data else None,
                         'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
-                        data['accuracies_horizontal'] if 'accuracies_horizontal' in data else None,
-                        data['accuracies_vertical'] if 'accuracies_vertical' in data else None,
-                        data['bearing'] if 'bearing' in data else None,
-                        data['is_casting'] if 'is_casting' in data else None,
+                        data['accuracies_horizontal'] if 'accuracies_horizontal' in data else 0.00,
+                        data['accuracies_vertical'] if 'accuracies_vertical' in data else 0.00,
+                        data['bearing'] if 'bearing' in data else 0,
+                        data['is_casting'] if 'is_casting' in data else False,
                     )
                 )
                 id = cursor.fetchone()[0]
