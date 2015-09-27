@@ -416,7 +416,8 @@ class RabbitMQ(object):
                             'photo_preview': record['user_source_photo_preview'],
                             'first_name': record['user_source_first_name'],
                             'last_name': record['user_source_last_name'],
-                            'date_of_birth': record['user_source_date_of_birth'].isoformat(),
+                            'date_of_birth': record['user_source_date_of_birth'].isoformat()
+                                if record['user_source_date_of_birth'] else None,
                             'gender': record['user_source_gender'],
                             'location': record['user_source_location'],
                             'description': record['user_source_description'],
@@ -437,7 +438,8 @@ class RabbitMQ(object):
                             'photo_preview': record['user_destination_photo_preview'],
                             'first_name': record['user_destination_first_name'],
                             'last_name': record['user_destination_last_name'],
-                            'date_of_birth': record['user_destination_date_of_birth'].isoformat(),
+                            'date_of_birth': record['user_destination_date_of_birth'].isoformat()
+                                if record['user_destination_date_of_birth'] else None,
                             'gender': record['user_destination_gender'],
                             'location': record['user_destination_location'],
                             'description': record['user_destination_description'],
