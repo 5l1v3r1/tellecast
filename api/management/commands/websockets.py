@@ -510,15 +510,19 @@ class RabbitMQ(object):
         notification = {}
         try:
             with closing(connection.cursor()) as cursor:
-                cursor.execute('SELECT id, type, contents, status, timestamp FROM api_notifications WHERE id = %s', (id,))
+                cursor.execute(
+                    'SELECT id, user_id, type, contents, status, timestamp FROM api_notifications WHERE id = %s',
+                    (id,),
+                )
                 record = cursor.fetchone()
                 if record:
                     notification = {
                         'id': record[0],
-                        'type': record[1],
-                        'contents': loads(record[2]),
-                        'status': record[3],
-                        'timestamp': record[4].isoformat(' '),
+                        'user_id': record[1],
+                        'type': record[2],
+                        'contents': loads(record[3]),
+                        'status': record[4],
+                        'timestamp': record[5].isoformat(' '),
                     }
         except Exception:
             report_exc_info()
