@@ -242,6 +242,27 @@ def thumbnails_1(table, id):
                 serializer='json',
             )
         return
+    if table == 'Post':
+        instance = models.Post.objects.get_queryset().filter(id=id).first()
+        if not instance:
+            logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
+            raise thumbnails_1.retry(countdown=1)
+        if instance.type.startswith('image'):
+            current_app.send_task(
+                'api.tasks.thumbnails_2',
+                (instance.contents, instance.type, 'large', 1920,),
+                queue='api.tasks.thumbnails',
+                routing_key='api.tasks.thumbnails',
+                serializer='json',
+            )
+            current_app.send_task(
+                'api.tasks.thumbnails_2',
+                (instance.contents, instance.type, 'small', 685,),
+                queue='api.tasks.thumbnails',
+                routing_key='api.tasks.thumbnails',
+                serializer='json',
+            )
+        return
 
 
 @celery.task

@@ -20,6 +20,7 @@ from rest_framework.serializers import (
     EmailField,
     FloatField,
     IntegerField,
+    ListField,
     ModelSerializer,
     Serializer,
     ValidationError,
@@ -496,7 +497,41 @@ class User(ModelSerializer):
         return dictionary
 
 
+class Category(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Category
+
+
+class UsersProfilePost(ModelSerializer):
+
+    category = Category()
+    title = CharField(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'category',
+            'title',
+            'type',
+            'description',
+            'contents',
+            'inserted_at',
+            'updated_at',
+            'expired_at',
+        )
+        model = models.Post
+
+
 class UsersProfile(User):
+
+    posts = UsersProfilePost(many=True)
 
     class Meta:
 
@@ -521,6 +556,7 @@ class UsersProfile(User):
             'master_tells',
             'messages',
             'is_tellcard',
+            'posts',
         )
         model = models.User
 
@@ -768,6 +804,43 @@ class ShareUser(ModelSerializer):
         )
 
 
+class TellzonePostUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
+class TellzonePost(ModelSerializer):
+
+    user = TellzonePostUser()
+    category = Category()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'category',
+            'title',
+            'type',
+            'description',
+            'contents',
+            'inserted_at',
+            'updated_at',
+            'expired_at',
+        )
+        model = models.Post
+
+
 class Tellzone(ModelSerializer):
 
     hours = DictField()
@@ -779,6 +852,7 @@ class Tellzone(ModelSerializer):
     tellecasters = IntegerField()
     is_viewed = BooleanField()
     is_favorited = BooleanField()
+    posts = TellzonePost(many=True)
 
     class Meta:
 
@@ -800,6 +874,7 @@ class Tellzone(ModelSerializer):
             'tellecasters',
             'is_viewed',
             'is_favorited',
+            'posts',
         )
         model = models.Tellzone
 
@@ -920,6 +995,79 @@ class Tellcard(ModelSerializer):
 
     def delete(self):
         return models.Tellcard.remove(get_user_id(self.context), self.validated_data)
+
+
+class PostUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
+class PostTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'views',
+            'favorites',
+            'distance',
+            'connections',
+            'tellecasters',
+            'is_viewed',
+            'is_favorited',
+        )
+        model = models.Tellzone
+
+
+class Post(ModelSerializer):
+
+    user_id = IntegerField()
+    user = PostUser()
+    category_id = IntegerField(required=False)
+    category = Category()
+    title = CharField(required=False)
+    tellzones = PostTellzone(many=True)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'category',
+            'title',
+            'type',
+            'description',
+            'contents',
+            'inserted_at',
+            'updated_at',
+            'expired_at',
+            'tellzones',
+        )
+        model = models.Post
+
+    def insert(self):
+        return models.Post.insert(get_user_id(self.context), self.validated_data)
+
+    def update(self):
+        return self.instance.update(self.validated_data)
 
 
 class Ads(Ad):
@@ -1825,3 +1973,59 @@ class UsersTellzonesResponse(UserTellzone):
             'favorited_at',
         )
         model = models.UserTellzone
+
+
+class PostsRequest(Post):
+
+    tellzones = ListField(child=IntegerField())
+
+    class Meta:
+
+        fields = (
+            'category_id',
+            'title',
+            'type',
+            'description',
+            'contents',
+            'tellzones',
+        )
+        model = models.Post
+
+
+class PostsResponse(Post):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'category',
+            'title',
+            'type',
+            'description',
+            'contents',
+            'inserted_at',
+            'updated_at',
+            'expired_at',
+            'tellzones',
+        )
+        model = models.Post
+
+
+class PostsSearch(Post):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'category',
+            'title',
+            'type',
+            'description',
+            'contents',
+            'inserted_at',
+            'updated_at',
+            'expired_at',
+        )
+        model = models.Post

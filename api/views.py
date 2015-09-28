@@ -1394,6 +1394,426 @@ class Notifications(ViewSet):
         )
 
 
+class Posts(ViewSet):
+
+    permission_classes = (IsAuthenticated,)
+
+    def search(self, request):
+        '''
+        SEARCH Posts
+
+        <pre>
+        Input
+        =====
+
+        + category_ids
+            - Type: a comma-separated list of Category IDs
+            - Status: optional
+
+        + keywords
+            - Type: string
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: category_ids
+              paramType: query
+              required: false
+              type: string
+            - name: keywords
+              paramType: query
+              required: false
+              type: string
+        response_serializer: api.serializers.PostsSearch
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        return Response(
+            data=serializers.PostsResponse(
+                self.get_queryset(
+                    category_ids=request.query_params.get('category_ids', None),
+                    keywords=request.query_params.get('keywords', None),
+                ),
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def get(self, request):
+        '''
+        SELECT Posts
+
+        <pre>
+        Input
+        =====
+
+        + N/A
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.PostsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        return Response(
+            data=serializers.PostsResponse(
+                self.get_queryset(user_id=request.user.id),
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request):
+        '''
+        INSERT Posts
+
+        <pre>
+        Input
+        =====
+
+        + category_id
+            - Type: integer
+            - Status: mandatory
+
+        + title
+            - Type: string
+            - Status: optional
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - application/pdf
+                - audio/*
+                - audio/aac
+                - audio/mp4
+                - audio/mpeg
+                - audio/mpeg3
+                - audio/x-mpeg3
+                - image/*
+                - image/bmp
+                - image/gif
+                - image/jpeg
+                - image/png
+                - text/plain
+                - video/*
+                - video/3gpp
+                - video/mp4
+                - video/mpeg
+                - video/x-mpeg
+
+        + description
+            - Type: string
+            - Status: mandatory
+
+        + contents
+            - Type: string
+            - Status: mandatory
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.PostsRequest
+        response_serializer: api.serializers.PostsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.PostsRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.PostsResponse(
+                serializer.insert(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_201_CREATED,
+        )
+
+    def put(self, request, id):
+        '''
+        UPDATE Posts
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        + category_id
+            - Type: integer
+            - Status: mandatory
+
+        + title
+            - Type: string
+            - Status: optional
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - application/pdf
+                - audio/*
+                - audio/aac
+                - audio/mp4
+                - audio/mpeg
+                - audio/mpeg3
+                - audio/x-mpeg3
+                - image/*
+                - image/bmp
+                - image/gif
+                - image/jpeg
+                - image/png
+                - text/plain
+                - video/*
+                - video/3gpp
+                - video/mp4
+                - video/mpeg
+                - video/x-mpeg
+
+        + description
+            - Type: string
+            - Status: mandatory
+
+        + contents
+            - Type: string
+            - Status: mandatory
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.PostsRequest
+        response_serializer: api.serializers.PostsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        serializer = serializers.PostsRequest(
+            instance,
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.PostsResponse(
+                serializer.update(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def patch(self, request, id):
+        '''
+        UPDATE Posts
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        + category_id
+            - Type: integer
+            - Status: mandatory
+
+        + title
+            - Type: string
+            - Status: optional
+
+        + type
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - application/pdf
+                - audio/*
+                - audio/aac
+                - audio/mp4
+                - audio/mpeg
+                - audio/mpeg3
+                - audio/x-mpeg3
+                - image/*
+                - image/bmp
+                - image/gif
+                - image/jpeg
+                - image/png
+                - text/plain
+                - video/*
+                - video/3gpp
+                - video/mp4
+                - video/mpeg
+                - video/x-mpeg
+
+        + description
+            - Type: string
+            - Status: mandatory
+
+        + contents
+            - Type: string
+            - Status: mandatory
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.PostsRequest
+        response_serializer: api.serializers.PostsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        serializer = serializers.PostsRequest(
+            instance,
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.PostsResponse(
+                serializer.update(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def delete(self, request, id):
+        '''
+        DELETE Posts
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        instance.delete()
+        return Response(data=serializers.Null().data, status=HTTP_200_OK)
+
+    def get_instance(self, id):
+        return self.get_queryset().filter(id=id).first()
+
+    def get_queryset(self, user_id=None, category_ids=None, keywords=None):
+        queryset = models.Post.objects.get_queryset()
+        if user_id:
+            queryset = queryset.filter(user_id=self.request.user.id)
+        if category_ids:
+            queryset = queryset.filter(category_id__in=map(int, category_ids.split(',')))
+        if keywords:
+            queryset = queryset.filter(
+                Q(title__icontains=keywords) | Q(description__icontains=keywords) | Q(contents__icontains=keywords),
+            )
+        return queryset
+
+
 class Radar(ViewSet):
 
     permission_classes = (IsAuthenticated,)

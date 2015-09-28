@@ -1643,6 +1643,147 @@ class Tellcard(Model):
         return unicode(self.id)
 
 
+class Category(Model):
+
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+
+    class Meta:
+        db_table = 'api_categories'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
+
+    def __str__(self):
+        return '{id} {name}'.format(id=self.id, name=self.name)
+
+    def __unicode__(self):
+        return u'{id} {name}'.format(id=self.id, name=self.name)
+
+
+class Post(Model):
+
+    user = ForeignKey(User, related_name='posts')
+    category = ForeignKey(Category, null=True, related_name='posts')
+    title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255, null=True)
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('application/pdf', 'application/pdf',),
+            ('audio/*', 'audio/*',),
+            ('audio/aac', 'audio/aac',),
+            ('audio/mp4', 'audio/mp4',),
+            ('audio/mpeg', 'audio/mpeg',),
+            ('audio/mpeg3', 'audio/mpeg3',),
+            ('audio/x-mpeg3', 'audio/x-mpeg3',),
+            ('image/*', 'image/*',),
+            ('image/bmp', 'image/bmp',),
+            ('image/gif', 'image/gif',),
+            ('image/jpeg', 'image/jpeg',),
+            ('image/png', 'image/png',),
+            ('text/plain', 'text/plain',),
+            ('video/*', 'video/*',),
+            ('video/3gpp', 'video/3gpp',),
+            ('video/mp4', 'video/mp4',),
+            ('video/mpeg', 'video/mpeg',),
+            ('video/x-mpeg', 'video/x-mpeg',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    description = TextField(ugettext_lazy('Description'), db_index=True)
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+    expired_at = DateTimeField(ugettext_lazy('Expired At'), db_index=True)
+
+    class Meta:
+        db_table = 'api_posts'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'Post'
+        verbose_name_plural = 'Posts'
+
+    @cached_property
+    def tellzones(self):
+        return [
+            post_tellzone.tellzone for post_tellzone in PostTellzone.objects.get_queryset().filter(post_id=self.id)
+        ]
+
+    @classmethod
+    def insert(cls, user_id, data):
+        post = Post.objects.create(
+            user_id=user_id,
+            category_id=data['category_id'] if 'category_id' in data else None,
+            title=data['title'] if 'title' in data else None,
+            type=data['type'] if 'type' in data else None,
+            description=data['description'] if 'description' in data else None,
+            contents=data['contents'] if 'contents' in data else None,
+        )
+        if 'tellzones' in data:
+            for tellzone in data['tellzones']:
+                PostTellzone.insert_or_update(post.id, tellzone)
+        return post
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+    def update(self, data):
+        if 'category_id' in data:
+            self.category_id = data['category_id']
+        if 'title' in data:
+            self.title = data['title']
+        if 'type' in data:
+            self.type = data['type']
+        if 'description' in data:
+            self.description = data['description']
+        if 'contents' in data:
+            self.contents = data['contents']
+        self.save()
+        if 'tellzones' in data:
+            PostTellzone.objects.get_queryset().exclude(post_id=self.id, tellzone_id__in=data['tellzones']).delete()
+            for tellzone in data['tellzones']:
+                PostTellzone.insert_or_update(self.id, tellzone)
+        return self
+
+
+class PostTellzone(Model):
+
+    post = ForeignKey(Post, related_name='+')
+    tellzone = ForeignKey(Tellzone, related_name='+')
+
+    class Meta:
+
+        db_table = 'api_posts_tellzones'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'Posts :: Tellzone'
+        verbose_name_plural = 'Posts :: Tellzones'
+
+    @classmethod
+    def insert_or_update(cls, post_id, tellzone_id):
+        post_tellzone = PostTellzone.objects.get_queryset().filter(post_id=post_id, tellzone_id=tellzone_id).first()
+        if not post_tellzone:
+            post_tellzone = PostTellzone.objects.create(post_id=post_id, tellzone_id=tellzone_id)
+        return post_tellzone
+
+    @classmethod
+    def remove(cls, post_id, tellzone_id):
+        return PostTellzone.objects.get_queryset().filter(post_id=post_id, tellzone_id=tellzone_id).delete()
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
 @receiver(post_save, sender=User)
 def user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
@@ -1982,6 +2123,22 @@ def tellcard_post_save(instance, **kwargs):
                     routing_key='api.tasks.push_notifications',
                     serializer='json',
                 )
+
+
+@receiver(pre_save, sender=Post)
+def post_pre_save(instance, **kwargs):
+    instance.expired_at = datetime.now() + timedelta(days=365)
+
+
+@receiver(post_save, sender=Post)
+def post_post_save(instance, **kwargs):
+    current_app.send_task(
+        'api.tasks.thumbnails_1',
+        ('Post', instance.id,),
+        queue='api.tasks.thumbnails',
+        routing_key='api.tasks.thumbnails',
+        serializer='json',
+    )
 
 
 def get_badge(user_id):

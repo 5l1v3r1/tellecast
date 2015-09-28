@@ -118,6 +118,27 @@ urlpatterns = patterns(
         }),
     ),
     url(
+        r'^api/posts/search/$',
+        views.Posts.as_view({
+            'get': 'search',
+        }),
+    ),
+    url(
+        r'^api/posts/(?P<id>[0-9]+)/$',
+        views.Posts.as_view({
+            'put': 'put',
+            'patch': 'patch',
+            'delete': 'delete',
+        }),
+    ),
+    url(
+        r'^api/posts/$',
+        views.Posts.as_view({
+            'get': 'get',
+            'post': 'post',
+        }),
+    ),
+    url(
         r'^api/radar/$', views.Radar.as_view({
             'get': 'get',
             'post': 'post',

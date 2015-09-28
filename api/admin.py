@@ -933,6 +933,81 @@ class UserURL(ModelAdmin):
 UserURL.delete_view = delete_view
 
 
+class Category(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'name',
+    )
+    list_display = (
+        'id',
+        'name',
+    )
+    list_filter = ()
+    search_fields = (
+        'name',
+    )
+
+Category.delete_view = delete_view
+
+
+class Post(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'user',
+        'category',
+        'title',
+        'type',
+        'description',
+        'contents',
+    )
+    list_display = (
+        'id',
+        'user',
+        'category',
+        'title',
+        'type',
+        'inserted_at',
+        'updated_at',
+        'expired_at',
+    )
+    list_filter = (
+        'user',
+        'category',
+        'type',
+    )
+    search_fields = (
+        'title',
+        'type',
+        'description',
+        'contents',
+    )
+
+Post.delete_view = delete_view
+
+
+class PostTellzone(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'post',
+        'tellzone',
+    )
+    list_display = (
+        'id',
+        'post',
+        'tellzone',
+    )
+    list_filter = (
+        'post',
+        'tellzone',
+    )
+    search_fields = ()
+
+PostTellzone.delete_view = delete_view
+
+
 apps.get_app_config('api').verbose_name = ugettext_lazy('API')
 apps.get_app_config('auth').verbose_name = ugettext_lazy('Django')
 apps.get_app_config('default').verbose_name = ugettext_lazy('Social')
@@ -960,3 +1035,6 @@ site.register(models.UserStatus, UserStatus)
 site.register(models.UserStatusAttachment, UserStatusAttachment)
 site.register(models.UserTellzone, UserTellzone)
 site.register(models.UserURL, UserURL)
+site.register(models.Category, Category)
+site.register(models.Post, Post)
+site.register(models.PostTellzone, PostTellzone)
