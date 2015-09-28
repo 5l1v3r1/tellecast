@@ -155,7 +155,7 @@ class RabbitMQ(object):
         if not message:
             raise Return(None)
         for user in [key for key, value in IOLoop.current().clients.items() if value == message['user_source_id']]:
-            body = message
+            body = deepcopy(message)
             body['user_destination']['email'] = (
                 body['user_destination']['email']
                 if body['user_destination']['settings']['show_email'] == 'True' else None
@@ -183,7 +183,7 @@ class RabbitMQ(object):
                 'body': body,
             }))
         for user in [key for key, value in IOLoop.current().clients.items() if value == message['user_destination_id']]:
-            body = message
+            body = deepcopy(message)
             body['user_source']['email'] = (
                 body['user_source']['email']
                 if body['user_source']['settings']['show_email'] == 'True' else None
