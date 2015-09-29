@@ -508,10 +508,28 @@ class Category(ModelSerializer):
         model = models.Category
 
 
+class PostAttachment(ModelSerializer):
+
+    position = IntegerField(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'type',
+            'contents',
+            'position',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.PostAttachment
+
+
 class UsersProfilePost(ModelSerializer):
 
     category = Category()
     title = CharField(required=False)
+    attachments = PostAttachment(many=True)
 
     class Meta:
 
@@ -519,12 +537,11 @@ class UsersProfilePost(ModelSerializer):
             'id',
             'category',
             'title',
-            'type',
-            'description',
             'contents',
             'inserted_at',
             'updated_at',
             'expired_at',
+            'attachments',
         )
         model = models.Post
 
@@ -823,6 +840,7 @@ class TellzonePost(ModelSerializer):
 
     user = TellzonePostUser()
     category = Category()
+    attachments = PostAttachment(many=True)
 
     class Meta:
 
@@ -831,12 +849,11 @@ class TellzonePost(ModelSerializer):
             'user',
             'category',
             'title',
-            'type',
-            'description',
             'contents',
             'inserted_at',
             'updated_at',
             'expired_at',
+            'attachments',
         )
         model = models.Post
 
@@ -1045,6 +1062,7 @@ class Post(ModelSerializer):
     category_id = IntegerField(required=False)
     category = Category()
     title = CharField(required=False)
+    attachments = PostAttachment(many=True)
     tellzones = PostTellzone(many=True)
 
     class Meta:
@@ -1053,12 +1071,11 @@ class Post(ModelSerializer):
             'id',
             'category',
             'title',
-            'type',
-            'description',
             'contents',
             'inserted_at',
             'updated_at',
             'expired_at',
+            'attachments',
             'tellzones',
         )
         model = models.Post
@@ -1975,18 +1992,31 @@ class UsersTellzonesResponse(UserTellzone):
         model = models.UserTellzone
 
 
+class PostsRequestAttachment(PostAttachment):
+
+    class Meta:
+
+        fields = (
+            'type',
+            'contents',
+            'position',
+        )
+        model = models.PostAttachment
+
+
 class PostsRequest(Post):
 
-    tellzones = ListField(child=IntegerField())
+    contents = CharField(required=False)
+    attachments = PostsRequestAttachment(many=True, required=False)
+    tellzones = ListField(child=IntegerField(), required=False)
 
     class Meta:
 
         fields = (
             'category_id',
             'title',
-            'type',
-            'description',
             'contents',
+            'attachments',
             'tellzones',
         )
         model = models.Post
@@ -1994,6 +2024,8 @@ class PostsRequest(Post):
 
 class PostsResponse(Post):
 
+    attachments = PostAttachment(many=True)
+
     class Meta:
 
         fields = (
@@ -2001,12 +2033,11 @@ class PostsResponse(Post):
             'user',
             'category',
             'title',
-            'type',
-            'description',
             'contents',
             'inserted_at',
             'updated_at',
             'expired_at',
+            'attachments',
             'tellzones',
         )
         model = models.Post
@@ -2014,6 +2045,8 @@ class PostsResponse(Post):
 
 class PostsSearch(Post):
 
+    attachments = PostAttachment(many=True)
+
     class Meta:
 
         fields = (
@@ -2021,11 +2054,10 @@ class PostsSearch(Post):
             'user',
             'category',
             'title',
-            'type',
-            'description',
             'contents',
             'inserted_at',
             'updated_at',
             'expired_at',
+            'attachments',
         )
         model = models.Post

@@ -1662,10 +1662,10 @@ class Category(Model):
         verbose_name_plural = 'Categories'
 
     def __str__(self):
-        return '{id} {name}'.format(id=self.id, name=self.name)
+        return str(self.name)
 
     def __unicode__(self):
-        return u'{id} {name}'.format(id=self.id, name=self.name)
+        return unicode(self.name)
 
 
 class Post(Model):
@@ -1673,32 +1673,6 @@ class Post(Model):
     user = ForeignKey(User, related_name='posts')
     category = ForeignKey(Category, null=True, related_name='posts')
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255, null=True)
-    type = CharField(
-        ugettext_lazy('Type'),
-        choices=(
-            ('application/pdf', 'application/pdf',),
-            ('audio/*', 'audio/*',),
-            ('audio/aac', 'audio/aac',),
-            ('audio/mp4', 'audio/mp4',),
-            ('audio/mpeg', 'audio/mpeg',),
-            ('audio/mpeg3', 'audio/mpeg3',),
-            ('audio/x-mpeg3', 'audio/x-mpeg3',),
-            ('image/*', 'image/*',),
-            ('image/bmp', 'image/bmp',),
-            ('image/gif', 'image/gif',),
-            ('image/jpeg', 'image/jpeg',),
-            ('image/png', 'image/png',),
-            ('text/plain', 'text/plain',),
-            ('video/*', 'video/*',),
-            ('video/3gpp', 'video/3gpp',),
-            ('video/mp4', 'video/mp4',),
-            ('video/mpeg', 'video/mpeg',),
-            ('video/x-mpeg', 'video/x-mpeg',),
-        ),
-        db_index=True,
-        max_length=255,
-    )
-    description = TextField(ugettext_lazy('Description'), db_index=True)
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
@@ -1724,10 +1698,16 @@ class Post(Model):
             user_id=user_id,
             category_id=data['category_id'] if 'category_id' in data else None,
             title=data['title'] if 'title' in data else None,
-            type=data['type'] if 'type' in data else None,
-            description=data['description'] if 'description' in data else None,
             contents=data['contents'] if 'contents' in data else None,
         )
+        if 'attachments' in data:
+            for attachment in data['attachments']:
+                PostAttachment.objects.create(
+                    post_id=post.id,
+                    type=attachment['type'] if 'type' in attachment else None,
+                    contents=attachment['contents'] if 'contents' in attachment else None,
+                    position=attachment['position'] if 'position' in attachment else None,
+                )
         if 'tellzones' in data:
             for tellzone in data['tellzones']:
                 PostTellzone.insert_or_update(post.id, tellzone)
@@ -1744,18 +1724,91 @@ class Post(Model):
             self.category_id = data['category_id']
         if 'title' in data:
             self.title = data['title']
-        if 'type' in data:
-            self.type = data['type']
-        if 'description' in data:
-            self.description = data['description']
         if 'contents' in data:
             self.contents = data['contents']
         self.save()
+        if 'attachments' in data:
+            ids = []
+            for attachment in data['attachments']:
+                instance = PostAttachment.objects.get_queryset().filter(
+                    Q(id=attachment['id'] if 'id' in attachment else 0) |
+                    Q(contents=attachment['contents'] if 'contents' in attachment else ''),
+                    post_id=self.id,
+                ).first()
+                if instance:
+                    if 'type' in attachment:
+                        instance.type = attachment['type']
+                    if 'contents' in attachment:
+                        instance.contents = attachment['contents']
+                    if 'position' in attachment:
+                        instance.position = attachment['position']
+                    instance.save()
+                else:
+                    instance = PostAttachment.objects.create(
+                        post_id=self.id,
+                        type=attachment['type'] if 'type' in attachment else None,
+                        contents=attachment['contents'] if 'contents' in attachment else None,
+                        position=attachment['position'] if 'position' in attachment else None,
+                    )
+                ids.append(instance.id)
+            PostAttachment.objects.get_queryset().filter(post_id=self.id).exclude(id__in=ids).delete()
         if 'tellzones' in data:
-            PostTellzone.objects.get_queryset().exclude(post_id=self.id, tellzone_id__in=data['tellzones']).delete()
+            PostTellzone.objects.get_queryset().filter(
+                post_id=self.id,
+            ).exclude(
+                tellzone_id__in=data['tellzones'],
+            ).delete()
             for tellzone in data['tellzones']:
                 PostTellzone.insert_or_update(self.id, tellzone)
         return self
+
+
+class PostAttachment(Model):
+
+    post = ForeignKey(Post, related_name='attachments')
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('application/pdf', 'application/pdf',),
+            ('audio/*', 'audio/*',),
+            ('audio/aac', 'audio/aac',),
+            ('audio/mp4', 'audio/mp4',),
+            ('audio/mpeg', 'audio/mpeg',),
+            ('audio/mpeg3', 'audio/mpeg3',),
+            ('audio/x-mpeg3', 'audio/x-mpeg3',),
+            ('image/*', 'image/*',),
+            ('image/bmp', 'image/bmp',),
+            ('image/gif', 'image/gif',),
+            ('image/jpeg', 'image/jpeg',),
+            ('image/png', 'image/png',),
+            ('text/plain', 'text/plain',),
+            ('video/*', 'video/*',),
+            ('video/3gpp', 'video/3gpp',),
+            ('video/mp4', 'video/mp4',),
+            ('video/mpeg', 'video/mpeg',),
+            ('video/x-mpeg', 'video/x-mpeg',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+
+    class Meta:
+        db_table = 'api_posts_attachments'
+        ordering = (
+            'id',
+        )
+        verbose_name = 'Posts :: Attachment'
+        verbose_name_plural = 'Posts :: Attachments'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class PostTellzone(Model):
@@ -2136,11 +2189,22 @@ def post_pre_save(instance, **kwargs):
     instance.expired_at = datetime.now() + timedelta(days=365)
 
 
-@receiver(post_save, sender=Post)
-def post_post_save(instance, **kwargs):
+@receiver(pre_save, sender=PostAttachment)
+def post_attachment_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = PostAttachment.objects.get_queryset().filter(
+            post=instance.post,
+        ).aggregate(
+            Max('position'),
+        )['position__max']
+        instance.position = position + 1 if position else 1
+
+
+@receiver(post_save, sender=PostAttachment)
+def post_attachment_post_save(instance, **kwargs):
     current_app.send_task(
         'api.tasks.thumbnails_1',
-        ('Post', instance.id,),
+        ('PostAttachment', instance.id,),
         queue='api.tasks.thumbnails',
         routing_key='api.tasks.thumbnails',
         serializer='json',

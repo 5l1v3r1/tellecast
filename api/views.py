@@ -1498,36 +1498,44 @@ class Posts(ViewSet):
             - Type: string
             - Status: optional
 
-        + type
-            - Type: string
-            - Status: mandatory
-            - Choices:
-                - application/pdf
-                - audio/*
-                - audio/aac
-                - audio/mp4
-                - audio/mpeg
-                - audio/mpeg3
-                - audio/x-mpeg3
-                - image/*
-                - image/bmp
-                - image/gif
-                - image/jpeg
-                - image/png
-                - text/plain
-                - video/*
-                - video/3gpp
-                - video/mp4
-                - video/mpeg
-                - video/x-mpeg
-
-        + description
-            - Type: string
-            - Status: mandatory
-
         + contents
             - Type: string
             - Status: mandatory
+
+        + attachments
+            - Type: list (a list of Attachment objects; see below)
+            - Status: optional
+
+                + type
+                    - Type: string
+                    - Status: mandatory
+                    - Choices:
+                        - application/pdf
+                        - audio/*
+                        - audio/aac
+                        - audio/mp4
+                        - audio/mpeg
+                        - audio/mpeg3
+                        - audio/x-mpeg3
+                        - image/*
+                        - image/bmp
+                        - image/gif
+                        - image/jpeg
+                        - image/png
+                        - text/plain
+                        - video/*
+                        - video/3gpp
+                        - video/mp4
+                        - video/mpeg
+                        - video/x-mpeg
+
+                + contents
+                    - Type: string
+                    - Status: mandatory
+
+                + position
+                    - Type: integer
+                    - Status: optional
 
         + tellzones
             - Type: list (a list of Tellzone IDs)
@@ -1587,36 +1595,44 @@ class Posts(ViewSet):
             - Type: string
             - Status: optional
 
-        + type
-            - Type: string
-            - Status: mandatory
-            - Choices:
-                - application/pdf
-                - audio/*
-                - audio/aac
-                - audio/mp4
-                - audio/mpeg
-                - audio/mpeg3
-                - audio/x-mpeg3
-                - image/*
-                - image/bmp
-                - image/gif
-                - image/jpeg
-                - image/png
-                - text/plain
-                - video/*
-                - video/3gpp
-                - video/mp4
-                - video/mpeg
-                - video/x-mpeg
-
-        + description
-            - Type: string
-            - Status: mandatory
-
         + contents
             - Type: string
             - Status: mandatory
+
+        + attachments
+            - Type: list (a list of Attachment objects; see below)
+            - Status: optional
+
+                + type
+                    - Type: string
+                    - Status: mandatory
+                    - Choices:
+                        - application/pdf
+                        - audio/*
+                        - audio/aac
+                        - audio/mp4
+                        - audio/mpeg
+                        - audio/mpeg3
+                        - audio/x-mpeg3
+                        - image/*
+                        - image/bmp
+                        - image/gif
+                        - image/jpeg
+                        - image/png
+                        - text/plain
+                        - video/*
+                        - video/3gpp
+                        - video/mp4
+                        - video/mpeg
+                        - video/x-mpeg
+
+                + contents
+                    - Type: string
+                    - Status: mandatory
+
+                + position
+                    - Type: integer
+                    - Status: optional
 
         + tellzones
             - Type: list (a list of Tellzone IDs)
@@ -1677,7 +1693,7 @@ class Posts(ViewSet):
             - Type: integer
             - Status: mandatory
 
-        + category_id
+                + category_id
             - Type: integer
             - Status: mandatory
 
@@ -1685,36 +1701,44 @@ class Posts(ViewSet):
             - Type: string
             - Status: optional
 
-        + type
-            - Type: string
-            - Status: mandatory
-            - Choices:
-                - application/pdf
-                - audio/*
-                - audio/aac
-                - audio/mp4
-                - audio/mpeg
-                - audio/mpeg3
-                - audio/x-mpeg3
-                - image/*
-                - image/bmp
-                - image/gif
-                - image/jpeg
-                - image/png
-                - text/plain
-                - video/*
-                - video/3gpp
-                - video/mp4
-                - video/mpeg
-                - video/x-mpeg
-
-        + description
-            - Type: string
-            - Status: mandatory
-
         + contents
             - Type: string
             - Status: mandatory
+
+        + attachments
+            - Type: list (a list of Attachment objects; see below)
+            - Status: optional
+
+                + type
+                    - Type: string
+                    - Status: mandatory
+                    - Choices:
+                        - application/pdf
+                        - audio/*
+                        - audio/aac
+                        - audio/mp4
+                        - audio/mpeg
+                        - audio/mpeg3
+                        - audio/x-mpeg3
+                        - image/*
+                        - image/bmp
+                        - image/gif
+                        - image/jpeg
+                        - image/png
+                        - text/plain
+                        - video/*
+                        - video/3gpp
+                        - video/mp4
+                        - video/mpeg
+                        - video/x-mpeg
+
+                + contents
+                    - Type: string
+                    - Status: mandatory
+
+                + position
+                    - Type: integer
+                    - Status: optional
 
         + tellzones
             - Type: list (a list of Tellzone IDs)
@@ -1808,9 +1832,7 @@ class Posts(ViewSet):
         if category_ids:
             queryset = queryset.filter(category_id__in=map(int, category_ids.split(',')))
         if keywords:
-            queryset = queryset.filter(
-                Q(title__icontains=keywords) | Q(description__icontains=keywords) | Q(contents__icontains=keywords),
-            )
+            queryset = queryset.filter(Q(title__icontains=keywords) | Q(contents__icontains=keywords))
         return queryset
 
 

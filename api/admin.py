@@ -958,8 +958,6 @@ class Post(ModelAdmin):
         'user',
         'category',
         'title',
-        'type',
-        'description',
         'contents',
     )
     list_display = (
@@ -967,7 +965,6 @@ class Post(ModelAdmin):
         'user',
         'category',
         'title',
-        'type',
         'inserted_at',
         'updated_at',
         'expired_at',
@@ -975,16 +972,42 @@ class Post(ModelAdmin):
     list_filter = (
         'user',
         'category',
-        'type',
     )
     search_fields = (
         'title',
-        'type',
-        'description',
         'contents',
     )
 
 Post.delete_view = delete_view
+
+
+class PostAttachment(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'post',
+        'type',
+        'contents',
+        'position',
+    )
+    list_display = (
+        'id',
+        'post',
+        'type',
+        'contents',
+        'position',
+        'inserted_at',
+        'updated_at',
+    )
+    list_filter = (
+        'post',
+        'type',
+    )
+    search_fields = (
+        'contents',
+    )
+
+PostAttachment.delete_view = delete_view
 
 
 class PostTellzone(ModelAdmin):
@@ -1037,4 +1060,5 @@ site.register(models.UserTellzone, UserTellzone)
 site.register(models.UserURL, UserURL)
 site.register(models.Category, Category)
 site.register(models.Post, Post)
+site.register(models.PostAttachment, PostAttachment)
 site.register(models.PostTellzone, PostTellzone)

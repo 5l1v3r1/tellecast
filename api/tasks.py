@@ -242,8 +242,8 @@ def thumbnails_1(table, id):
                 serializer='json',
             )
         return
-    if table == 'Post':
-        instance = models.Post.objects.get_queryset().filter(id=id).first()
+    if table == 'PostAttachment':
+        instance = models.PostAttachment.objects.get_queryset().filter(id=id).first()
         if not instance:
             logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
             raise thumbnails_1.retry(countdown=1)
