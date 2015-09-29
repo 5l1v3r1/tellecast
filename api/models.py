@@ -251,6 +251,12 @@ class Tellzone(Model):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
 
     @cached_property
+    def posts(self):
+        return [
+            post_tellzone.post for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
+        ]
+
+    @cached_property
     def tellecasters(self):
         return UserLocation.objects.get_queryset().filter(
             point__distance_lte=(self.point, D(ft=Tellzone.radius())),
