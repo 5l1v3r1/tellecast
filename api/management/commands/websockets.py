@@ -594,9 +594,6 @@ class RabbitMQ(object):
     @coroutine
     def get_radar_get(self, user, users):
         for key, value in enumerate(users):
-            users[key]['last_name'] = (
-                users[key]['last_name'] if users[key]['settings']['show_last_name'] == 'True' else None
-            )
             users[key]['photo_original'] = (
                 users[key]['photo_original'] if users[key]['settings']['show_photo'] == 'True' else None
             )
@@ -652,51 +649,8 @@ class RabbitMQ(object):
                         api_users.id AS id,
                         api_users.photo_original AS photo_original,
                         api_users.photo_preview AS photo_preview,
-                        api_users.first_name AS first_name,
-                        api_users.last_name AS last_name,
-                        api_users.gender AS gender,
-                        api_users.location AS location,
-                        api_users.description AS description,
-                        api_users_photos.id AS photo_id,
-                        api_users_photos.string_original AS photo_string_original,
-                        api_users_photos.string_preview AS photo_string_preview,
-                        api_users_photos.description AS photo_description,
-                        api_users_photos.position AS photo_position,
                         api_users_settings.key AS user_setting_key,
                         api_users_settings.value AS user_setting_value,
-                        api_users_statuses.id AS user_status_id,
-                        api_users_statuses.string AS user_status_string,
-                        api_users_statuses.title AS user_status_title,
-                        api_users_statuses.url AS user_status_url,
-                        api_users_statuses.notes AS user_status_notes,
-                        api_users_statuses_attachments.id AS user_status_attachment_id,
-                        api_users_statuses_attachments.string_original AS user_status_attachment_string_original,
-                        api_users_statuses_attachments.string_preview AS user_status_attachment_string_preview,
-                        api_users_statuses_attachments.position AS user_status_attachment_position,
-                        api_master_tells.id AS master_tell_id,
-                        api_master_tells.created_by_id AS master_tell_created_by_id,
-                        api_master_tells.owned_by_id AS master_tell_owned_by_id,
-                        api_master_tells.contents AS master_tell_contents,
-                        api_master_tells.position AS master_tell_position,
-                        api_master_tells.is_visible AS master_tell_is_visible,
-                        api_master_tells.inserted_at AS master_tell_inserted_at,
-                        api_master_tells.updated_at AS master_tell_updated_at,
-                        api_slave_tells.id AS slave_tell_id,
-                        api_slave_tells.master_tell_id AS slave_tell_master_tell_id,
-                        api_slave_tells.created_by_id AS slave_tell_created_by_id,
-                        api_slave_tells.owned_by_id AS slave_tell_owned_by_id,
-                        api_slave_tells.photo AS slave_tell_photo,
-                        api_slave_tells.first_name AS slave_tell_first_name,
-                        api_slave_tells.last_name AS slave_tell_last_name,
-                        api_slave_tells.type AS slave_tell_type,
-                        api_slave_tells.contents_original AS slave_tell_contents_original,
-                        api_slave_tells.contents_preview AS slave_tell_contents_preview,
-                        api_slave_tells.description AS slave_tell_description,
-                        api_slave_tells.position AS slave_tell_position,
-                        api_slave_tells.is_editable AS slave_tell_is_editable,
-                        api_slave_tells.inserted_at AS slave_tell_inserted_at,
-                        api_slave_tells.updated_at AS slave_tell_updated_at,
-                        ST_AsGeoJSON(api_users_locations.point) AS point,
                         ST_Distance(
                             ST_Transform(api_users_locations.point, 2163),
                             ST_Transform(ST_GeomFromText(%s, 4326), 2163)
@@ -705,9 +659,12 @@ class RabbitMQ(object):
                     INNER JOIN (
                         SELECT MAX(api_users_locations.id) AS id
                         FROM api_users_locations
+                        WHERE api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                         GROUP BY api_users_locations.user_id
                     ) api_users_locations_ ON api_users_locations_.id = api_users_locations.id
                     INNER JOIN api_users ON api_users.id = api_users_locations.user_id
+                    LEFT OUTER JOIN api_users_settings AS api_users_settings
+                        ON api_users_settings.user_id = api_users.id
                     LEFT OUTER JOIN api_blocks
                         ON
                             (
@@ -721,18 +678,6 @@ class RabbitMQ(object):
                                 AND
                                 api_blocks.user_destination_id = %s
                             )
-                    LEFT OUTER JOIN api_users_settings AS api_users_settings
-                        ON api_users_settings.user_id = api_users.id
-                    LEFT OUTER JOIN api_users_photos
-                        ON api_users_photos.user_id = api_users.id
-                    LEFT OUTER JOIN api_users_statuses
-                        ON api_users_statuses.user_id = api_users.id
-                    LEFT OUTER JOIN api_users_statuses_attachments
-                        ON api_users_statuses_attachments.user_status_id = api_users_statuses.user_id
-                    LEFT OUTER JOIN api_master_tells
-                        ON api_master_tells.owned_by_id = api_users.id
-                    LEFT OUTER JOIN api_slave_tells
-                        ON api_slave_tells.master_tell_id = api_master_tells.id
                     WHERE
                         (api_users_locations.user_id != %s OR %s = true)
                         AND
@@ -747,6 +692,8 @@ class RabbitMQ(object):
                         api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                         AND
                         api_users.is_signed_in IS TRUE
+                        AND
+                        api_users_settings.key = 'show_photo'
                         AND
                         api_blocks.id IS NULL
                     ORDER BY distance ASC, api_users_locations.user_id ASC
@@ -776,110 +723,15 @@ class RabbitMQ(object):
                         users[record['id']]['photo_original'] = record['photo_original']
                     if 'photo_preview' not in users[record['id']]:
                         users[record['id']]['photo_preview'] = record['photo_preview']
-                    if 'first_name' not in users[record['id']]:
-                        users[record['id']]['first_name'] = record['first_name']
-                    if 'last_name' not in users[record['id']]:
-                        users[record['id']]['last_name'] = record['last_name']
-                    if 'gender' not in users[record['id']]:
-                        users[record['id']]['gender'] = record['gender']
-                    if 'location' not in users[record['id']]:
-                        users[record['id']]['location'] = record['location']
-                    if 'description' not in users[record['id']]:
-                        users[record['id']]['description'] = record['description']
-                    if 'point' not in users[record['id']]:
-                        point = loads(record['point'])
-                        users[record['id']]['point'] = {
-                            'latitude': point['coordinates'][1],
-                            'longitude': point['coordinates'][0],
-                        }
                     if 'distance' not in users[record['id']]:
                         users[record['id']]['distance'] = record['distance']
-                    if 'is_tellcard' not in users[record['id']]:
-                        users[record['id']]['is_tellcard'] = False
                     if 'settings' not in users[record['id']]:
                         users[record['id']]['settings'] = {}
                     if record['user_setting_key']:
                         if record['user_setting_key'] not in users[record['id']]['settings']:
                             users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
-                    if 'user_status' not in users[record['id']]:
-                        users[record['id']]['user_status'] = {}
-                    if record['user_status_id']:
-                        if 'id' not in users[record['id']]['user_status']:
-                            users[record['id']]['user_status']['id'] = record['user_status_id']
-                        if 'string' not in users[record['id']]['user_status']:
-                            users[record['id']]['user_status']['string'] = record['user_status_string']
-                        if 'title' not in users[record['id']]['user_status']:
-                            users[record['id']]['user_status']['title'] = record['user_status_title']
-                        if 'url' not in users[record['id']]['user_status']:
-                            users[record['id']]['user_status']['url'] = record['user_status_url']
-                        if 'notes' not in users[record['id']]['user_status']:
-                            users[record['id']]['user_status']['notes'] = record['user_status_notes']
-                        if 'attachments' not in users[record['id']]['user_status']:
-                            users[record['id']]['user_status']['attachments'] = {}
-                        if record['user_status_attachment_id'] not in users[
-                            record['id']
-                        ]['user_status']['attachments']:
-                            users[record['id']]['user_status']['attachments'][record['user_status_attachment_id']] = {
-                                'id': record['user_status_attachment_id'],
-                                'string_original': record['user_status_attachment_string_original'],
-                                'string_preview': record['user_status_attachment_string_preview'],
-                                'position': record['user_status_attachment_position'],
-                            }
-                    if 'master_tells' not in users[record['id']]:
-                        users[record['id']]['master_tells'] = {}
-                    if record['master_tell_id']:
-                        if record['master_tell_id'] not in users[record['id']]['master_tells']:
-                            users[record['id']]['master_tells'][record['master_tell_id']] = {
-                                'id': record['master_tell_id'],
-                                'created_by_id': record['master_tell_created_by_id'],
-                                'owned_by_id': record['master_tell_owned_by_id'],
-                                'contents': record['master_tell_contents'],
-                                'position': record['master_tell_position'],
-                                'is_visible': record['master_tell_is_visible'],
-                                'inserted_at': record['master_tell_inserted_at'].isoformat(),
-                                'updated_at': record['master_tell_updated_at'].isoformat(),
-                            }
-                        if 'slave_tells' not in users[record['id']]['master_tells'][record['master_tell_id']]:
-                            users[record['id']]['master_tells'][record['master_tell_id']]['slave_tells'] = {}
-                        if record['slave_tell_id']:
-                            if record['slave_tell_id'] not in users[record['id']]['master_tells'][
-                                record['master_tell_id']
-                            ]['slave_tells']:
-                                users[record['id']]['master_tells'][record['master_tell_id']]['slave_tells'][
-                                    record['slave_tell_id']
-                                ] = {
-                                    'id': record['slave_tell_id'],
-                                    'master_tell_id': record['slave_tell_master_tell_id'],
-                                    'created_by_id': record['slave_tell_created_by_id'],
-                                    'owned_by_id': record['slave_tell_owned_by_id'],
-                                    'photo': record['slave_tell_photo'],
-                                    'first_name': record['slave_tell_first_name'],
-                                    'last_name': record['slave_tell_last_name'],
-                                    'type': record['slave_tell_type'],
-                                    'contents_original': record['slave_tell_contents_original'],
-                                    'contents_preview': record['slave_tell_contents_preview'],
-                                    'description': record['slave_tell_description'],
-                                    'position': record['slave_tell_position'],
-                                    'is_editable': record['slave_tell_is_editable'],
-                                    'inserted_at': record['slave_tell_inserted_at'].isoformat(),
-                                    'updated_at': record['slave_tell_updated_at'].isoformat(),
-                                }
         except Exception:
             report_exc_info()
-        for key, value in users.items():
-            if 'user_status' in users[key]:
-                if 'attachments' in users[key]['user_status']:
-                    users[key]['user_status']['attachments'] = sorted(
-                        users[key]['user_status']['attachments'].values(), key=lambda item: item['position'],
-                    )
-            if 'master_tells' in users[key]:
-                for k, v in users[key]['master_tells'].items():
-                    users[key]['master_tells'][k]['slave_tells'] = sorted(
-                        users[key]['master_tells'][k]['slave_tells'].values(), key=lambda item: item['position'],
-                    )
-                users[key]['master_tells'] = sorted(
-                    users[key]['master_tells'].values(), key=lambda item: item['position'],
-                )
         users = sorted(users.values(), key=lambda item: (item['distance'], item['id'],))
         raise Return(users)
 
