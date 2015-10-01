@@ -4376,6 +4376,64 @@ def messages_bulk_status(request):
     )
 
 
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def profiles(request):
+    '''
+    SELECT (Profiles) Users
+
+    <pre>
+    Input
+    =====
+
+    + ids
+        - Type: a list of User IDs
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.ProfilesRequest
+    response_serializer: api.serializers.ProfilesResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.ProfilesRequest(
+        context={
+            'request': request,
+        },
+        data=request.data,
+    )
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        data=serializers.ProfilesResponse(
+            [
+                user
+                for user in models.User.objects.get_queryset().filter(
+                    id__in=serializer.validated_data['ids'],
+                ).order_by(
+                    'id',
+                )
+                if not is_blocked(request.user.id, user.id)
+            ],
+            context={
+                'request': request,
+            },
+            many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('GET',))
 @permission_classes(())
 def recommended_tells(request, type):

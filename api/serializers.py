@@ -2061,3 +2061,12 @@ class PostsSearch(Post):
             'attachments',
         )
         model = models.Post
+
+
+class ProfilesRequest(Serializer):
+
+    ids = ListField(child=IntegerField())
+
+
+class ProfilesResponse(UsersProfile):
+    pass

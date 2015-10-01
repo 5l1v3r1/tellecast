@@ -138,6 +138,7 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/profiles/$', views.profiles),
     url(
         r'^api/radar/$', views.Radar.as_view({
             'get': 'get',
