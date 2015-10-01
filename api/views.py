@@ -4390,6 +4390,12 @@ def profiles(request):
         - Type: a list of User IDs
         - Status: mandatory
 
+        Example:
+
+        {
+            "ids": [...]
+        }
+
     Output
     ======
 
