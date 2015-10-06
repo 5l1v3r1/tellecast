@@ -981,6 +981,7 @@ class WebSocket(WebSocketHandler):
                         data['status'] if 'status' in data else 'Unread',
                     )
                 )
+                connection.commit()
                 message_id = cursor.fetchone()[0]
                 if 'attachments' in data:
                     for position, _ in enumerate(data['attachments']):
@@ -991,6 +992,76 @@ class WebSocket(WebSocketHandler):
                             (message_id, data['attachments'][position]['string'], position + 1,)
                         )
                         connection.commit()
+                if 'type' in data:
+                    if data['type'] == 'Response - Blocked':
+                        cursor.execute(
+                            '''
+                            INSERT INTO api_blocks (user_source_id, user_destination_id, timestamp)
+                            VALUES (%s, %s, NOW())
+                             RETURNING id
+                            ''',
+                            (user_id, data['user_destination_id'],)
+                        )
+                        connection.commit()
+                        block_id = cursor.fetchone()[0]
+                        current_app.send_task(
+                            'api.management.commands.websockets',
+                            (
+                                {
+                                    'subject': 'blocks',
+                                    'body': block_id,
+                                },
+                            ),
+                            queue='api.management.commands.websockets',
+                            routing_key='api.management.commands.websockets',
+                            serializer='json',
+                        )
+                    notify = False
+                    if data['type'] != 'Message':
+                        cursor.execute(
+                            'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
+                            (data['user_destination_id'], 'notifications_invitations', 'True',)
+                        )
+                        if cursor.fetchone()[0]:
+                            notify = True
+                    else:
+                        cursor.execute(
+                            'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
+                            (data['user_destination_id'], 'notifications_messages', 'True',)
+                        )
+                        if cursor.fetchone()[0]:
+                            notify = True
+                    if notify:
+                        badge = 0
+                        cursor.execute(
+                            'SELECT COUNT(id) FROM api_messages WHERE user_destination_id = %s AND status = %s',
+                            (data['user_destination_id'], 'Unread',)
+                        )
+                        badge += cursor.fetchone()[0]
+                        cursor.execute(
+                            'SELECT COUNT(id) FROM api_notifications WHERE user_id = %s AND status = %s',
+                            (data['user_destination_id'], 'Unread',)
+                        )
+                        badge += cursor.fetchone()[0]
+                        current_app.send_task(
+                            'api.tasks.push_notifications',
+                            (
+                                data['user_destination_id'],
+                                {
+                                    'aps': {
+                                        'alert': {
+                                            'body': data['contents'],
+                                            'title': 'New message from user',
+                                        },
+                                        'badge': badge,
+                                    },
+                                    'type': 'message',
+                                },
+                            ),
+                            queue='api.tasks.push_notifications',
+                            routing_key='api.tasks.push_notifications',
+                            serializer='json',
+                        )
                 current_app.send_task(
                     'api.management.commands.websockets',
                     (
