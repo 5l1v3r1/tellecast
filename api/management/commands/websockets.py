@@ -928,7 +928,7 @@ class WebSocket(WebSocketHandler):
                             (user_source_id = %s AND user_destination_id = %s)
                         )
                         AND
-                        type IN ('Response - Accepted', 'Response - Rejected', 'Message')
+                        type IN ('Response - Accepted', 'Response - Rejected', 'Message', 'Ask')
                     ''',
                     (one, two, two, one,)
                 )
@@ -1017,7 +1017,7 @@ class WebSocket(WebSocketHandler):
                             serializer='json',
                         )
                     notify = False
-                    if data['type'] != 'Message':
+                    if data['type'] not in ['Message', 'Ask']:
                         cursor.execute(
                             'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
                             (data['user_destination_id'], 'notifications_invitations', 'True',)
@@ -1129,7 +1129,7 @@ class WebSocket(WebSocketHandler):
                         }))
                         raise Return(None)
                 if message['user_destination_id'] == user_id:
-                    if message['type'] == 'Request' and data['type'] == 'Message':
+                    if message['type'] == 'Request' and data['type'] in ['Message', 'Ask']:
                         self.write_message(dumps({
                             'subject': 'messages',
                             'body': {

@@ -912,6 +912,7 @@ class Messages(ViewSet):
             - Type: string
             - Status: mandatory
             - Choices:
+                - Ask
                 - Message
                 - Request
                 - Response - Accepted
@@ -1008,6 +1009,7 @@ class Messages(ViewSet):
                 'Response - Accepted',
                 'Response - Rejected',
                 'Message',
+                'Ask',
             ],
         ).count():
             message = models.Message.objects.get_queryset().filter(
@@ -1030,7 +1032,7 @@ class Messages(ViewSet):
                     if message.type == 'Response - Blocked':
                         return Response(status=HTTP_403_FORBIDDEN)
                 if message.user_destination_id == request.user.id:
-                    if message.type == 'Request' and serializer.validated_data['type'] == 'Message':
+                    if message.type == 'Request' and serializer.validated_data['type'] in ['Message', 'Ask']:
                         return Response(status=HTTP_403_FORBIDDEN)
                     if message.type == 'Response - Blocked':
                         return Response(status=HTTP_403_FORBIDDEN)

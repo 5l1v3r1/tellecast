@@ -633,7 +633,7 @@ class User(Model):
             return 0
         if Message.objects.get_queryset().filter(
             Q(user_source_id=id, user_destination_id=self.id) | Q(user_source_id=self.id, user_destination_id=id),
-            type='Message',
+            type__in=['Message', 'Ask'],
         ).count():
             return 2
         message = Message.objects.get_queryset().filter(
@@ -655,6 +655,8 @@ class User(Model):
         if message.type == 'Response - Accepted':
             return 2
         if message.type == 'Message':
+            return 2
+        if message.type == 'Ask':
             return 2
         return 0
 
@@ -1265,6 +1267,7 @@ class Message(Model):
     type = CharField(
         ugettext_lazy('Type'),
         choices=(
+            ('Ask', 'Ask',),
             ('Message', 'Message',),
             ('Request', 'Request',),
             ('Response - Accepted', 'Response - Accepted',),
@@ -1989,8 +1992,12 @@ def message_post_save(instance, **kwargs):
         if instance.type == 'Response - Blocked':
             Block.insert_or_update(instance.user_source.id, instance.user_destination_id, False)
         if (
-            (instance.type != 'Message' and instance.user_destination.settings_['notifications_invitations']) or
-            (instance.type == 'Message' and instance.user_destination.settings_['notifications_messages'])
+            (
+                instance.type not in ['Message', 'Ask']
+                and
+                instance.user_destination.settings_['notifications_invitations']
+            ) or
+            (instance.type in ['Message', 'Ask'] and instance.user_destination.settings_['notifications_messages'])
         ):
             current_app.send_task(
                 'api.tasks.push_notifications',
