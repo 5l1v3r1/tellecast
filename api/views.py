@@ -756,6 +756,12 @@ class Messages(ViewSet):
             Type: integer
             Status: optional
 
+        + post_id
+            Description: If supplied, all messages will pertain to this `post_id`. Only applicable if
+            `recent` = False.
+            Type: integer
+            Status: optional
+
         + since_id
             Description: (similar to how it works in all major APIs; Example: twitter.com) Only applicable if
             `recent` = False.
@@ -795,6 +801,10 @@ class Messages(ViewSet):
               required: False
               type: integer
             - name: master_tell_id
+              paramType: query
+              required: False
+              type: integer
+            - name: post_id
               paramType: query
               required: False
               type: integer
@@ -848,6 +858,9 @@ class Messages(ViewSet):
             master_tell_id = serializer.validated_data.get('master_tell_id', None)
             if master_tell_id:
                 query = query.filter(master_tell_id=master_tell_id)
+            post_id = serializer.validated_data.get('post_id', None)
+            if post_id:
+                query = query.filter(post_id=post_id)
             since_id = 0
             try:
                 since_id = serializer.validated_data.get('since_id', 0)
@@ -905,6 +918,10 @@ class Messages(ViewSet):
             - Status: optional
 
         + master_tell_id
+            - Type: integer
+            - Status: optional
+
+        + post_id
             - Type: integer
             - Status: optional
 
@@ -4283,6 +4300,7 @@ def messages_bulk_is_hidden(request):
         'user_destination',
         'user_status',
         'master_tell',
+        'post',
     ):
         if message.user_source_id == request.user.id:
             message.user_source_is_hidden = True
@@ -4362,6 +4380,7 @@ def messages_bulk_status(request):
         'user_destination',
         'user_status',
         'master_tell',
+        'post',
     ):
         message.status = 'Read'
         message.save()

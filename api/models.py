@@ -693,6 +693,8 @@ class User(Model):
             return self.has_permission(self, instance=instance.message)
         if isinstance(instance, Notification):
             return instance.user_id == self.id
+        if isinstance(instance, Post):
+            return instance.user_id == self.id
         if isinstance(instance, Report):
             return instance.user_source_id == self.id
         if isinstance(instance, ShareUser):
@@ -1256,116 +1258,6 @@ class MasterTell(Model):
         return self
 
 
-class Message(Model):
-
-    user_source = ForeignKey(User, related_name='+')
-    user_source_is_hidden = BooleanField(ugettext_lazy('Is Hidden?'), db_index=True, default=False)
-    user_destination = ForeignKey(User, related_name='+')
-    user_destination_is_hidden = BooleanField(ugettext_lazy('Is Hidden?'), db_index=True, default=False)
-    user_status = ForeignKey(UserStatus, blank=True, null=True, related_name='+')
-    master_tell = ForeignKey(MasterTell, blank=True, null=True, related_name='+')
-    type = CharField(
-        ugettext_lazy('Type'),
-        choices=(
-            ('Ask', 'Ask',),
-            ('Message', 'Message',),
-            ('Request', 'Request',),
-            ('Response - Accepted', 'Response - Accepted',),
-            ('Response - Blocked', 'Response - Blocked',),
-            ('Response - Rejected', 'Response - Rejected',),
-        ),
-        db_index=True,
-        max_length=255,
-    )
-    contents = TextField(ugettext_lazy('Contents'), db_index=True)
-    status = CharField(
-        ugettext_lazy('Status'),
-        choices=(
-            ('Read', 'Read',),
-            ('Unread', 'Unread',),
-        ),
-        db_index=True,
-        default='Unread',
-        max_length=255,
-    )
-    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
-    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
-
-    class Meta:
-
-        db_table = 'api_messages'
-        ordering = (
-            '-id',
-        )
-        verbose_name = 'Message'
-        verbose_name_plural = 'Messages'
-
-    @classmethod
-    def insert(cls, user_source_id, data):
-        message = Message.objects.create(
-            user_source_id=user_source_id,
-            user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
-            user_destination_id=data['user_destination_id'],
-            user_destination_is_hidden=data['user_destination_is_hidden']
-            if 'user_destination_is_hidden' in data else None,
-            user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
-            master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
-            type=data['type'] if 'type' in data else None,
-            contents=data['contents'] if 'contents' in data else None,
-            status=data['status'] if 'status' in data else 'Unread',
-        )
-        if 'attachments' in data:
-            for attachment in data['attachments']:
-                MessageAttachment.insert(message.id, attachment)
-        return message
-
-    def __str__(self):
-        return str(self.type)
-
-    def __unicode__(self):
-        return unicode(self.type)
-
-    def update(self, data):
-        if 'user_source_is_hidden' in data:
-            self.user_source_is_hidden = data['user_source_is_hidden']
-        if 'user_destination_is_hidden' in data:
-            self.user_destination_is_hidden = data['user_destination_is_hidden']
-        if 'status' in data:
-            self.status = data['status']
-        self.save()
-        return self
-
-
-class MessageAttachment(Model):
-
-    message = ForeignKey(Message, related_name='attachments')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-
-        db_table = 'api_messages_attachments'
-        ordering = (
-            '-id',
-        )
-        verbose_name = 'Messages :: Attachment'
-        verbose_name_plural = 'Messages :: Attachments'
-
-    @classmethod
-    def insert(cls, message_id, data):
-        return MessageAttachment.objects.create(
-            message_id=message_id,
-            string=data['string'] if 'string' in data else None,
-            position=data['position'] if 'position' in data else None,
-        )
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
-
-
 class Notification(Model):
 
     user = ForeignKey(User, related_name='notifications')
@@ -1838,6 +1730,118 @@ class PostTellzone(Model):
     @classmethod
     def remove(cls, post_id, tellzone_id):
         return PostTellzone.objects.get_queryset().filter(post_id=post_id, tellzone_id=tellzone_id).delete()
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
+class Message(Model):
+
+    user_source = ForeignKey(User, related_name='+')
+    user_source_is_hidden = BooleanField(ugettext_lazy('Is Hidden?'), db_index=True, default=False)
+    user_destination = ForeignKey(User, related_name='+')
+    user_destination_is_hidden = BooleanField(ugettext_lazy('Is Hidden?'), db_index=True, default=False)
+    user_status = ForeignKey(UserStatus, blank=True, null=True, related_name='+')
+    master_tell = ForeignKey(MasterTell, blank=True, null=True, related_name='+')
+    post = ForeignKey(Post, blank=True, null=True, related_name='+')
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('Ask', 'Ask',),
+            ('Message', 'Message',),
+            ('Request', 'Request',),
+            ('Response - Accepted', 'Response - Accepted',),
+            ('Response - Blocked', 'Response - Blocked',),
+            ('Response - Rejected', 'Response - Rejected',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    status = CharField(
+        ugettext_lazy('Status'),
+        choices=(
+            ('Read', 'Read',),
+            ('Unread', 'Unread',),
+        ),
+        db_index=True,
+        default='Unread',
+        max_length=255,
+    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+
+    class Meta:
+
+        db_table = 'api_messages'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Message'
+        verbose_name_plural = 'Messages'
+
+    @classmethod
+    def insert(cls, user_source_id, data):
+        message = Message.objects.create(
+            user_source_id=user_source_id,
+            user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
+            user_destination_id=data['user_destination_id'],
+            user_destination_is_hidden=data['user_destination_is_hidden']
+            if 'user_destination_is_hidden' in data else None,
+            user_status_id=data['user_status_id'] if 'user_status_id' in data else None,
+            master_tell_id=data['master_tell_id'] if 'master_tell_id' in data else None,
+            post_id=data['post_id'] if 'post_id' in data else None,
+            type=data['type'] if 'type' in data else None,
+            contents=data['contents'] if 'contents' in data else None,
+            status=data['status'] if 'status' in data else 'Unread',
+        )
+        if 'attachments' in data:
+            for attachment in data['attachments']:
+                MessageAttachment.insert(message.id, attachment)
+        return message
+
+    def __str__(self):
+        return str(self.type)
+
+    def __unicode__(self):
+        return unicode(self.type)
+
+    def update(self, data):
+        if 'user_source_is_hidden' in data:
+            self.user_source_is_hidden = data['user_source_is_hidden']
+        if 'user_destination_is_hidden' in data:
+            self.user_destination_is_hidden = data['user_destination_is_hidden']
+        if 'status' in data:
+            self.status = data['status']
+        self.save()
+        return self
+
+
+class MessageAttachment(Model):
+
+    message = ForeignKey(Message, related_name='attachments')
+    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+
+        db_table = 'api_messages_attachments'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Messages :: Attachment'
+        verbose_name_plural = 'Messages :: Attachments'
+
+    @classmethod
+    def insert(cls, message_id, data):
+        return MessageAttachment.objects.create(
+            message_id=message_id,
+            string=data['string'] if 'string' in data else None,
+            position=data['position'] if 'position' in data else None,
+        )
 
     def __str__(self):
         return str(self.id)

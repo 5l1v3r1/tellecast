@@ -669,108 +669,6 @@ class DevicesGCMResponse(DeviceGCM):
         model = models.DeviceGCM
 
 
-class MessageUser(User):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'email',
-            'photo_original',
-            'photo_preview',
-            'first_name',
-            'last_name',
-            'date_of_birth',
-            'gender',
-            'location',
-            'description',
-            'phone',
-        )
-        model = models.User
-
-
-class MessageUserStatus(UserStatus):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'string',
-            'title',
-            'url',
-            'notes',
-            'attachments',
-        )
-        model = models.UserStatus
-
-
-class MessageMasterTell(MasterTell):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'created_by_id',
-            'owned_by_id',
-            'contents',
-            'position',
-            'is_visible',
-            'inserted_at',
-            'updated_at',
-        )
-        model = models.MasterTell
-
-
-class MessageAttachment(ModelSerializer):
-
-    position = IntegerField(required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'string',
-            'position',
-        )
-        model = models.MessageAttachment
-
-
-class Message(ModelSerializer):
-
-    user_source_id = IntegerField()
-    user_source = MessageUser()
-    user_source_is_hidden = BooleanField(default=False)
-    user_destination_id = IntegerField()
-    user_destination = MessageUser()
-    user_destination_is_hidden = BooleanField(default=False)
-    user_status_id = IntegerField(required=False)
-    user_status = MessageUserStatus(required=False)
-    master_tell_id = IntegerField(required=False)
-    master_tell = MessageMasterTell(required=False)
-    attachments = MessageAttachment(help_text='List of Messages :: Attachments', many=True, required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'user_source_id',
-            'user_source',
-            'user_source_is_hidden',
-            'user_destination_id',
-            'user_destination',
-            'user_destination_is_hidden',
-            'user_status',
-            'master_tell',
-            'type',
-            'contents',
-            'status',
-            'inserted_at',
-            'updated_at',
-            'attachments',
-        )
-        model = models.Message
-
-
 class ShareUser(ModelSerializer):
 
     user_destination_id = IntegerField(default=None)
@@ -1087,6 +985,127 @@ class Post(ModelSerializer):
         return self.instance.update(self.validated_data)
 
 
+class MessageUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'email',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+        )
+        model = models.User
+
+
+class MessageUserStatus(UserStatus):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'string',
+            'title',
+            'url',
+            'notes',
+            'attachments',
+        )
+        model = models.UserStatus
+
+
+class MessageMasterTell(MasterTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'contents',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.MasterTell
+
+
+class MessagePost(Post):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'category_id',
+            'title',
+            'contents',
+            'inserted_at',
+            'updated_at',
+            'expired_at',
+        )
+        model = models.Post
+
+
+class MessageAttachment(ModelSerializer):
+
+    position = IntegerField(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'string',
+            'position',
+        )
+        model = models.MessageAttachment
+
+
+class Message(ModelSerializer):
+
+    user_source_id = IntegerField()
+    user_source = MessageUser()
+    user_source_is_hidden = BooleanField(default=False)
+    user_destination_id = IntegerField()
+    user_destination = MessageUser()
+    user_destination_is_hidden = BooleanField(default=False)
+    user_status_id = IntegerField(required=False)
+    user_status = MessageUserStatus(required=False)
+    master_tell_id = IntegerField(required=False)
+    master_tell = MessageMasterTell(required=False)
+    post_id = IntegerField(required=False)
+    post = MessagePost(required=False)
+    attachments = MessageAttachment(help_text='List of Messages :: Attachments', many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user_source_id',
+            'user_source',
+            'user_source_is_hidden',
+            'user_destination_id',
+            'user_destination',
+            'user_destination_is_hidden',
+            'user_status',
+            'master_tell',
+            'post',
+            'type',
+            'contents',
+            'status',
+            'inserted_at',
+            'updated_at',
+            'attachments',
+        )
+        model = models.Message
+
+
 class Ads(Ad):
     pass
 
@@ -1350,6 +1369,7 @@ class MessagesGetRequest(Serializer):
     user_id = IntegerField(required=False)
     user_status_id = IntegerField(required=False)
     master_tell_id = IntegerField(required=False)
+    post_id = IntegerField(required=False)
     since_id = IntegerField(required=False)
     max_id = IntegerField(required=False)
     limit = IntegerField(required=False)
@@ -1382,6 +1402,7 @@ class MessagesPostRequest(Message):
             'user_destination_is_hidden',
             'user_status_id',
             'master_tell_id',
+            'post_id',
             'type',
             'contents',
             'status',
@@ -1399,6 +1420,9 @@ class MessagesPostRequest(Message):
         if 'master_tell_id' in attrs:
             if not attrs['master_tell_id']:
                 del attrs['master_tell_id']
+        if 'post_id' in attrs:
+            if not attrs['post_id']:
+                del attrs['post_id']
         return attrs
 
 

@@ -713,6 +713,7 @@ class Messages(TransactionTestCase):
         assert response.data['user_destination_is_hidden'] is False
         assert response.data['user_status'] is None
         assert response.data['master_tell'] is None
+        assert response.data['post'] is None
         assert response.data['type'] == dictionary['type']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['status'] == dictionary['status']
@@ -745,6 +746,7 @@ class Messages(TransactionTestCase):
         assert response.data['user_destination_is_hidden'] is False
         assert response.data['user_status'] is None
         assert response.data['master_tell'] is None
+        assert response.data['post'] is None
         assert response.data['type'] == dictionary['type']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['status'] == dictionary['status']
