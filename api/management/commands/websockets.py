@@ -895,7 +895,7 @@ class WebSocket(WebSocketHandler):
                         (user_source_id = %s AND user_destination_id = %s)
                         OR
                         (user_source_id = %s AND user_destination_id = %s)
-                    ORDER BY inserted_at DESC, id DESC
+                    ORDER BY id DESC
                     LIMIT 1
                     OFFSET 0
                     ''',

@@ -639,7 +639,7 @@ class User(Model):
         message = Message.objects.get_queryset().filter(
             Q(user_source_id=id, user_destination_id=self.id) | Q(user_source_id=self.id, user_destination_id=id),
         ).order_by(
-            '-inserted_at',
+            '-id',
         ).first()
         if not message:
             return 0

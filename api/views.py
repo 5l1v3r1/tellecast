@@ -839,7 +839,6 @@ class Messages(ViewSet):
                     Q(user_source_id=request.user.id, user_destination_id=user.id) |
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
                 ).order_by(
-                    '-inserted_at',
                     '-id',
                 ).first()
                 if message:
@@ -880,7 +879,7 @@ class Messages(ViewSet):
                 limit = serializer.validated_data.get('limit', 100)
             except Exception:
                 pass
-            for message in query.order_by('-inserted_at')[:limit]:
+            for message in query.order_by('-id')[:limit]:
                 messages.append(message)
         return Response(
             data=serializers.MessagesGetResponse(
@@ -1039,7 +1038,6 @@ class Messages(ViewSet):
                     user_destination_id=request.user.id,
                 ),
             ).order_by(
-                '-inserted_at',
                 '-id',
             ).first()
             if message:
