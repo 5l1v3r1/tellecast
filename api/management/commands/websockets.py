@@ -1056,6 +1056,7 @@ class WebSocket(WebSocketHandler):
                                         'badge': badge,
                                     },
                                     'type': 'message',
+                                    'user_source_id': user_id,
                                 },
                             ),
                             queue='api.tasks.push_notifications',

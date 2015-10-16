@@ -989,6 +989,7 @@ class Messages(ViewSet):
             },
             'badge': {{ total_number_of_unread_messages + total_number_of_unread_notifications }},
             'type': 'message',
+            'user_source_id': {{ user_source_id }},
         }
         </pre>
         ---

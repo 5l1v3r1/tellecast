@@ -2016,6 +2016,7 @@ def message_post_save(instance, **kwargs):
                             'badge': get_badge(instance.user_destination_id),
                         },
                         'type': 'message',
+                        'user_source_id': instance.user_source.id,
                     },
                 ),
                 queue='api.tasks.push_notifications',
