@@ -842,7 +842,11 @@ class Messages(ViewSet):
                     '-id',
                 ).first()
                 if message:
-                    messages.append(message)
+                    if message.type not in [
+                        'Response - Blocked',
+                        'Response - Rejected',
+                    ]:
+                        messages.append(message)
             messages = sorted(messages, key=lambda message: message.inserted_at, reverse=True)
         else:
             query = models.Message.objects.get_queryset().filter(
@@ -856,7 +860,7 @@ class Messages(ViewSet):
                     type__in=[
                         'Response - Blocked',
                         'Response - Rejected',
-                    ]
+                    ],
                 ).order_by('-id').first()
                 if message:
                     query = query.filter(id__gt=message.id)
