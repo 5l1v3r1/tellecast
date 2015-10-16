@@ -1995,14 +1995,14 @@ def message_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         if instance.type == 'Response - Blocked':
             Block.insert_or_update(instance.user_source.id, instance.user_destination_id, False)
-        if (
-            (
-                instance.type not in ['Message', 'Ask']
-                and
-                instance.user_destination.settings_['notifications_invitations']
-            ) or
-            (instance.type in ['Message', 'Ask'] and instance.user_destination.settings_['notifications_messages'])
-        ):
+        status = False
+        if instance.type in ['Request', 'Response - Accepted']:
+            if instance.user_destination.settings_['notifications_invitations']:
+                status = True
+        if instance.type in ['Ask', 'Message']:
+            if instance.user_destination.settings_['notifications_messages']:
+                status = True
+        if status:
             current_app.send_task(
                 'api.tasks.push_notifications',
                 (

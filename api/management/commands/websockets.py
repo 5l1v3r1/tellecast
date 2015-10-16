@@ -1017,14 +1017,14 @@ class WebSocket(WebSocketHandler):
                             serializer='json',
                         )
                     notify = False
-                    if data['type'] not in ['Message', 'Ask']:
+                    if data['type'] in ['Request', 'Response - Accepted']:
                         cursor.execute(
                             'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
                             (data['user_destination_id'], 'notifications_invitations', 'True',)
                         )
                         if cursor.fetchone()[0]:
                             notify = True
-                    else:
+                    if data['type'] in ['Ask', 'Message']:
                         cursor.execute(
                             'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
                             (data['user_destination_id'], 'notifications_messages', 'True',)
