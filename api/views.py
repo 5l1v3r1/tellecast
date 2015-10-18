@@ -1438,6 +1438,10 @@ class Posts(ViewSet):
         Input
         =====
 
+        + user_id
+            - Type: integer
+            - Status: optional
+
         + category_ids
             - Type: a comma-separated list of Category IDs
             - Status: optional
@@ -1455,6 +1459,10 @@ class Posts(ViewSet):
         omit_parameters:
             - form
         parameters:
+            - name: user_id
+              paramType: query
+              required: false
+              type: string
             - name: category_ids
               paramType: query
               required: false
@@ -1471,6 +1479,7 @@ class Posts(ViewSet):
         return Response(
             data=serializers.PostsResponse(
                 self.get_queryset(
+                    user_id=request.query_params.get('user_id', None),
                     category_ids=request.query_params.get('category_ids', None),
                     keywords=request.query_params.get('keywords', None),
                 ),
@@ -1860,7 +1869,7 @@ class Posts(ViewSet):
     def get_queryset(self, user_id=None, category_ids=None, keywords=None):
         queryset = models.Post.objects.get_queryset()
         if user_id:
-            queryset = queryset.filter(user_id=self.request.user.id)
+            queryset = queryset.filter(user_id=user_id)
         if category_ids:
             queryset = queryset.filter(category_id__in=map(int, category_ids.split(',')))
         if keywords:
