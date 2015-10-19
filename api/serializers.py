@@ -525,30 +525,7 @@ class PostAttachment(ModelSerializer):
         model = models.PostAttachment
 
 
-class UsersProfilePost(ModelSerializer):
-
-    category = Category()
-    title = CharField(required=False)
-    attachments = PostAttachment(many=True)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'category',
-            'title',
-            'contents',
-            'inserted_at',
-            'updated_at',
-            'expired_at',
-            'attachments',
-        )
-        model = models.Post
-
-
 class UsersProfile(User):
-
-    posts = UsersProfilePost(many=True)
 
     class Meta:
 
@@ -573,7 +550,6 @@ class UsersProfile(User):
             'master_tells',
             'messages',
             'is_tellcard',
-            'posts',
         )
         model = models.User
 
