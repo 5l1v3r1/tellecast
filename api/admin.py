@@ -342,6 +342,7 @@ class Message(ModelAdmin):
         'type',
         'contents',
         'status',
+        'is_suppressed',
     )
     list_display = (
         'id',
@@ -354,6 +355,7 @@ class Message(ModelAdmin):
         'post',
         'type',
         'status',
+        'is_suppressed',
         'attachments_',
         'inserted_at',
         'updated_at',
@@ -368,6 +370,7 @@ class Message(ModelAdmin):
         'post',
         'type',
         'status',
+        'is_suppressed',
         'inserted_at',
         'updated_at',
     )
@@ -379,7 +382,7 @@ class Message(ModelAdmin):
         return instance.attachments.get_queryset().count()
 
     attachments_.allow_tags = True
-    attachments_.short_description = 'Slave Tells'
+    attachments_.short_description = 'Attachments'
 
 Message.delete_view = delete_view
 

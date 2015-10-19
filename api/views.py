@@ -838,32 +838,20 @@ class Messages(ViewSet):
                 message = models.Message.objects.get_queryset().filter(
                     Q(user_source_id=request.user.id, user_destination_id=user.id) |
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
+                    is_suppressed=False,
                 ).order_by(
                     '-id',
                 ).first()
                 if message:
-                    if message.type not in [
-                        'Response - Blocked',
-                        'Response - Rejected',
-                    ]:
-                        messages.append(message)
+                    messages.append(message)
             messages = sorted(messages, key=lambda message: message.inserted_at, reverse=True)
         else:
             query = models.Message.objects.get_queryset().filter(
                 Q(user_source_id=request.user.id) | Q(user_destination_id=request.user.id),
+                is_suppressed=False,
             )
             user_id = serializer.validated_data.get('user_id', None)
             if user_id:
-                message = models.Message.objects.get_queryset().filter(
-                    Q(user_source_id=request.user.id, user_destination_id=user_id) |
-                    Q(user_source_id=user_id, user_destination_id=request.user.id),
-                    type__in=[
-                        'Response - Blocked',
-                        'Response - Rejected',
-                    ],
-                ).order_by('-id').first()
-                if message:
-                    query = query.filter(id__gt=message.id)
                 query = query.filter(Q(user_source_id=user_id) | Q(user_destination_id=user_id))
             user_status_id = serializer.validated_data.get('user_status_id', None)
             if user_status_id:

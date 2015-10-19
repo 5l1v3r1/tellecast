@@ -1771,6 +1771,7 @@ class Message(Model):
         default='Unread',
         max_length=255,
     )
+    is_suppressed = BooleanField(ugettext_lazy('Is Suppressed?'), db_index=True, default=False)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
 
@@ -1995,6 +1996,21 @@ def message_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         if instance.type == 'Response - Blocked':
             Block.insert_or_update(instance.user_source.id, instance.user_destination_id, False)
+        if instance.type in ['Response - Rejected', 'Response - Blocked']:
+            instance.is_suppressed = True
+            instance.save()
+            for message in Message.objects.get_queryset().filter(
+                id__lt=instance.id,
+                user_source_id=instance.user_source_id,
+                user_destination_id=instance.user_destination_id,
+                master_tell_id=instance.master_tell_id,
+                user_status_id=instance.user_status_id,
+                post_id=instance.post_id,
+            ).order_by('-id'):
+                if message.type == 'Request':
+                    message.is_suppressed = True
+                    message.save()
+                    break
         status = False
         if instance.type in ['Request', 'Response - Accepted']:
             if instance.user_destination.settings_['notifications_invitations']:
