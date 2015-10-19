@@ -2000,9 +2000,9 @@ def message_post_save(instance, **kwargs):
             instance.is_suppressed = True
             instance.save()
             for message in Message.objects.get_queryset().filter(
+                Q(user_source_id=instance.user_source_id, user_destination_id=instance.user_destination_id) |
+                Q(user_source_id=instance.user_destination_id, user_destination_id=instance.user_source_id),
                 id__lt=instance.id,
-                user_source_id=instance.user_source_id,
-                user_destination_id=instance.user_destination_id,
                 master_tell_id=instance.master_tell_id,
                 user_status_id=instance.user_status_id,
                 post_id=instance.post_id,
