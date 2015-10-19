@@ -1426,8 +1426,8 @@ class Posts(ViewSet):
         Input
         =====
 
-        + user_id
-            - Type: integer
+        + user_ids
+            - Type: a comma-separated list of User IDs
             - Status: optional
 
         + category_ids
@@ -1447,7 +1447,7 @@ class Posts(ViewSet):
         omit_parameters:
             - form
         parameters:
-            - name: user_id
+            - name: user_ids
               paramType: query
               required: false
               type: string
@@ -1467,7 +1467,7 @@ class Posts(ViewSet):
         return Response(
             data=serializers.PostsResponse(
                 self.get_queryset(
-                    user_id=request.query_params.get('user_id', None),
+                    user_ids=request.query_params.get('user_ids', None),
                     category_ids=request.query_params.get('category_ids', None),
                     keywords=request.query_params.get('keywords', None),
                 ),
@@ -1854,10 +1854,12 @@ class Posts(ViewSet):
     def get_instance(self, id):
         return self.get_queryset().filter(id=id).first()
 
-    def get_queryset(self, user_id=None, category_ids=None, keywords=None):
+    def get_queryset(self, user_id=None, user_ids=None, category_ids=None, keywords=None):
         queryset = models.Post.objects.get_queryset()
         if user_id:
             queryset = queryset.filter(user_id=user_id)
+        if user_ids:
+            queryset = queryset.filter(user_ids=map(int, user_ids.split(',')))
         if category_ids:
             queryset = queryset.filter(category_id__in=map(int, category_ids.split(',')))
         if keywords:
