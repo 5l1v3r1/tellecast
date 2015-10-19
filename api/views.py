@@ -1859,7 +1859,7 @@ class Posts(ViewSet):
         if user_id:
             queryset = queryset.filter(user_id=user_id)
         if user_ids:
-            queryset = queryset.filter(user_ids=map(int, user_ids.split(',')))
+            queryset = queryset.filter(user_id__in=map(int, user_ids.split(',')))
         if category_ids:
             queryset = queryset.filter(category_id__in=map(int, category_ids.split(',')))
         if keywords:
