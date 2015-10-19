@@ -4317,7 +4317,8 @@ def messages_bulk_is_hidden(request):
         if message.user_destination_id == request.user.id:
             message.user_destination_is_hidden = True
         message.save()
-        messages.append(message)
+        if not message.is_suppressed:
+            messages.append(message)
     current_app.send_task(
         'api.tasks.push_notifications',
         (
@@ -4394,7 +4395,8 @@ def messages_bulk_status(request):
     ):
         message.status = 'Read'
         message.save()
-        messages.append(message)
+        if not message.is_suppressed:
+            messages.append(message)
     return Response(
         data=serializers.MessagesBulkResponse(
             messages,
