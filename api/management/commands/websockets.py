@@ -953,9 +953,11 @@ class WebSocket(WebSocketHandler):
                         type,
                         contents,
                         status,
+                        is_suppressed,
                         inserted_at,
                         updated_at
                     ) VALUES (
+                        %s,
                         %s,
                         %s,
                         %s,
@@ -979,6 +981,7 @@ class WebSocket(WebSocketHandler):
                         data['type'] if 'type' in data else None,
                         data['contents'] if 'contents' in data else None,
                         data['status'] if 'status' in data else 'Unread',
+                        False,
                     )
                 )
                 connection.commit()
