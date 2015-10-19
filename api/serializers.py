@@ -2030,7 +2030,6 @@ class PostsRequestAttachment(PostAttachment):
 
 class PostsRequest(Post):
 
-    contents = CharField(required=False)
     attachments = PostsRequestAttachment(many=True, required=False)
     tellzones = ListField(child=IntegerField(), required=False)
 
