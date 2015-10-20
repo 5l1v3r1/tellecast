@@ -510,6 +510,7 @@ class Category(ModelSerializer):
 
 class PostAttachment(ModelSerializer):
 
+    string_preview = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
 
     class Meta:
@@ -517,8 +518,8 @@ class PostAttachment(ModelSerializer):
         fields = (
             'id',
             'type',
-            'contents_original',
-            'contents_preview',
+            'string_original',
+            'string_preview',
             'position',
             'inserted_at',
             'updated_at',
@@ -1999,8 +2000,8 @@ class PostsRequestAttachment(PostAttachment):
 
         fields = (
             'type',
-            'contents_original',
-            'contents_preview',
+            'string_original',
+            'string_preview',
             'position',
         )
         model = models.PostAttachment

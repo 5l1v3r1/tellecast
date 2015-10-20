@@ -1558,11 +1558,11 @@ class Posts(ViewSet):
                         - video/mpeg
                         - video/x-mpeg
 
-                + contents_original
+                + string_original
                     - Type: string
                     - Status: mandatory
 
-                + contents_preview
+                + string_preview
                     - Type: string
                     - Status: mandatory
 
@@ -1659,11 +1659,11 @@ class Posts(ViewSet):
                         - video/mpeg
                         - video/x-mpeg
 
-                + contents_original
+                + string_original
                     - Type: string
                     - Status: mandatory
 
-                + contents_preview
+                + string_preview
                     - Type: string
                     - Status: mandatory
 
@@ -1769,11 +1769,11 @@ class Posts(ViewSet):
                         - video/mpeg
                         - video/x-mpeg
 
-                + contents_original
+                + string_original
                     - Type: string
                     - Status: mandatory
 
-                + contents_preview
+                + string_preview
                     - Type: string
                     - Status: mandatory
 

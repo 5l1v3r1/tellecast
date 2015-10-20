@@ -993,16 +993,16 @@ class PostAttachment(ModelAdmin):
     fields = (
         'post',
         'type',
-        'contents_original',
-        'contents_preview',
+        'string_original',
+        'string_preview',
         'position',
     )
     list_display = (
         'id',
         'post',
         'type',
-        'contents_original',
-        'contents_preview',
+        'string_original',
+        'string_preview',
         'position',
         'inserted_at',
         'updated_at',
@@ -1012,8 +1012,8 @@ class PostAttachment(ModelAdmin):
         'type',
     )
     search_fields = (
-        'contents_original',
-        'contents_preview',
+        'string_original',
+        'string_preview',
     )
 
 PostAttachment.delete_view = delete_view
