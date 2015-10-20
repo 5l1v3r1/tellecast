@@ -1600,7 +1600,8 @@ class Post(Model):
                 PostAttachment.objects.create(
                     post_id=post.id,
                     type=attachment['type'] if 'type' in attachment else None,
-                    contents=attachment['contents'] if 'contents' in attachment else None,
+                    contents_original=attachment['contents_original'] if 'contents_original' in attachment else None,
+                    contents_preview=attachment['contents_preview'] if 'contents_preview' in attachment else None,
                     position=attachment['position'] if 'position' in attachment else None,
                 )
         if 'tellzones' in data:
@@ -1626,15 +1627,15 @@ class Post(Model):
             ids = []
             for attachment in data['attachments']:
                 instance = PostAttachment.objects.get_queryset().filter(
-                    Q(id=attachment['id'] if 'id' in attachment else 0) |
-                    Q(contents=attachment['contents'] if 'contents' in attachment else ''),
-                    post_id=self.id,
+                    Q(id=attachment['id'] if 'id' in attachment else 0), post_id=self.id,
                 ).first()
                 if instance:
                     if 'type' in attachment:
                         instance.type = attachment['type']
-                    if 'contents' in attachment:
-                        instance.contents = attachment['contents']
+                    if 'contents_original' in attachment:
+                        instance.contents_original = attachment['contents_original']
+                    if 'contents_preview' in attachment:
+                        instance.contents_preview = attachment['contents_preview']
                     if 'position' in attachment:
                         instance.position = attachment['position']
                     instance.save()
@@ -1642,7 +1643,9 @@ class Post(Model):
                     instance = PostAttachment.objects.create(
                         post_id=self.id,
                         type=attachment['type'] if 'type' in attachment else None,
-                        contents=attachment['contents'] if 'contents' in attachment else None,
+                        contents_original=attachment['contents_original']
+                        if 'contents_original' in attachment else None,
+                        contents_preview=attachment['contents_preview'] if 'contents_preview' in attachment else None,
                         position=attachment['position'] if 'position' in attachment else None,
                     )
                 ids.append(instance.id)
@@ -1686,7 +1689,8 @@ class PostAttachment(Model):
         db_index=True,
         max_length=255,
     )
-    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    contents_original = TextField(ugettext_lazy('Contents :: Original'), db_index=True)
+    contents_preview = TextField(ugettext_lazy('Contents :: Preview'), db_index=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)

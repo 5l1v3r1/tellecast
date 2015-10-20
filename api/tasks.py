@@ -250,14 +250,28 @@ def thumbnails_1(table, id):
         if instance.type.startswith('image'):
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.contents, instance.type, 'large', 1920,),
+                (instance.contents_original, instance.type, 'large', 1920,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.contents, instance.type, 'small', 685,),
+                (instance.contents_original, instance.type, 'small', 685,),
+                queue='api.tasks.thumbnails',
+                routing_key='api.tasks.thumbnails',
+                serializer='json',
+            )
+            current_app.send_task(
+                'api.tasks.thumbnails_2',
+                (instance.contents_preview, instance.type, 'large', 1920,),
+                queue='api.tasks.thumbnails',
+                routing_key='api.tasks.thumbnails',
+                serializer='json',
+            )
+            current_app.send_task(
+                'api.tasks.thumbnails_2',
+                (instance.contents_preview, instance.type, 'small', 685,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',

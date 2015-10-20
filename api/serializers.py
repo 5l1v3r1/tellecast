@@ -517,7 +517,8 @@ class PostAttachment(ModelSerializer):
         fields = (
             'id',
             'type',
-            'contents',
+            'contents_original',
+            'contents_preview',
             'position',
             'inserted_at',
             'updated_at',
@@ -1998,7 +1999,8 @@ class PostsRequestAttachment(PostAttachment):
 
         fields = (
             'type',
-            'contents',
+            'contents_original',
+            'contents_preview',
             'position',
         )
         model = models.PostAttachment
