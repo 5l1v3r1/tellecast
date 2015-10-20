@@ -510,7 +510,6 @@ class Category(ModelSerializer):
 
 class PostAttachment(ModelSerializer):
 
-    string_preview = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
 
     class Meta:
