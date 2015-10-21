@@ -2042,18 +2042,19 @@ def message_post_save(instance, **kwargs):
                 routing_key='api.tasks.push_notifications',
                 serializer='json',
             )
-    current_app.send_task(
-        'api.management.commands.websockets',
-        (
-            {
-                'subject': 'messages',
-                'body': instance.id,
-            },
-        ),
-        queue='api.management.commands.websockets',
-        routing_key='api.management.commands.websockets',
-        serializer='json',
-    )
+    if instance.type not in ['Response - Rejected', 'Response - Blocked']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'subject': 'messages',
+                    'body': instance.id,
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
 
 
 @receiver(pre_save, sender=MessageAttachment)
