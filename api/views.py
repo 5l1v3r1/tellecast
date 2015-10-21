@@ -1007,13 +1007,6 @@ class Messages(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        if is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
-            return Response(
-                data={
-                    'error': ugettext_lazy('Invalid `user_destination_id`'),
-                },
-                status=HTTP_400_BAD_REQUEST,
-            )
         if request.user.id == serializer.validated_data['user_destination_id']:
             return Response(
                 data={
@@ -1021,42 +1014,57 @@ class Messages(ViewSet):
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
-        if not models.Message.objects.get_queryset().filter(
-            Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_destination_id']) |
-            Q(user_source_id=serializer.validated_data['user_destination_id'], user_destination_id=request.user.id),
-            type__in=[
-                'Response - Accepted',
-                'Response - Rejected',
-                'Message',
-                'Ask',
-            ],
-        ).count():
-            message = models.Message.objects.get_queryset().filter(
+        if is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `user_destination_id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        if 'post_id' not in serializer.validated_data or not serializer.validated_data['post_id']:
+            if not models.Message.objects.get_queryset().filter(
                 Q(
                     user_source_id=request.user.id,
                     user_destination_id=serializer.validated_data['user_destination_id'],
-                ) |
-                Q(
+                ) | Q(
                     user_source_id=serializer.validated_data['user_destination_id'],
                     user_destination_id=request.user.id,
                 ),
-            ).order_by(
-                '-id',
-            ).first()
-            if message:
-                if message.user_source_id == request.user.id:
-                    if message.type == 'Request':
-                        return Response(status=HTTP_409_CONFLICT)
-                    if message.type == 'Response - Blocked':
+                post_id__isnull=True,
+                type__in=[
+                    'Response - Accepted',
+                    'Response - Rejected',
+                    'Message',
+                    'Ask',
+                ],
+            ).count():
+                message = models.Message.objects.get_queryset().filter(
+                    Q(
+                        user_source_id=request.user.id,
+                        user_destination_id=serializer.validated_data['user_destination_id'],
+                    ) |
+                    Q(
+                        user_source_id=serializer.validated_data['user_destination_id'],
+                        user_destination_id=request.user.id,
+                    ),
+                    post_id__isnull=True,
+                ).order_by(
+                    '-id',
+                ).first()
+                if message:
+                    if message.user_source_id == request.user.id:
+                        if message.type == 'Request':
+                            return Response(status=HTTP_409_CONFLICT)
+                        if message.type == 'Response - Blocked':
+                            return Response(status=HTTP_403_FORBIDDEN)
+                    if message.user_destination_id == request.user.id:
+                        if message.type == 'Request' and serializer.validated_data['type'] in ['Message', 'Ask']:
+                            return Response(status=HTTP_403_FORBIDDEN)
+                        if message.type == 'Response - Blocked':
+                            return Response(status=HTTP_403_FORBIDDEN)
+                else:
+                    if not serializer.validated_data['type'] == 'Request':
                         return Response(status=HTTP_403_FORBIDDEN)
-                if message.user_destination_id == request.user.id:
-                    if message.type == 'Request' and serializer.validated_data['type'] in ['Message', 'Ask']:
-                        return Response(status=HTTP_403_FORBIDDEN)
-                    if message.type == 'Response - Blocked':
-                        return Response(status=HTTP_403_FORBIDDEN)
-            else:
-                if not serializer.validated_data['type'] == 'Request':
-                    return Response(status=HTTP_403_FORBIDDEN)
         return Response(
             data=serializers.MessagesPostResponse(
                 serializer.insert(),

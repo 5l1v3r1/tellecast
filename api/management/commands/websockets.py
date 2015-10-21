@@ -950,6 +950,7 @@ class WebSocket(WebSocketHandler):
                         user_destination_is_hidden,
                         user_status_id,
                         master_tell_id,
+                        post_id,
                         type,
                         contents,
                         status,
@@ -957,6 +958,7 @@ class WebSocket(WebSocketHandler):
                         inserted_at,
                         updated_at
                     ) VALUES (
+                        %s,
                         %s,
                         %s,
                         %s,
@@ -978,6 +980,7 @@ class WebSocket(WebSocketHandler):
                         data['user_destination_is_hidden'] if 'user_destination_is_hidden' in data else False,
                         data['user_status_id'] if 'user_status_id' in data else None,
                         data['master_tell_id'] if 'master_tell_id' in data else None,
+                        data['post_id'] if 'post_id' in data else None,
                         data['type'] if 'type' in data else None,
                         data['contents'] if 'contents' in data else None,
                         data['status'] if 'status' in data else 'Unread',
@@ -1111,20 +1114,47 @@ class WebSocket(WebSocketHandler):
                 },
             }))
             raise Return(None)
-        messages = yield self.get_messages(user_id, data['user_destination_id'])
-        if not messages:
-            message = yield self.get_message(user_id, data['user_destination_id'])
-            if message:
-                if message['user_source_id'] == user_id:
-                    if message['type'] == 'Request':
-                        self.write_message(dumps({
-                            'subject': 'messages',
-                            'body': {
-                                'errors': 'HTTP_409_CONFLICT',
-                            },
-                        }))
-                        raise Return(None)
-                    if message['type'] == 'Response - Blocked':
+        if 'post_id' not in data or not data['post_id']:
+            messages = yield self.get_messages(user_id, data['user_destination_id'])
+            if not messages:
+                message = yield self.get_message(user_id, data['user_destination_id'])
+                if message:
+                    if message['user_source_id'] == user_id:
+                        if message['type'] == 'Request':
+                            self.write_message(dumps({
+                                'subject': 'messages',
+                                'body': {
+                                    'errors': 'HTTP_409_CONFLICT',
+                                },
+                            }))
+                            raise Return(None)
+                        if message['type'] == 'Response - Blocked':
+                            self.write_message(dumps({
+                                'subject': 'messages',
+                                'body': {
+                                    'errors': 'HTTP_403_FORBIDDEN',
+                                },
+                            }))
+                            raise Return(None)
+                    if message['user_destination_id'] == user_id:
+                        if message['type'] == 'Request' and data['type'] in ['Message', 'Ask']:
+                            self.write_message(dumps({
+                                'subject': 'messages',
+                                'body': {
+                                    'errors': 'HTTP_403_FORBIDDEN',
+                                },
+                            }))
+                            raise Return(None)
+                        if message['type'] == 'Response - Blocked':
+                            self.write_message(dumps({
+                                'subject': 'messages',
+                                'body': {
+                                    'errors': 'HTTP_403_FORBIDDEN',
+                                },
+                            }))
+                            raise Return(None)
+                else:
+                    if not data['type'] == 'Request':
                         self.write_message(dumps({
                             'subject': 'messages',
                             'body': {
@@ -1132,32 +1162,6 @@ class WebSocket(WebSocketHandler):
                             },
                         }))
                         raise Return(None)
-                if message['user_destination_id'] == user_id:
-                    if message['type'] == 'Request' and data['type'] in ['Message', 'Ask']:
-                        self.write_message(dumps({
-                            'subject': 'messages',
-                            'body': {
-                                'errors': 'HTTP_403_FORBIDDEN',
-                            },
-                        }))
-                        raise Return(None)
-                    if message['type'] == 'Response - Blocked':
-                        self.write_message(dumps({
-                            'subject': 'messages',
-                            'body': {
-                                'errors': 'HTTP_403_FORBIDDEN',
-                            },
-                        }))
-                        raise Return(None)
-            else:
-                if not data['type'] == 'Request':
-                    self.write_message(dumps({
-                        'subject': 'messages',
-                        'body': {
-                            'errors': 'HTTP_403_FORBIDDEN',
-                        },
-                    }))
-                    raise Return(None)
         yield self.set_message(user_id, data)
         raise Return(None)
 
