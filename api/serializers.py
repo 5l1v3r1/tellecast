@@ -934,7 +934,7 @@ class Post(ModelSerializer):
 
     user_id = IntegerField()
     user = PostUser()
-    category_id = IntegerField(required=False)
+    category_id = IntegerField()
     category = Category()
     title = CharField(required=False)
     attachments = PostAttachment(many=True)
