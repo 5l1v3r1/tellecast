@@ -1583,9 +1583,7 @@ class Post(Model):
 
     @cached_property
     def tellzones(self):
-        return [
-            post_tellzone.tellzone for post_tellzone in PostTellzone.objects.get_queryset().filter(post_id=self.id)
-        ]
+        return [post_tellzone.tellzone for post_tellzone in self.posts_tellzones.get_queryset()]
 
     @classmethod
     def insert(cls, user_id, data):
@@ -1711,8 +1709,8 @@ class PostAttachment(Model):
 
 class PostTellzone(Model):
 
-    post = ForeignKey(Post, related_name='+')
-    tellzone = ForeignKey(Tellzone, related_name='+')
+    post = ForeignKey(Post, related_name='posts_tellzones')
+    tellzone = ForeignKey(Tellzone, related_name='posts_tellzones')
 
     class Meta:
 

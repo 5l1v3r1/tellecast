@@ -1879,7 +1879,9 @@ class Posts(ViewSet):
             'user',
             'category',
         ).prefetch_related(
+            'posts_tellzones',
             'attachments',
+            'user__settings',
         )
         if user_id:
             queryset = queryset.filter(user_id=user_id)
