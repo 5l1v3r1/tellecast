@@ -46,6 +46,7 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/categories/$', views.categories),
     url(r'^api/deauthenticate/$', views.deauthenticate),
     url(
         r'^api/devices/apns/(?P<id>[0-9]+)/$',

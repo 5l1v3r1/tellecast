@@ -3420,7 +3420,7 @@ class UsersTellzones(ViewSet):
 
 
 @api_view(('GET',))
-@permission_classes(())
+@permission_classes((IsAuthenticated,))
 def ads(request):
     '''
     SELECT Ads
@@ -3544,6 +3544,41 @@ def authenticate(request, backend):
             context={
                 'request': request,
             },
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def categories(request):
+    '''
+    SELECT Categries
+
+    <pre>
+    Input
+    =====
+
+    + N/A
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.Categories
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    return Response(
+        data=serializers.Categories(
+            models.Category.objects.get_queryset(),
+            context={
+                'request': request,
+            },
+            many=True,
         ).data,
         status=HTTP_200_OK,
     )

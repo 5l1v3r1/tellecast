@@ -97,6 +97,17 @@ class Ad(ModelSerializer):
         model = models.Ad
 
 
+class Category(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Category
+
+
 class DeviceAPNS(ModelSerializer):
 
     device_id = CharField()
@@ -495,17 +506,6 @@ class User(ModelSerializer):
             else:
                 dictionary[field.field_name] = field.to_representation(attribute)
         return dictionary
-
-
-class Category(ModelSerializer):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-        )
-        model = models.Category
 
 
 class PostAttachment(ModelSerializer):
@@ -1137,6 +1137,10 @@ class BlocksResponse(Block):
             'timestamp',
         )
         model = models.Block
+
+
+class Categories(Category):
+    pass
 
 
 class DeauthenticateRequest(Serializer):
