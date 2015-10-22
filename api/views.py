@@ -1875,7 +1875,12 @@ class Posts(ViewSet):
         return self.get_queryset().filter(id=id).first()
 
     def get_queryset(self, user_id=None, user_ids=None, category_ids=None, keywords=None):
-        queryset = models.Post.objects.get_queryset().select_related('user', 'category', 'attachments')
+        queryset = models.Post.objects.get_queryset().select_related(
+            'user',
+            'category',
+        ).prefetch_related(
+            'attachments',
+        )
         if user_id:
             queryset = queryset.filter(user_id=user_id)
         if user_ids:
