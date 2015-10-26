@@ -1014,22 +1014,6 @@ class MessageMasterTell(MasterTell):
         model = models.MasterTell
 
 
-class MessagePost(Post):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'category_id',
-            'title',
-            'contents',
-            'inserted_at',
-            'updated_at',
-            'expired_at',
-        )
-        model = models.Post
-
-
 class MessageAttachment(ModelSerializer):
 
     position = IntegerField(required=False)
@@ -1057,7 +1041,6 @@ class Message(ModelSerializer):
     master_tell_id = IntegerField(allow_null=True, required=False)
     master_tell = MessageMasterTell(required=False)
     post_id = IntegerField(allow_null=True, required=False)
-    post = MessagePost(required=False)
     attachments = MessageAttachment(help_text='List of Messages :: Attachments', many=True, required=False)
 
     class Meta:
@@ -1072,7 +1055,7 @@ class Message(ModelSerializer):
             'user_destination_is_hidden',
             'user_status',
             'master_tell',
-            'post',
+            'post_id',
             'type',
             'contents',
             'status',
