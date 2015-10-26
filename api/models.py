@@ -704,6 +704,9 @@ class User(Model):
         if isinstance(instance, Tellcard):
             return instance.user_source_id == self.id
 
+    def has_posts(self):
+        return self.posts.get_queryset().count() > 0
+
     def is_authenticated(self):
         return True
 

@@ -440,6 +440,7 @@ class User(ModelSerializer):
             'messages',
             'token',
             'is_tellcard',
+            'has_posts',
         )
         model = models.User
 
@@ -496,6 +497,9 @@ class User(ModelSerializer):
             if field.field_name == 'is_tellcard':
                 dictionary[field.field_name] = instance.is_tellcard(id)
                 continue
+            if field.field_name == 'has_posts':
+                dictionary[field.field_name] = instance.has_posts()
+                continue
             attribute = None
             try:
                 attribute = field.get_attribute(instance)
@@ -551,6 +555,7 @@ class UsersProfile(User):
             'master_tells',
             'messages',
             'is_tellcard',
+            'has_posts',
         )
         model = models.User
 
@@ -1188,6 +1193,7 @@ class HomeConnectionsResponseItemsUser(User):
             'status',
             'master_tells',
             'is_tellcard',
+            'has_posts',
         )
         model = models.User
 
@@ -1461,6 +1467,7 @@ class RadarGetResponseItems(User):
             'status',
             'master_tells',
             'is_tellcard',
+            'has_posts',
         )
         model = models.User
 
