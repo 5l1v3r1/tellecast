@@ -660,6 +660,9 @@ class User(Model):
             return 2
         return 0
 
+    def get_posts(self):
+        return self.posts.get_queryset().count()
+
     def has_permission(self, instance=None):
         if isinstance(instance, User):
             return instance.id == self.id
@@ -703,9 +706,6 @@ class User(Model):
             return instance.owned_by_id == self.id
         if isinstance(instance, Tellcard):
             return instance.user_source_id == self.id
-
-    def has_posts(self):
-        return self.posts.get_queryset().count() > 0
 
     def is_authenticated(self):
         return True

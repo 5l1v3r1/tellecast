@@ -413,6 +413,7 @@ class User(ModelSerializer):
     master_tells = MasterTell(help_text='List of Master Tells', many=True, required=False)
     messages = IntegerField()
     is_tellcard = BooleanField()
+    posts = IntegerField()
 
     class Meta:
 
@@ -440,7 +441,7 @@ class User(ModelSerializer):
             'messages',
             'token',
             'is_tellcard',
-            'has_posts',
+            'posts',
         )
         model = models.User
 
@@ -497,8 +498,8 @@ class User(ModelSerializer):
             if field.field_name == 'is_tellcard':
                 dictionary[field.field_name] = instance.is_tellcard(id)
                 continue
-            if field.field_name == 'has_posts':
-                dictionary[field.field_name] = instance.has_posts()
+            if field.field_name == 'posts':
+                dictionary[field.field_name] = instance.get_posts()
                 continue
             attribute = None
             try:
@@ -555,7 +556,7 @@ class UsersProfile(User):
             'master_tells',
             'messages',
             'is_tellcard',
-            'has_posts',
+            'posts',
         )
         model = models.User
 
@@ -1193,7 +1194,7 @@ class HomeConnectionsResponseItemsUser(User):
             'status',
             'master_tells',
             'is_tellcard',
-            'has_posts',
+            'posts',
         )
         model = models.User
 
@@ -1467,7 +1468,7 @@ class RadarGetResponseItems(User):
             'status',
             'master_tells',
             'is_tellcard',
-            'has_posts',
+            'posts',
         )
         model = models.User
 
