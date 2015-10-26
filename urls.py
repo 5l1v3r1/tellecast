@@ -127,6 +127,7 @@ urlpatterns = patterns(
     url(
         r'^api/posts/(?P<id>[0-9]+)/$',
         views.Posts.as_view({
+            'get': 'get_2',
             'put': 'put',
             'patch': 'patch',
             'delete': 'delete',
@@ -135,7 +136,7 @@ urlpatterns = patterns(
     url(
         r'^api/posts/$',
         views.Posts.as_view({
-            'get': 'get',
+            'get': 'get_1',
             'post': 'post',
         }),
     ),

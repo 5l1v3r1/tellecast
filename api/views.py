@@ -1487,7 +1487,7 @@ class Posts(ViewSet):
             status=HTTP_200_OK,
         )
 
-    def get(self, request):
+    def get_1(self, request):
         '''
         SELECT Posts
 
@@ -1515,6 +1515,45 @@ class Posts(ViewSet):
                     'request': request,
                 },
                 many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def get_2(self, request, id):
+        '''
+        SELECT Post
+
+        <pre>
+        Input
+        =====
+
+        + N/A
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.PostsResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=serializers.PostsResponse(
+                instance,
+                context={
+                    'request': request,
+                },
             ).data,
             status=HTTP_200_OK,
         )
