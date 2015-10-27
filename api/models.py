@@ -633,11 +633,13 @@ class User(Model):
             return 0
         if Message.objects.get_queryset().filter(
             Q(user_source_id=id, user_destination_id=self.id) | Q(user_source_id=self.id, user_destination_id=id),
+            post_id__isnull=True,
             type__in=['Message', 'Ask'],
         ).count():
             return 2
         message = Message.objects.get_queryset().filter(
             Q(user_source_id=id, user_destination_id=self.id) | Q(user_source_id=self.id, user_destination_id=id),
+            post_id__isnull=True,
         ).order_by(
             '-id',
         ).first()

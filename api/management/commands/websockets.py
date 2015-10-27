@@ -891,10 +891,11 @@ class WebSocket(WebSocketHandler):
                     '''
                     SELECT user_source_id, user_destination_id, type
                     FROM api_messages
-                    WHERE
+                    WHERE (
                         (user_source_id = %s AND user_destination_id = %s)
                         OR
                         (user_source_id = %s AND user_destination_id = %s)
+                    ) AND post_id IS NULL
                     ORDER BY id DESC
                     LIMIT 1
                     OFFSET 0
@@ -927,6 +928,8 @@ class WebSocket(WebSocketHandler):
                             OR
                             (user_source_id = %s AND user_destination_id = %s)
                         )
+                        AND
+                        post_id IS NULL
                         AND
                         type IN ('Response - Accepted', 'Response - Rejected', 'Message', 'Ask')
                     ''',
