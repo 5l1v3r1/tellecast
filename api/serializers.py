@@ -1933,6 +1933,7 @@ class UsersResponse(User):
             'social_profiles',
             'status',
             'urls',
+            'posts',
         )
         model = models.User
 
