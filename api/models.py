@@ -1581,7 +1581,7 @@ class Post(Model):
     class Meta:
         db_table = 'api_posts'
         ordering = (
-            'id',
+            '-id',
         )
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
