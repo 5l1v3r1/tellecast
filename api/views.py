@@ -4984,7 +4984,7 @@ def tellzones_master_tells(request, id):
             },
             status=HTTP_400_BAD_REQUEST,
         )
-    master_tells = []
+    master_tells = {}
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             '''
@@ -5031,7 +5031,7 @@ def tellzones_master_tells(request, id):
             )
         )
         for record in cursor.fetchall():
-            master_tells.append({
+            master_tells[record[0]] = {
                 'id': record[0],
                 'created_by_id': record[1],
                 'owned_by_id': record[2],
@@ -5040,10 +5040,10 @@ def tellzones_master_tells(request, id):
                 'is_visible': record[5],
                 'inserted_at': record[6],
                 'updated_at': record[7],
-            })
+            }
     return Response(
         data=serializers.TellzonesMasterTells(
-            master_tells,
+            sorted(master_tells.values(), key=lambda master_tell: master_tell['id']),
             context={
                 'request': request,
             },
