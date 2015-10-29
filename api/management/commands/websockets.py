@@ -1066,6 +1066,7 @@ class WebSocket(WebSocketHandler):
                                     },
                                     'type': 'message',
                                     'user_source_id': user_id,
+                                    'post_id': data['post_id'] if 'post_id' in data else None,
                                 },
                             ),
                             queue='api.tasks.push_notifications',
