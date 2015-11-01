@@ -1611,7 +1611,7 @@ class Posts(ViewSet):
 
                 + string_preview
                     - Type: string
-                    - Status: mandatory
+                    - Status: optional
 
                 + position
                     - Type: integer
@@ -1712,7 +1712,7 @@ class Posts(ViewSet):
 
                 + string_preview
                     - Type: string
-                    - Status: mandatory
+                    - Status: optional
 
                 + position
                     - Type: integer
@@ -1822,7 +1822,7 @@ class Posts(ViewSet):
 
                 + string_preview
                     - Type: string
-                    - Status: mandatory
+                    - Status: optional
 
                 + position
                     - Type: integer

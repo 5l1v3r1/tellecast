@@ -1692,7 +1692,7 @@ class PostAttachment(Model):
         max_length=255,
     )
     string_original = TextField(ugettext_lazy('String :: Original'), db_index=True)
-    string_preview = TextField(ugettext_lazy('String :: Preview'), db_index=True)
+    string_preview = TextField(ugettext_lazy('String :: Preview'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
