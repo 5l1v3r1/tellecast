@@ -251,12 +251,6 @@ class Tellzone(Model):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
 
     @cached_property
-    def posts(self):
-        return [
-            post_tellzone.post for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
-        ]
-
-    @cached_property
     def tellecasters(self):
         return UserLocation.objects.get_queryset().filter(
             point__distance_lte=(self.point, D(ft=Tellzone.radius())),
@@ -304,6 +298,13 @@ class Tellzone(Model):
             if tellcard.user_destination_id == user_id:
                 connections.append(tellcard.user_source)
         return connections
+
+    def get_posts(self, user_id):
+        return [
+            post_tellzone.post
+            for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
+            if not is_blocked(user_id, post_tellzone.post.user_id)
+        ]
 
     def is_viewed(self, user_id):
         return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0
@@ -2327,3 +2328,11 @@ def get_users(user_id, point, radius, include_user_id):
                     record[2],
                 )
     return users
+
+
+def is_blocked(one, two):
+    if Block.objects.get_queryset().filter(
+        Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
+    ).count():
+        return True
+    return False

@@ -1014,7 +1014,7 @@ class Messages(ViewSet):
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
-        if is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
+        if models.is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `user_destination_id`'),
@@ -1481,7 +1481,7 @@ class Posts(ViewSet):
                         category_ids=request.query_params.get('category_ids', None),
                         keywords=request.query_params.get('keywords', None),
                     )
-                    if not is_blocked(request.user.id, post.user_id)
+                    if not models.is_blocked(request.user.id, post.user_id)
                 ],
                 context={
                     'request': request,
@@ -2785,7 +2785,7 @@ class Tellcards(ViewSet):
             data=request.data,
         )
         serializer.is_valid(raise_exception=True)
-        if is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
+        if models.is_blocked(request.user.id, serializer.validated_data['user_destination_id']):
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `user_destination_id`'),
@@ -4569,7 +4569,7 @@ def profiles(request):
                 ).order_by(
                     'id',
                 )
-                if not is_blocked(request.user.id, user.id)
+                if not models.is_blocked(request.user.id, user.id)
             ],
             context={
                 'request': request,
@@ -5085,7 +5085,7 @@ def users_profile(request, id):
           message: Invalid Input
     '''
     if request.user.is_authenticated():
-        if is_blocked(request.user.id, id):
+        if models.is_blocked(request.user.id, id):
             return Response(
                 data={
                     'error': ugettext_lazy('Invalid `id`'),
@@ -5170,11 +5170,3 @@ def get_months(today):
         dates[-1].isoformat(),
         get(dates[0]).replace(days=-1, months=1).date().isoformat(),
     ]
-
-
-def is_blocked(one, two):
-    if models.Block.objects.get_queryset().filter(
-        Q(user_source_id=one, user_destination_id=two) | Q(user_source_id=two, user_destination_id=one),
-    ).count():
-        return True
-    return False
