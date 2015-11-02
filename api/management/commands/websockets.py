@@ -573,7 +573,10 @@ class RabbitMQ(object):
                     '''
                     SELECT user_id, ST_AsGeoJSON(point)
                     FROM api_users_locations
-                    WHERE id < %s AND user_id = %s LIMIT 1 OFFSET 0
+                    WHERE id < %s AND user_id = %s
+                    ORDER BY id DESC
+                    LIMIT 1
+                    OFFSET 0
                     ''',
                     (one, two,),
                 )
