@@ -797,9 +797,9 @@ class Tellzone(ModelSerializer):
             if field.field_name == 'connections':
                 dictionary[field.field_name] = instance.get_connections(id)
                 continue
-        if field.field_name == 'posts':
-            dictionary[field.field_name] = instance.get_posts(id)
-            continue
+            if field.field_name == 'posts':
+                dictionary[field.field_name] = instance.get_posts(id)
+                continue
             if field.field_name == 'is_viewed':
                 dictionary[field.field_name] = instance.is_viewed(id)
                 continue
