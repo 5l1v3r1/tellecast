@@ -1474,15 +1474,11 @@ class Posts(ViewSet):
         '''
         return Response(
             data=serializers.PostsResponse(
-                [
-                    post
-                    for post in self.get_queryset(
-                        user_ids=request.query_params.get('user_ids', None),
-                        category_ids=request.query_params.get('category_ids', None),
-                        keywords=request.query_params.get('keywords', None),
-                    )
-                    if not models.is_blocked(request.user.id, post.user_id)
-                ],
+                self.get_queryset(
+                    user_ids=request.query_params.get('user_ids', None),
+                    category_ids=request.query_params.get('category_ids', None),
+                    keywords=request.query_params.get('keywords', None),
+                ),
                 context={
                     'request': request,
                 },

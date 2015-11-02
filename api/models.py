@@ -303,7 +303,6 @@ class Tellzone(Model):
         return [
             post_tellzone.post
             for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
-            if not is_blocked(user_id, post_tellzone.post.user_id)
         ]
 
     def is_viewed(self, user_id):

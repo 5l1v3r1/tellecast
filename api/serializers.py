@@ -751,7 +751,7 @@ class Tellzone(ModelSerializer):
     tellecasters = IntegerField()
     is_viewed = BooleanField()
     is_favorited = BooleanField()
-    posts = TellzonePost(many=True)
+    posts = TellzonePost(many=True, required=False)
 
     class Meta:
 
@@ -795,10 +795,10 @@ class Tellzone(ModelSerializer):
                     ).ft
                     continue
             if field.field_name == 'connections':
-                dictionary[field.field_name] = instance.get_connections(id)
+                dictionary[field.field_name] = field.to_representation(instance.get_connections(id))
                 continue
             if field.field_name == 'posts':
-                dictionary[field.field_name] = instance.get_posts(id)
+                dictionary[field.field_name] = field.to_representation(instance.get_posts(id))
                 continue
             if field.field_name == 'is_viewed':
                 dictionary[field.field_name] = instance.is_viewed(id)
