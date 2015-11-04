@@ -1336,8 +1336,7 @@ class Posts(TransactionTestCase):
         assert response.data['attachments'][2]['position'] == 3
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert (
-            datetime.strptime(response.data['inserted_at'], '%Y-%m-%dT%H:%M:%S.%f')
-            +
+            datetime.strptime(response.data['inserted_at'], '%Y-%m-%dT%H:%M:%S.%f') +
             timedelta(days=365)
         ).date() == datetime.strptime(response.data['expired_at'], '%Y-%m-%dT%H:%M:%S.%f').date()
         assert response.status_code == 201
