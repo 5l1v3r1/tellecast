@@ -306,6 +306,7 @@ class RabbitMQ(object):
                         api_messages.user_source_is_hidden AS message_user_source_is_hidden,
                         api_messages.user_destination_id AS message_user_destination_id,
                         api_messages.user_destination_is_hidden AS message_user_destination_is_hidden,
+                        api_messages.post_id AS message_post_id,
                         api_messages.type AS message_type,
                         api_messages.contents AS message_contents,
                         api_messages.status AS message_status,
@@ -389,6 +390,8 @@ class RabbitMQ(object):
                         message['user_destination_id'] = record['message_user_destination_id']
                     if 'user_destination_is_hidden' not in message:
                         message['user_destination_is_hidden'] = record['message_user_destination_is_hidden']
+                    if 'post_id' not in message:
+                        message['post_id'] = record['message_post_id']
                     if 'type' not in message:
                         message['type'] = record['message_type']
                     if 'contents' not in message:
