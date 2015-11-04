@@ -2336,6 +2336,12 @@ class Tellzones(TransactionTestCase):
         assert response.status_code == 200
 
         response = self.client.get(
+            '/api/tellzones/{id}/'.format(id=models.Tellzone.objects.get_queryset().first().id), format='json',
+        )
+        assert len(response.data['social_profiles']) == 5
+        assert response.status_code == 200
+
+        response = self.client.get(
             '/api/tellzones/{id}/master-tells/'.format(id=models.Tellzone.objects.get_queryset().first().id),
             {
                 'latitude': 1.00,

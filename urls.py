@@ -187,7 +187,18 @@ urlpatterns = patterns(
         }),
     ),
     url(r'^api/tellzones/(?P<id>[0-9]+)/master-tells/$', views.tellzones_master_tells),
-    url(r'^api/tellzones/$', views.tellzones),
+    url(
+        r'^api/tellzones/(?P<id>[0-9]+)/$',
+        views.Tellzones.as_view({
+            'get': 'get_2',
+        }),
+    ),
+    url(
+        r'^api/tellzones/$',
+        views.Tellzones.as_view({
+            'get': 'get_1',
+        }),
+    ),
     url(r'^api/users/(?P<id>[0-9]+)/profile/$', views.users_profile),
     url(
         r'^api/users/(?P<id>[0-9]+)/tellzones/delete/$',

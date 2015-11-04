@@ -2857,6 +2857,130 @@ class Tellcards(ViewSet):
         )
 
 
+class Tellzones(ViewSet):
+
+    permission_classes = (IsAuthenticated,)
+
+    def get_1(self, request):
+        '''
+        SELECT Tellzones
+
+        <pre>
+        Input
+        =====
+
+        + latitude
+            - Type: float
+            - Status: mandatory
+
+        + longitude
+            - Type: float
+            - Status: mandatory
+
+        + radius
+            - Unit: foot
+            - Type: float
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: latitude
+              paramType: query
+              required: true
+              type: number
+            - name: longitude
+              paramType: query
+              required: true
+              type: number
+            - name: radius
+              paramType: query
+              required: true
+              type: number
+        response_serializer: api.serializers.TellzonesResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.TellzonesRequest(
+            context={
+                'request': request,
+            },
+            data=request.QUERY_PARAMS,
+        )
+        serializer.is_valid(raise_exception=True)
+        point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
+        return Response(
+            data=serializers.TellzonesResponse(
+                sorted(
+                    [
+                        tellzone
+                        for tellzone in models.Tellzone.objects.get_queryset().prefetch_related(
+                            'social_profiles',
+                        ).filter(
+                            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
+                        ).distance(
+                            point,
+                        )
+                    ],
+                    key=lambda tellzone: (-tellzone.tellecasters, tellzone.distance.ft, -tellzone.id),
+                ),
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def get_2(self, request, id):
+        '''
+        SELECT Tellzone
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.TellzonesResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = models.Tellzone.objects.get_queryset().prefetch_related('social_profiles').filter(id=id).first()
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=serializers.TellzonesResponse(
+                instance,
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+
 class Users(ViewSet):
 
     permission_classes = (IsAuthenticated,)
@@ -4877,87 +5001,6 @@ def slave_tells_positions(request):
     return Response(
         data=serializers.SlaveTellsResponse(
             slave_tells,
-            context={
-                'request': request,
-            },
-            many=True,
-        ).data,
-        status=HTTP_200_OK,
-    )
-
-
-@api_view(('GET',))
-@permission_classes((IsAuthenticated,))
-def tellzones(request):
-    '''
-    SELECT Tellzones
-
-    <pre>
-    Input
-    =====
-
-    + latitude
-        - Type: float
-        - Status: mandatory
-
-    + longitude
-        - Type: float
-        - Status: mandatory
-
-    + radius
-        - Unit: foot
-        - Type: float
-        - Status: mandatory
-
-    Output
-    ======
-
-    (see below; "Response Class" -> "Model Schema")
-    </pre>
-    ---
-    omit_parameters:
-        - form
-    parameters:
-        - name: latitude
-          paramType: query
-          required: true
-          type: number
-        - name: longitude
-          paramType: query
-          required: true
-          type: number
-        - name: radius
-          paramType: query
-          required: true
-          type: number
-    response_serializer: api.serializers.TellzonesResponse
-    responseMessages:
-        - code: 400
-          message: Invalid Input
-    '''
-    serializer = serializers.TellzonesRequest(
-        context={
-            'request': request,
-        },
-        data=request.QUERY_PARAMS,
-    )
-    serializer.is_valid(raise_exception=True)
-    point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
-    return Response(
-        data=serializers.TellzonesResponse(
-            sorted(
-                [
-                    tellzone
-                    for tellzone in models.Tellzone.objects.get_queryset().prefetch_related(
-                        'social_profiles',
-                    ).filter(
-                        point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
-                    ).distance(
-                        point,
-                    )
-                ],
-                key=lambda tellzone: (-tellzone.tellecasters, tellzone.distance.ft, -tellzone.id),
-            ),
             context={
                 'request': request,
             },
