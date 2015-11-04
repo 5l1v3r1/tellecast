@@ -2265,7 +2265,6 @@ class Tellcards(TransactionTestCase):
 class Tellzones(TransactionTestCase):
 
     def setUp(self):
-
         self.user = middleware.mixer.blend('api.User')
 
         self.tellzone = middleware.mixer.blend('api.Tellzone')
@@ -2297,8 +2296,11 @@ class Tellzones(TransactionTestCase):
                 user.point = get_point()
                 user.is_signed_in = True
                 user.save()
-                for index in range(0, 5):
-                    models.MasterTell.objects.create(created_by_id=user.id, owned_by_id=user.id, contents=str(id))
+
+                for master_tell in middleware.mixer.cycle(5).blend('api.MasterTell', created_by=user, owned_by=user):
+                    master_tell.contents = str(user.id)
+                    master_tell.save()
+
                 client = APIClient()
                 client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
                 response = client.post(
@@ -2350,7 +2352,7 @@ class Tellzones(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 25
+        assert len(response.data) == 5
         assert response.status_code == 200
 
     def test_b(self):

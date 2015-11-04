@@ -5079,7 +5079,7 @@ def tellzones_master_tells(request, id):
                 api_users.is_signed_in IS TRUE
                 AND
                 api_blocks.id IS NULL
-            ORDER BY api_users_locations.timestamp DESC, api_users_locations.id DESC
+            ORDER BY api_master_tells.id ASC
             ''',
             (
                 request.user.id,
@@ -5090,7 +5090,7 @@ def tellzones_master_tells(request, id):
             )
         )
         for record in cursor.fetchall():
-            master_tells[record[0]] = {
+            master_tells[record[3]] = {
                 'id': record[0],
                 'created_by_id': record[1],
                 'owned_by_id': record[2],
@@ -5102,7 +5102,7 @@ def tellzones_master_tells(request, id):
             }
     return Response(
         data=serializers.TellzonesMasterTells(
-            sorted(master_tells.values(), key=lambda master_tell: master_tell['id']),
+            sorted(master_tells.values(), key=lambda master_tell: master_tell['contents']),
             context={
                 'request': request,
             },
