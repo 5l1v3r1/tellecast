@@ -645,6 +645,31 @@ class Tellzone(ModelAdmin):
 Tellzone.delete_view = delete_view
 
 
+class TellzoneSocialProfile(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'tellzone',
+        'netloc',
+        'url',
+    )
+    list_display = (
+        'id',
+        'tellzone',
+        'netloc',
+        'url',
+    )
+    list_filter = (
+        'tellzone',
+        'netloc',
+    )
+    search_fields = (
+        'url',
+    )
+
+TellzoneSocialProfile.delete_view = delete_view
+
+
 class User(ModelAdmin):
 
     actions = [delete_selected]
@@ -1058,6 +1083,7 @@ site.register(models.ShareUser, ShareUser)
 site.register(models.SlaveTell, SlaveTell)
 site.register(models.Tellcard, Tellcard)
 site.register(models.Tellzone, Tellzone)
+site.register(models.TellzoneSocialProfile, TellzoneSocialProfile)
 site.register(models.User, User)
 site.register(models.UserLocation, UserLocation)
 site.register(models.UserPhoto, UserPhoto)

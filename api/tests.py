@@ -2272,6 +2272,15 @@ class Tellzones(TransactionTestCase):
         self.tellzone.point = get_point()
         self.tellzone.save()
 
+        for netloc in [
+            'facebook.com',
+            'google.com',
+            'instagram.com',
+            'linkedin.com',
+            'twitter.com',
+        ]:
+            middleware.mixer.blend('api.TellzoneSocialProfile', tellzone=self.tellzone, netloc=netloc)
+
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
@@ -2323,6 +2332,7 @@ class Tellzones(TransactionTestCase):
             format='json',
         )
         assert len(response.data) == 1
+        assert len(response.data[0]['social_profiles']) == 5
         assert response.status_code == 200
 
         response = self.client.get(

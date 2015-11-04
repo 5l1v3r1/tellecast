@@ -703,6 +703,20 @@ class ShareUser(ModelSerializer):
         )
 
 
+class TellzoneSocialProfile(ModelSerializer):
+
+    url = CharField(allow_blank=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'netloc',
+            'url',
+        )
+        model = models.TellzoneSocialProfile
+
+
 class TellzonePostUser(User):
 
     class Meta:
@@ -751,6 +765,7 @@ class Tellzone(ModelSerializer):
     tellecasters = IntegerField()
     is_viewed = BooleanField()
     is_favorited = BooleanField()
+    social_profiles = TellzoneSocialProfile(help_text='List of Tellzones :: Social Profiles', many=True, required=False)
     posts = TellzonePost(many=True, required=False)
 
     class Meta:
@@ -766,14 +781,15 @@ class Tellzone(ModelSerializer):
             'point',
             'inserted_at',
             'updated_at',
+            'social_profiles',
+            'posts',
             'views',
             'favorites',
+            'tellecasters',
             'distance',
             'connections',
-            'tellecasters',
             'is_viewed',
             'is_favorited',
-            'posts',
         )
         model = models.Tellzone
 
@@ -781,6 +797,9 @@ class Tellzone(ModelSerializer):
         id = get_user_id(self.context)
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'posts':
+                dictionary[field.field_name] = field.to_representation(instance.get_posts(id))
+                continue
             if field.field_name == 'distance':
                 try:
                     dictionary[field.field_name] = getattr(instance.distance, 'ft', 0.00)
@@ -796,9 +815,6 @@ class Tellzone(ModelSerializer):
                     continue
             if field.field_name == 'connections':
                 dictionary[field.field_name] = field.to_representation(instance.get_connections(id))
-                continue
-            if field.field_name == 'posts':
-                dictionary[field.field_name] = field.to_representation(instance.get_posts(id))
                 continue
             if field.field_name == 'is_viewed':
                 dictionary[field.field_name] = instance.is_viewed(id)
@@ -833,6 +849,7 @@ class TellcardTellzone(Tellzone):
             'point',
             'inserted_at',
             'updated_at',
+            'social_profiles',
         )
         model = models.Tellzone
 
@@ -929,11 +946,12 @@ class PostTellzone(Tellzone):
             'point',
             'inserted_at',
             'updated_at',
+            'social_profiles',
             'views',
             'favorites',
+            'tellecasters',
             'distance',
             'connections',
-            'tellecasters',
             'is_viewed',
             'is_favorited',
         )
@@ -1218,6 +1236,7 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
             'point',
             'inserted_at',
             'updated_at',
+            'social_profiles',
         )
         model = models.Tellzone
 
@@ -1957,11 +1976,12 @@ class UsersTellzonesGet(Tellzone):
             'point',
             'inserted_at',
             'updated_at',
+            'social_profiles',
             'views',
             'favorites',
+            'tellecasters',
             'distance',
             'connections',
-            'tellecasters',
             'is_viewed',
             'is_favorited',
         )

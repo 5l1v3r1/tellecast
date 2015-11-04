@@ -2087,6 +2087,8 @@ class Radar(ViewSet):
             user_location = serializer.insert()
             tellzones = models.Tellzone.objects.get_queryset().filter(
                 point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
+            ).prefetch_related(
+                'social_profiles',
             ).distance(
                 user_location.point,
             )
@@ -3335,7 +3337,9 @@ class UsersTellzones(ViewSet):
                 sorted(
                     [
                         user_tellzone.tellzone
-                        for user_tellzone in models.UserTellzone.objects.get_queryset().filter(
+                        for user_tellzone in models.UserTellzone.objects.get_queryset().prefetch_related(
+                            'tellzone__social_profiles',
+                        ).filter(
                             user_id=request.user.id,
                             favorited_at__isnull=False,
                         )
@@ -3754,7 +3758,9 @@ def home_connections(request):
         data['users'] = [
             {
                 'user': user,
-                'tellzone': models.Tellzone.objects.get_queryset().order_by('?').first(),
+                'tellzone': models.Tellzone.objects.get_queryset().prefetch_related(
+                    'social_profiles',
+                ).order_by('?').first(),
                 'location': None,
                 'point': user.point,
                 'timestamp': datetime.now() - timedelta(days=randint(1, 7)),
@@ -3828,7 +3834,11 @@ def home_connections(request):
                 p = loads(record[3])
                 data['users'][record[0]] = {
                     'user': models.User.objects.get_queryset().filter(id=record[0]).first(),
-                    'tellzone': models.Tellzone.objects.get_queryset().filter(id=record[1]).first(),
+                    'tellzone': models.Tellzone.objects.get_queryset().prefetch_related(
+                        'social_profiles',
+                    ).filter(
+                        id=record[1],
+                    ).first(),
                     'location': record[2],
                     'point': {
                         'latitude': p['coordinates'][1],
@@ -4240,9 +4250,13 @@ def home_tellzones(request):
     serializer.is_valid(raise_exception=True)
     point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
     if serializer.validated_data['dummy'] == 'Yes':
-        tellzones = models.Tellzone.objects.get_queryset().distance(point).order_by('?')[0:5]
+        tellzones = models.Tellzone.objects.get_queryset().prefetch_related(
+            'social_profiles',
+        ).distance(point).order_by('?')[0:5]
     else:
-        tellzones = models.Tellzone.objects.get_queryset().filter(
+        tellzones = models.Tellzone.objects.get_queryset().prefetch_related(
+            'social_profiles',
+        ).filter(
             point__distance_lte=(point, D(mi=10)),
         ).distance(
             point,
@@ -4934,7 +4948,9 @@ def tellzones(request):
             sorted(
                 [
                     tellzone
-                    for tellzone in models.Tellzone.objects.get_queryset().filter(
+                    for tellzone in models.Tellzone.objects.get_queryset().prefetch_related(
+                        'social_profiles',
+                    ).filter(
                         point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
                     ).distance(
                         point,

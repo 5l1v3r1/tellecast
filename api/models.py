@@ -312,6 +312,43 @@ class Tellzone(Model):
         return self.users.get_queryset().filter(user_id=user_id, favorited_at__isnull=False).count() > 0
 
 
+class TellzoneSocialProfile(Model):
+
+    tellzone = ForeignKey(Tellzone, related_name='social_profiles')
+    netloc = CharField(
+        ugettext_lazy('Network Location'),
+        choices=(
+            ('facebook.com', 'facebook.com',),
+            ('google.com', 'google.com',),
+            ('instagram.com', 'instagram.com',),
+            ('linkedin.com', 'linkedin.com',),
+            ('twitter.com', 'twitter.com',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+
+    class Meta:
+
+        db_table = 'api_tellzones_social_profiles'
+        ordering = (
+            '-id',
+        )
+        unique_together = (
+            'tellzone',
+            'netloc',
+        )
+        verbose_name = 'Tellzones :: Social Profile'
+        verbose_name_plural = 'Tellzones :: Social Profiles'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
 class User(Model):
 
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
@@ -1594,7 +1631,10 @@ class Post(Model):
 
     @cached_property
     def tellzones(self):
-        return [post_tellzone.tellzone for post_tellzone in self.posts_tellzones.get_queryset()]
+        return [
+            post_tellzone.tellzone
+            for post_tellzone in self.posts_tellzones.get_queryset().prefetch_related('tellzone__social_profiles')
+        ]
 
     @classmethod
     def insert(cls, user_id, data):
