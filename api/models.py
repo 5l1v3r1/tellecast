@@ -1166,7 +1166,10 @@ class DeviceAPNS(Model):
                 badge = extra['aps']['badge']
                 del extra['aps']['badge']
             del extra['aps']
-        return apns_send_message(self.registration_id, alert, badge=badge, extra=extra, sound='default')
+        try:
+            apns_send_message(self.registration_id, alert, badge=badge, extra=extra, sound='default')
+        except Exception:
+            pass
 
 
 class DeviceGCM(Model):
@@ -1209,7 +1212,10 @@ class DeviceGCM(Model):
         return unicode(self.id)
 
     def send_message(self, data):
-        return _gcm_send_json([self.registration_id], data)
+        try:
+            _gcm_send_json([self.registration_id], data)
+        except Exception:
+            pass
 
 
 class MasterTell(Model):
