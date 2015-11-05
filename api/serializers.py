@@ -987,6 +987,8 @@ class Post(ModelSerializer):
         return models.Post.insert(get_user_id(self.context), self.validated_data)
 
     def update(self):
+        self.instance.attachments.get_queryset()._result_cache = None
+        self.instance.posts_tellzones.get_queryset()._result_cache = None
         return self.instance.update(self.validated_data)
 
 

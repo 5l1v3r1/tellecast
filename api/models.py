@@ -1675,7 +1675,7 @@ class Post(Model):
         if 'attachments' in data:
             ids = []
             for attachment in data['attachments']:
-                instance = PostAttachment.objects.get_queryset().filter(
+                instance = self.attachments.get_queryset().filter(
                     Q(id=attachment['id'] if 'id' in attachment else 0), post_id=self.id,
                 ).first()
                 if instance:
@@ -1697,7 +1697,7 @@ class Post(Model):
                         position=attachment['position'] if 'position' in attachment else None,
                     )
                 ids.append(instance.id)
-            PostAttachment.objects.get_queryset().filter(post_id=self.id).exclude(id__in=ids).delete()
+            self.attachments.get_queryset().exclude(id__in=ids).delete()
         if 'tellzones' in data:
             PostTellzone.objects.get_queryset().filter(
                 post_id=self.id,
