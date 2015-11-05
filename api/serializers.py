@@ -2020,6 +2020,7 @@ class PostsRequestAttachment(PostAttachment):
     class Meta:
 
         fields = (
+            'id',
             'type',
             'string_original',
             'string_preview',
