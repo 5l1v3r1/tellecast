@@ -250,10 +250,35 @@ class RabbitMQ(object):
                 'body': body,
             }))
         users = yield self.get_users(users_locations_new['user_id'], users_locations_new['point'], 999999999, True)
+        blocks = {}
+        users_ids = tuple([user['id'] for user in users])
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT user_source_id, user_destination_id
+                FROM api_blocks
+                WHERE user_source_id IN %s OR user_destination_id IN %s
+                ''',
+                (users_ids, users_ids,)
+            )
+            for record in cursor.fetchall():
+                if not record[0] in blocks:
+                    blocks[record[0]] = []
+                blocks[record[0]].append(record[1])
+                if not record[1] in blocks:
+                    blocks[record[1]] = []
+                blocks[record[1]].append(record[0])
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
-                    body = yield self.get_radar_get(user, [u for u in deepcopy(users[:]) if u['id'] != user['id']])
+                    body = yield self.get_radar_get(
+                        user,
+                        [
+                            u
+                            for u in deepcopy(users[:])
+                            if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
+                        ]
+                    )
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
@@ -270,7 +295,14 @@ class RabbitMQ(object):
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
-                    body = yield self.get_radar_get(user, [u for u in deepcopy(users[:]) if u['id'] != user['id']])
+                    body = yield self.get_radar_get(
+                        user,
+                        [
+                            u
+                            for u in deepcopy(users[:])
+                            if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
+                        ]
+                    )
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
                         'body': body,
