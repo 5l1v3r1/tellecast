@@ -1676,7 +1676,7 @@ class Post(Model):
             ids = []
             for attachment in data['attachments']:
                 instance = self.attachments.get_queryset().filter(
-                    Q(id=attachment['id'] if 'id' in attachment else 0), post_id=self.id,
+                    Q(id=attachment['id'] if 'id' in attachment else 0),
                 ).first()
                 if instance:
                     if 'type' in attachment:
