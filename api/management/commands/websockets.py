@@ -703,19 +703,6 @@ class RabbitMQ(object):
                     INNER JOIN api_users ON api_users.id = api_users_locations.user_id
                     LEFT OUTER JOIN api_users_settings AS api_users_settings
                         ON api_users_settings.user_id = api_users.id
-                    LEFT OUTER JOIN api_blocks
-                        ON
-                            (
-                                api_blocks.user_source_id = %s
-                                AND
-                                api_blocks.user_destination_id = api_users_locations.user_id
-                            )
-                            OR
-                            (
-                                api_blocks.user_source_id = api_users_locations.user_id
-                                AND
-                                api_blocks.user_destination_id = %s
-                            )
                     WHERE
                         (api_users_locations.user_id != %s OR %s = true)
                         AND
@@ -732,16 +719,12 @@ class RabbitMQ(object):
                         api_users.is_signed_in IS TRUE
                         AND
                         api_users_settings.key = 'show_photo'
-                        AND
-                        api_blocks.id IS NULL
                     ORDER BY distance ASC, api_users_locations.user_id ASC
                     ''',
                     (
                         'POINT({longitude} {latitude})'.format(
                             longitude=point['longitude'], latitude=point['latitude'],
                         ),
-                        user_id,
-                        user_id,
                         user_id,
                         status,
                         'POINT({longitude} {latitude})'.format(
