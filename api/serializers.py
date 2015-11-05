@@ -515,6 +515,7 @@ class User(ModelSerializer):
 
 class PostAttachment(ModelSerializer):
 
+    id = IntegerField(required=False)
     string_preview = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
 
@@ -965,8 +966,8 @@ class Post(ModelSerializer):
     category_id = IntegerField()
     category = Category()
     title = CharField(required=False)
-    attachments = PostAttachment(many=True)
-    tellzones = PostTellzone(many=True)
+    attachments = PostAttachment(many=True, required=False)
+    tellzones = PostTellzone(many=True, required=False)
 
     class Meta:
 
@@ -987,9 +988,10 @@ class Post(ModelSerializer):
         return models.Post.insert(get_user_id(self.context), self.validated_data)
 
     def update(self):
+        self.instance.update(self.validated_data)
         self.instance.attachments.get_queryset()._result_cache = None
         self.instance.posts_tellzones.get_queryset()._result_cache = None
-        return self.instance.update(self.validated_data)
+        return self.instance
 
 
 class MessageUser(User):
