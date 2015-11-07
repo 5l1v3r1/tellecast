@@ -988,10 +988,8 @@ class Post(ModelSerializer):
         return models.Post.insert(get_user_id(self.context), self.validated_data)
 
     def update(self):
-        self.instance = self.instance.update(self.validated_data)
-        self.instance.attachments.get_queryset()._result_cache = None
-        self.instance.posts_tellzones.get_queryset()._result_cache = None
-        return self.instance
+        self.instance.update(self.validated_data)
+        return models.Post.objects.get_queryset().filter(id=self.instance.id).first()
 
 
 class MessageUser(User):
