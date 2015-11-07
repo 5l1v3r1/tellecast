@@ -2232,7 +2232,7 @@ def tellcard_post_save(instance, **kwargs):
                         ] else None,
                     },
                 )
-                string = u'{name} saved your tellcard'.format(
+                string = u'{name} saved your profile'.format(
                     name=' '.join(
                         filter(
                             None,
