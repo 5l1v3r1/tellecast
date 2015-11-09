@@ -238,18 +238,18 @@ class RabbitMQ(object):
 
     @coroutine
     def users_locations(self, data):
-        users_locations_new = yield self.get_user_location_1(data)
-        if not users_locations_new:
+        users_locations = yield self.get_user_locations(data)
+        if not users_locations:
             raise Return(None)
         for user in [
-            key for key, value in IOLoop.current().clients.items() if value == users_locations_new['user_id']
+            key for key, value in IOLoop.current().clients.items() if value == users_locations[0]['user_id']
         ]:
-            body = yield self.get_radar_post(users_locations_new)
+            body = yield self.get_radar_post(users_locations[0])
             user.write_message(dumps({
                 'subject': 'users_locations_post',
                 'body': body,
             }))
-        users = yield self.get_users(users_locations_new['user_id'], users_locations_new['point'], 999999999, True)
+        users = yield self.get_users(users_locations[0]['user_id'], users_locations[0]['point'], 999999999, True)
         blocks = {}
         users_ids = tuple([user['id'] for user in users])
         with closing(connection.cursor()) as cursor:
@@ -283,15 +283,14 @@ class RabbitMQ(object):
                         'subject': 'users_locations_get',
                         'body': body,
                     }))
-        users_locations_old = yield self.get_user_location_2(data, users_locations_new['user_id'])
-        if not users_locations_old:
+        if len(users_locations) == 1:
             raise Return(None)
         if not vincenty(
-            (users_locations_new['point']['longitude'], users_locations_new['point']['latitude']),
-            (users_locations_old['point']['longitude'], users_locations_old['point']['latitude'])
+            (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
+            (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
         ).m > 999999999:
             raise Return(None)
-        users = yield self.get_users(users_locations_old['user_id'], users_locations_old['point'], 999999999, False)
+        users = yield self.get_users(users_locations[1]['user_id'], users_locations[1]['point'], 999999999, False)
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
@@ -580,43 +579,22 @@ class RabbitMQ(object):
         raise Return(profile)
 
     @coroutine
-    def get_user_location_1(self, id):
-        user_location = {}
-        try:
-            with closing(connection.cursor()) as cursor:
-                cursor.execute('SELECT user_id, ST_AsGeoJSON(point) FROM api_users_locations WHERE id = %s', (id,))
-                record = cursor.fetchone()
-                if record:
-                    point = loads(record[1])
-                    user_location = {
-                        'user_id': record[0],
-                        'point': {
-                            'latitude': point['coordinates'][1],
-                            'longitude': point['coordinates'][0],
-                        },
-                    }
-        except Exception:
-            report_exc_info()
-        raise Return(user_location)
-
-    @coroutine
-    def get_user_location_2(self, one, two):
-        user_location = {}
+    def get_user_locations(self, data):
+        user_locations = []
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
-                    SELECT user_id, ST_AsGeoJSON(point)
-                    FROM api_users_locations
-                    WHERE id < %s AND user_id = %s
-                    ORDER BY id DESC
-                    LIMIT 1
-                    OFFSET 0
+                    SELECT api_users_locations_1.user_id, ST_AsGeoJSON(api_users_locations_1.point)
+                      FROM api_users_locations api_users_locations_1
+                      INNER JOIN (
+                        SELECT user_id FROM api_users_locations WHERE id = %s
+                    ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
+                    ORDER BY api_users_locations_1.id DESC LIMIT 2
                     ''',
-                    (one, two,),
+                    (data,)
                 )
-                record = cursor.fetchone()
-                if record:
+                for record in cursor.fetchall():
                     point = loads(record[1])
                     user_location = {
                         'user_id': record[0],
@@ -625,9 +603,10 @@ class RabbitMQ(object):
                             'longitude': point['coordinates'][0],
                         },
                     }
+                    user_locations.append(user_location)
         except Exception:
             report_exc_info()
-        raise Return(user_location)
+        raise Return(user_locations)
 
     @coroutine
     def get_radar_get(self, user, users):
