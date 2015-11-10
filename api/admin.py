@@ -719,6 +719,7 @@ class Tellcard(ModelAdmin):
     fields = (
         'user_source',
         'user_destination',
+        'network',
         'tellzone',
         'location',
         'viewed_at',
@@ -728,6 +729,7 @@ class Tellcard(ModelAdmin):
         'id',
         'user_source',
         'user_destination',
+        'network',
         'tellzone',
         'location',
         'viewed_at',
@@ -736,6 +738,7 @@ class Tellcard(ModelAdmin):
     list_filter = (
         'user_source',
         'user_destination',
+        'network',
         'tellzone',
         'location',
         'viewed_at',
@@ -866,6 +869,7 @@ class UserLocation(ModelAdmin):
     actions = [delete_selected]
     fields = (
         'user',
+        'network',
         'tellzone',
         'location',
         'point',
@@ -877,6 +881,7 @@ class UserLocation(ModelAdmin):
     list_display = (
         'id',
         'user',
+        'network',
         'tellzone',
         'location',
         'point',
@@ -888,6 +893,7 @@ class UserLocation(ModelAdmin):
     )
     list_filter = (
         'user',
+        'network',
         'tellzone',
         'is_casting',
         'timestamp',

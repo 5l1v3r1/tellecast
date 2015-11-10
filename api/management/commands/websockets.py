@@ -1179,6 +1179,7 @@ class WebSocket(WebSocketHandler):
                     '''
                     INSERT INTO api_users_locations (
                         user_id,
+                        network_id,
                         tellzone_id,
                         location,
                         point,
@@ -1187,10 +1188,11 @@ class WebSocket(WebSocketHandler):
                         bearing,
                         is_casting,
                         timestamp
-                    ) VALUES (%s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW()) RETURNING id
+                    ) VALUES (%s, %s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW()) RETURNING id
                     ''',
                     (
                         user_id,
+                        data['network_id'] if 'network_id' in data else None,
                         data['tellzone_id'] if 'tellzone_id' in data else None,
                         data['location'] if 'location' in data else None,
                         'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),

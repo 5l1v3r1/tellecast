@@ -144,6 +144,17 @@ class DeviceGCM(ModelSerializer):
         return models.DeviceGCM.insert_or_update(get_user_id(self.context), self.validated_data)
 
 
+class Network(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Network
+
+
 class Notification(ModelSerializer):
 
     contents = DictField()
@@ -193,6 +204,7 @@ class UserPhoto(ModelSerializer):
 
 class UserLocation(ModelSerializer):
 
+    network_id = IntegerField(allow_null=True, default=None)
     tellzone_id = IntegerField(allow_null=True, default=None)
     location = CharField(allow_blank=True, required=False)
     point = PointField()
@@ -204,6 +216,7 @@ class UserLocation(ModelSerializer):
     class Meta:
 
         fields = (
+            'network_id',
             'tellzone_id',
             'location',
             'point',
@@ -835,6 +848,10 @@ class Tellzone(ModelSerializer):
         return dictionary
 
 
+class TellcardNetwork(Network):
+    pass
+
+
 class TellcardTellzone(Tellzone):
 
     class Meta:
@@ -859,7 +876,9 @@ class Tellcard(ModelSerializer):
 
     user_destination_id = IntegerField()
     user = UsersProfile()
-    tellzone_id = IntegerField(required=False)
+    network_id = IntegerField(allow_null=True, default=None)
+    network = TellcardNetwork(required=False)
+    tellzone_id = IntegerField(allow_null=True, default=None)
     tellzone = TellcardTellzone(required=False)
     location = CharField(allow_blank=True, required=False)
     action = ChoiceField(
@@ -875,6 +894,8 @@ class Tellcard(ModelSerializer):
             'id',
             'user_destination_id',
             'user',
+            'network_id',
+            'network',
             'tellzone_id',
             'tellzone',
             'location',
@@ -1858,6 +1879,7 @@ class TellcardsRequest(Tellcard):
 
         fields = (
             'user_destination_id',
+            'network_id',
             'tellzone_id',
             'location',
             'action',
@@ -1872,6 +1894,7 @@ class TellcardsResponse(Tellcard):
         fields = (
             'id',
             'user',
+            'network',
             'tellzone',
             'location',
             'viewed_at',

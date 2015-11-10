@@ -2025,6 +2025,10 @@ class Radar(ViewSet):
         Input
         =====
 
+        + network_id
+            - Type: integer
+            - Status: optional
+
         + tellzone_id
             - Type: integer
             - Status: optional
@@ -2744,6 +2748,10 @@ class Tellcards(ViewSet):
         + user_destination_id
             - Type: integer
             - Status: mandatory
+
+        + network_id
+            - Type: integer
+            - Status: optional
 
         + tellzone_id
             - Type: integer

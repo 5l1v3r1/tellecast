@@ -813,6 +813,7 @@ class User(Model):
 class UserLocation(Model):
 
     user = ForeignKey(User, related_name='locations')
+    network = ForeignKey(Network, blank=True, default=None, null=True, related_name='+')
     tellzone = ForeignKey(Tellzone, blank=True, default=None, null=True, related_name='+')
     location = CharField(ugettext_lazy('Location'), blank=True, default=None, db_index=True, max_length=255, null=True)
     point = PointField(ugettext_lazy('Point'), db_index=True)
@@ -837,6 +838,7 @@ class UserLocation(Model):
     def insert(cls, user_id, data):
         return UserLocation.objects.create(
             user_id=user_id,
+            network_id=data['network_id'] if 'network_id' in data else None,
             tellzone_id=data['tellzone_id'] if 'tellzone_id' in data else None,
             location=data['location'] if 'location' in data else None,
             point=data['point'] if 'point' in data else None,
@@ -1570,6 +1572,7 @@ class Tellcard(Model):
 
     user_source = ForeignKey(User, related_name='+')
     user_destination = ForeignKey(User, related_name='+')
+    network = ForeignKey(Network, blank=True, default=None, null=True, related_name='+')
     tellzone = ForeignKey(Tellzone, blank=True, default=None, null=True, related_name='+')
     location = CharField(ugettext_lazy('Location'), blank=True, default=None, db_index=True, max_length=255, null=True)
     viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
@@ -1600,6 +1603,9 @@ class Tellcard(Model):
                 return
         tellcard.tellzone_id = None
         tellcard.location = None
+        if 'network_id' in data and data['network_id']:
+            tellcard.network_id = data['network_id']
+            update_fields.append('network_id')
         if 'tellzone_id' in data and data['tellzone_id']:
             tellcard.tellzone_id = data['tellzone_id']
             update_fields.append('tellzone_id')
