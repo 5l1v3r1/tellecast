@@ -149,6 +149,7 @@ AdministratorAdmin.list_filter = (
     'is_superuser',
     'last_login',
 )
+AdministratorAdmin.list_per_page = 10
 AdministratorAdmin.search_fields = ()
 
 UserSocialAuthOption.actions = [delete_selected]
@@ -169,6 +170,7 @@ UserSocialAuthOption.list_filter = (
     'user',
     'provider',
 )
+UserSocialAuthOption.list_per_page = 10
 UserSocialAuthOption.search_fields = (
     'uid',
 )
@@ -201,6 +203,7 @@ class Ad(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'source',
         'target',
@@ -222,6 +225,7 @@ class Block(ModelAdmin):
         'user_destination',
         'timestamp',
     )
+    list_per_page = 10
     list_filter = (
         'user_source',
         'user_destination',
@@ -230,6 +234,25 @@ class Block(ModelAdmin):
     search_fields = ()
 
 Block.delete_view = delete_view
+
+
+class Category(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'name',
+    )
+    list_display = (
+        'id',
+        'name',
+    )
+    list_filter = ()
+    list_per_page = 10
+    search_fields = (
+        'name',
+    )
+
+Category.delete_view = delete_view
 
 
 class DeviceAPNS(ModelAdmin):
@@ -251,6 +274,7 @@ class DeviceAPNS(ModelAdmin):
     list_filter = (
         'user',
     )
+    list_per_page = 10
     search_fields = (
         'name',
         'device_id',
@@ -279,6 +303,7 @@ class DeviceGCM(ModelAdmin):
     list_filter = (
         'user',
     )
+    list_per_page = 10
     search_fields = (
         'name',
         'device_id',
@@ -304,7 +329,6 @@ class MasterTell(ModelAdmin):
         'owned_by',
         'position',
         'is_visible',
-        'slave_tells_',
         'inserted_at',
         'updated_at',
     )
@@ -315,15 +339,10 @@ class MasterTell(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'contents',
     )
-
-    def slave_tells_(self, instance):
-        return instance.slave_tells.get_queryset().count()
-
-    slave_tells_.allow_tags = True
-    slave_tells_.short_description = 'Slave Tells'
 
 MasterTell.delete_view = delete_view
 
@@ -356,7 +375,6 @@ class Message(ModelAdmin):
         'type',
         'status',
         'is_suppressed',
-        'attachments_',
         'inserted_at',
         'updated_at',
     )
@@ -374,15 +392,10 @@ class Message(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'contents',
     )
-
-    def attachments_(self, instance):
-        return instance.attachments.get_queryset().count()
-
-    attachments_.allow_tags = True
-    attachments_.short_description = 'Attachments'
 
 Message.delete_view = delete_view
 
@@ -404,11 +417,53 @@ class MessageAttachment(ModelAdmin):
     list_filter = (
         'message',
     )
+    list_per_page = 10
     search_fields = (
         'string',
     )
 
 MessageAttachment.delete_view = delete_view
+
+
+class Network(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'name',
+    )
+    list_display = (
+        'id',
+        'name',
+    )
+    list_filter = ()
+    list_per_page = 10
+    search_fields = (
+        'name',
+    )
+
+Network.delete_view = delete_view
+
+
+class NetworkTellzone(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'network',
+        'tellzone',
+    )
+    list_display = (
+        'id',
+        'network',
+        'tellzone',
+    )
+    list_filter = (
+        'network',
+        'tellzone',
+    )
+    list_per_page = 10
+    search_fields = ()
+
+NetworkTellzone.delete_view = delete_view
 
 
 class Notification(ModelAdmin):
@@ -433,11 +488,98 @@ class Notification(ModelAdmin):
         'status',
         'timestamp',
     )
+    list_per_page = 10
     search_fields = (
         'contents',
     )
 
 Notification.delete_view = delete_view
+
+
+class Post(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'user',
+        'category',
+        'title',
+        'contents',
+    )
+    list_display = (
+        'id',
+        'user',
+        'category',
+        'title',
+        'inserted_at',
+        'updated_at',
+        'expired_at',
+    )
+    list_filter = (
+        'user',
+        'category',
+    )
+    list_per_page = 10
+    search_fields = (
+        'title',
+        'contents',
+    )
+
+Post.delete_view = delete_view
+
+
+class PostAttachment(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'post',
+        'type',
+        'string_original',
+        'string_preview',
+        'position',
+    )
+    list_display = (
+        'id',
+        'post',
+        'type',
+        'string_original',
+        'string_preview',
+        'position',
+        'inserted_at',
+        'updated_at',
+    )
+    list_filter = (
+        'post',
+        'type',
+    )
+    list_per_page = 10
+    search_fields = (
+        'string_original',
+        'string_preview',
+    )
+
+PostAttachment.delete_view = delete_view
+
+
+class PostTellzone(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'post',
+        'tellzone',
+    )
+    list_display = (
+        'id',
+        'post',
+        'tellzone',
+    )
+    list_filter = (
+        'post',
+        'tellzone',
+    )
+    list_per_page = 10
+    search_fields = ()
+
+PostTellzone.delete_view = delete_view
 
 
 class RecommendedTell(ModelAdmin):
@@ -461,6 +603,7 @@ class RecommendedTell(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'contents',
         'photo',
@@ -487,6 +630,7 @@ class Report(ModelAdmin):
         'user_destination',
         'timestamp',
     )
+    list_per_page = 10
     search_fields = ()
 
 Report.delete_view = delete_view
@@ -513,6 +657,7 @@ class ShareUser(ModelAdmin):
         'object',
         'timestamp',
     )
+    list_per_page = 10
     search_fields = ()
 
 ShareUser.delete_view = delete_view
@@ -555,6 +700,7 @@ class SlaveTell(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'photo',
         'first_name',
@@ -595,6 +741,7 @@ class Tellcard(ModelAdmin):
         'viewed_at',
         'saved_at',
     )
+    list_per_page = 10
     search_fields = ()
 
 Tellcard.delete_view = delete_view
@@ -619,7 +766,6 @@ class Tellzone(ModelAdmin):
         'phone',
         'url',
         'point',
-        'users_',
         'inserted_at',
         'updated_at',
     )
@@ -627,6 +773,7 @@ class Tellzone(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'name',
         'photo',
@@ -635,12 +782,6 @@ class Tellzone(ModelAdmin):
         'url',
         'hours',
     )
-
-    def users_(self, instance):
-        return instance.users.get_queryset().count()
-
-    users_.allow_tags = True
-    users_.short_description = 'Users'
 
 Tellzone.delete_view = delete_view
 
@@ -663,6 +804,7 @@ class TellzoneSocialProfile(ModelAdmin):
         'tellzone',
         'netloc',
     )
+    list_per_page = 10
     search_fields = (
         'url',
     )
@@ -692,8 +834,6 @@ class User(ModelAdmin):
         'email',
         'first_name',
         'last_name',
-        'master_tells_',
-        'slave_tells_',
         'is_signed_in',
         'inserted_at',
         'updated_at',
@@ -704,6 +844,7 @@ class User(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'email',
         'photo_original',
@@ -716,18 +857,6 @@ class User(ModelAdmin):
         'description',
         'phone',
     )
-
-    def master_tells_(self, instance):
-        return instance.master_tells.get_queryset().count()
-
-    master_tells_.allow_tags = True
-    master_tells_.short_description = 'Master Tells'
-
-    def slave_tells_(self, instance):
-        return instance.slave_tells.get_queryset().count()
-
-    slave_tells_.allow_tags = True
-    slave_tells_.short_description = 'Slave Tells'
 
 User.delete_view = delete_view
 
@@ -763,6 +892,7 @@ class UserLocation(ModelAdmin):
         'is_casting',
         'timestamp',
     )
+    list_per_page = 10
     search_fields = (
         'location',
     )
@@ -791,6 +921,7 @@ class UserPhoto(ModelAdmin):
     list_filter = (
         'user',
     )
+    list_per_page = 10
     search_fields = (
         'string_original',
         'string_preview',
@@ -821,6 +952,7 @@ class UserSetting(ModelAdmin):
         'inserted_at',
         'updated_at',
     )
+    list_per_page = 10
     search_fields = (
         'value',
     )
@@ -846,6 +978,7 @@ class UserSocialProfile(ModelAdmin):
         'user',
         'netloc',
     )
+    list_per_page = 10
     search_fields = (
         'url',
     )
@@ -873,6 +1006,7 @@ class UserStatus(ModelAdmin):
     list_filter = (
         'user',
     )
+    list_per_page = 10
     search_fields = (
         'string',
         'title',
@@ -902,6 +1036,7 @@ class UserStatusAttachment(ModelAdmin):
     list_filter = (
         'user_status',
     )
+    list_per_page = 10
     search_fields = (
         'string_original',
         'string_preview',
@@ -932,6 +1067,7 @@ class UserTellzone(ModelAdmin):
         'viewed_at',
         'favorited_at',
     )
+    list_per_page = 10
     search_fields = ()
 
 UserTellzone.delete_view = delete_view
@@ -957,112 +1093,12 @@ class UserURL(ModelAdmin):
         'user',
         'is_visible',
     )
+    list_per_page = 10
     search_fields = (
         'string',
     )
 
 UserURL.delete_view = delete_view
-
-
-class Category(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'name',
-    )
-    list_display = (
-        'id',
-        'name',
-    )
-    list_filter = ()
-    search_fields = (
-        'name',
-    )
-
-Category.delete_view = delete_view
-
-
-class Post(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'user',
-        'category',
-        'title',
-        'contents',
-    )
-    list_display = (
-        'id',
-        'user',
-        'category',
-        'title',
-        'inserted_at',
-        'updated_at',
-        'expired_at',
-    )
-    list_filter = (
-        'user',
-        'category',
-    )
-    search_fields = (
-        'title',
-        'contents',
-    )
-
-Post.delete_view = delete_view
-
-
-class PostAttachment(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'post',
-        'type',
-        'string_original',
-        'string_preview',
-        'position',
-    )
-    list_display = (
-        'id',
-        'post',
-        'type',
-        'string_original',
-        'string_preview',
-        'position',
-        'inserted_at',
-        'updated_at',
-    )
-    list_filter = (
-        'post',
-        'type',
-    )
-    search_fields = (
-        'string_original',
-        'string_preview',
-    )
-
-PostAttachment.delete_view = delete_view
-
-
-class PostTellzone(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'post',
-        'tellzone',
-    )
-    list_display = (
-        'id',
-        'post',
-        'tellzone',
-    )
-    list_filter = (
-        'post',
-        'tellzone',
-    )
-    search_fields = ()
-
-PostTellzone.delete_view = delete_view
 
 
 apps.get_app_config('api').verbose_name = ugettext_lazy('API')
@@ -1071,12 +1107,18 @@ apps.get_app_config('default').verbose_name = ugettext_lazy('Social')
 
 site.register(models.Ad, Ad)
 site.register(models.Block, Block)
+site.register(models.Category, Category)
 site.register(models.DeviceAPNS, DeviceAPNS)
 site.register(models.DeviceGCM, DeviceGCM)
 site.register(models.MasterTell, MasterTell)
 site.register(models.Message, Message)
 site.register(models.MessageAttachment, MessageAttachment)
+site.register(models.Network, Network)
+site.register(models.NetworkTellzone, NetworkTellzone)
 site.register(models.Notification, Notification)
+site.register(models.Post, Post)
+site.register(models.PostAttachment, PostAttachment)
+site.register(models.PostTellzone, PostTellzone)
 site.register(models.RecommendedTell, RecommendedTell)
 site.register(models.Report, Report)
 site.register(models.ShareUser, ShareUser)
@@ -1093,7 +1135,3 @@ site.register(models.UserStatus, UserStatus)
 site.register(models.UserStatusAttachment, UserStatusAttachment)
 site.register(models.UserTellzone, UserTellzone)
 site.register(models.UserURL, UserURL)
-site.register(models.Category, Category)
-site.register(models.Post, Post)
-site.register(models.PostAttachment, PostAttachment)
-site.register(models.PostTellzone, PostTellzone)
