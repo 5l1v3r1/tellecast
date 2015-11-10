@@ -778,6 +778,11 @@ class User(Model):
             return instance.user_id == self.id
         if isinstance(instance, Post):
             return instance.user_id == self.id
+        if isinstance(instance, PostAttachment):
+            return self.has_permission(self, instance=instance.post)
+            return instance.post.user_id == self.id
+        if isinstance(instance, PostTellzone):
+            return self.has_permission(self, instance=instance.post)
         if isinstance(instance, Report):
             return instance.user_source_id == self.id
         if isinstance(instance, ShareUser):
