@@ -761,6 +761,7 @@ class Tellzone(ModelAdmin):
         'url',
         'hours',
         'point',
+        'status',
     )
     list_display = (
         'id',
@@ -769,6 +770,7 @@ class Tellzone(ModelAdmin):
         'phone',
         'url',
         'point',
+        'status',
         'inserted_at',
         'updated_at',
     )
@@ -784,6 +786,7 @@ class Tellzone(ModelAdmin):
         'phone',
         'url',
         'hours',
+        'status',
     )
 
 Tellzone.delete_view = delete_view

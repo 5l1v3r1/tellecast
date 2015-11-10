@@ -228,6 +228,16 @@ class Tellzone(Model):
     url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
     hours = JSONField(ugettext_lazy('Hours'))
     point = PointField(ugettext_lazy('Point'), db_index=True)
+    status = CharField(
+        ugettext_lazy('Status'),
+        choices=(
+            ('Public', 'Public',),
+            ('Private', 'Private',),
+        ),
+        db_index=True,
+        default='Public',
+        max_length=255,
+    )
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
 
