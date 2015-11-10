@@ -349,6 +349,47 @@ class TellzoneSocialProfile(Model):
         return unicode(self.id)
 
 
+class Network(Model):
+
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+
+    class Meta:
+
+        db_table = 'api_networks'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Network'
+        verbose_name_plural = 'Networks'
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
+class NetworkTellzone(Model):
+
+    network = ForeignKey(Network, related_name='networks_tellzones')
+    tellzone = ForeignKey(Tellzone, related_name='networks_tellzones')
+
+    class Meta:
+
+        db_table = 'api_networks_tellzones'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Networks :: Tellzone'
+        verbose_name_plural = 'Networks :: Tellzones'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
 class User(Model):
 
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
@@ -1599,7 +1640,7 @@ class Category(Model):
     class Meta:
         db_table = 'api_categories'
         ordering = (
-            'id',
+            '-id',
         )
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
@@ -1746,7 +1787,7 @@ class PostAttachment(Model):
     class Meta:
         db_table = 'api_posts_attachments'
         ordering = (
-            'id',
+            '-id',
         )
         verbose_name = 'Posts :: Attachment'
         verbose_name_plural = 'Posts :: Attachments'
@@ -1767,7 +1808,7 @@ class PostTellzone(Model):
 
         db_table = 'api_posts_tellzones'
         ordering = (
-            'id',
+            '-id',
         )
         verbose_name = 'Posts :: Tellzone'
         verbose_name_plural = 'Posts :: Tellzones'
