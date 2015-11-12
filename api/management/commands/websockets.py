@@ -250,6 +250,8 @@ class RabbitMQ(object):
                 'body': body,
             }))
         users = yield self.get_users(users_locations[0]['user_id'], users_locations[0]['point'], 999999999, True)
+        if not users:
+            raise Return(None)
         blocks = {}
         users_ids = tuple([user['id'] for user in users])
         with closing(connection.cursor()) as cursor:
