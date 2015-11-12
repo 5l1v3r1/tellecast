@@ -1503,6 +1503,13 @@ class RadarGetRequest(Serializer):
 
 class RadarGetResponseItems(User):
 
+    group = ChoiceField(
+        choices=(
+            (1, 1,),
+            (2, 2,),
+        ),
+    )
+
     class Meta:
 
         fields = (
@@ -1519,6 +1526,7 @@ class RadarGetResponseItems(User):
             'master_tells',
             'is_tellcard',
             'posts',
+            'group',
         )
         model = models.User
 

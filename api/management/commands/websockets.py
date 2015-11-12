@@ -717,6 +717,7 @@ class RabbitMQ(object):
                 columns = [column.name for column in cursor.description]
                 for record in cursor.fetchall():
                     record = dict(zip(columns, record))
+                    group = 1
                     if record['id'] not in users:
                         users[record['id']] = {}
                     if 'id' not in users[record['id']]:
@@ -732,6 +733,8 @@ class RabbitMQ(object):
                     if record['user_setting_key']:
                         if record['user_setting_key'] not in users[record['id']]['settings']:
                             users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
+                    if 'group' not in users[record['id']]:
+                        users[record['id']]['group'] = group
         except Exception:
             report_exc_info()
         users = sorted(users.values(), key=lambda item: (item['distance'], item['id'],))

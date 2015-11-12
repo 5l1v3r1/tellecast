@@ -2419,6 +2419,7 @@ def get_users(user_id, point, radius, include_user_id):
         )
         for record in cursor.fetchall():
             if record[0] not in users:
+                group = 1
                 p = loads(record[1])
                 p = get_point(p['coordinates'][1], p['coordinates'][0])
                 users[record[0]] = (
@@ -2426,6 +2427,7 @@ def get_users(user_id, point, radius, include_user_id):
                     p,
                     record[2],
                 )
+                users[record[0]][0].group = group
     return users
 
 
