@@ -2064,6 +2064,10 @@ def user_url_pre_save(instance, **kwargs):
 
 @receiver(post_save, sender=Block)
 def block_post_save(instance, **kwargs):
+    Tellcard.objects.get_queryset().filter(
+        Q(user_source_id=instance.user_source_id, user_destination_id=instance.user_destination_id) |
+        Q(user_source_id=instance.user_destination_id, user_destination_id=instance.user_source_id),
+    ).delete()
     current_app.send_task(
         'api.management.commands.websockets',
         (
