@@ -633,28 +633,56 @@ class RabbitMQ(object):
 
     @coroutine
     def get_radar_post(self, user_location):
-        tellzones = []
+        point = 'POINT({longitude} {latitude})'.format(
+            longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
+        )
+        tellzones = {}
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
-                    SELECT id, name
+                    SELECT
+                        api_tellzones.id AS api_tellzones_id,
+                        api_tellzones.name AS api_tellzones_name,
+                        ST_Distance(
+                            ST_Transform(api_tellzones.point, 2163),
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163)
+                        ) * 3.28084 AS distance,
+                        api_networks.id AS api_networks_id,
+                        api_networks.name AS api_networks_name
                     FROM api_tellzones
-                    WHERE ST_DWithin(ST_Transform(point, 2163), ST_Transform(ST_GeomFromText(%s, 4326), 2163), 91.44)
+                    INNER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
+                    INNER JOIN api_networks ON api_networks.id = api_networks_tellzones.network_id
+                    WHERE ST_DWithin(
+                        ST_Transform(api_tellzones.point, 2163),
+                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                        91.44
+                    )
                     ''',
-                    (
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
-                        ),
-                    ),
+                    (point, point,),
                 )
                 for record in cursor.fetchall():
-                    tellzones.append({
-                        'id': record[0],
-                        'name': record[1],
-                    })
+                    if record[0] not in tellzones:
+                        tellzones[record[0]] = {
+                            'id': record[0],
+                            'name': record[1],
+                            'distance': record[2],
+                            'networks': {},
+                        }
+                    if record[3] not in tellzones[record[0]]['networks']:
+                        tellzones[record[0]]['networks'][record[3]] = {
+                            'id': record[3],
+                            'name': record[4],
+                        }
         except Exception:
             report_exc_info()
+        for key, value in tellzones.items():
+            tellzones[key]['networks'] = sorted(
+                tellzones[key]['networks'].values(), key=lambda network: (network['name'], -network['id'],),
+            )
+        tellzones = sorted(tellzones.values(), key=lambda tellzone: (tellzone['distance'], -tellzone['id'],))
+        for index, _ in enumerate(tellzones):
+            del tellzones[index]['distance']
         raise Return(tellzones)
 
     @coroutine
