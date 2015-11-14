@@ -262,7 +262,10 @@ class Tellzone(Model):
 
     @cached_property
     def networks(self):
-        return [network_tellzone.network for network_tellzone in self.networks_tellzones.get_queryset()]
+        return sorted(
+            [network_tellzone.network for network_tellzone in self.networks_tellzones.get_queryset()],
+            key=lambda network: (network.name, -network.id,),
+        )
 
     @cached_property
     def tellecasters(self):
