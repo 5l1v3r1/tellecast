@@ -249,7 +249,14 @@ class RabbitMQ(object):
                 'subject': 'users_locations_post',
                 'body': body,
             }))
-        users = yield self.get_users(users_locations[0]['user_id'], users_locations[0]['point'], 999999999, True)
+        users = yield self.get_users(
+            users_locations[0]['user_id'],
+            users_locations[0]['network_id'],
+            users_locations[0]['tellzone_id'],
+            users_locations[0]['point'],
+            999999999,
+            True,
+        )
         if not users:
             raise Return(None)
         blocks = {}
@@ -292,7 +299,14 @@ class RabbitMQ(object):
             (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
         ).m > 999999999:
             raise Return(None)
-        users = yield self.get_users(users_locations[1]['user_id'], users_locations[1]['point'], 999999999, False)
+        users = yield self.get_users(
+            users_locations[1]['user_id'],
+            users_locations[1]['network_id'],
+            users_locations[1]['tellzone_id'],
+            users_locations[1]['point'],
+            999999999,
+            False
+        )
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
@@ -686,13 +700,16 @@ class RabbitMQ(object):
         raise Return(tellzones)
 
     @coroutine
-    def get_users(self, user_id, point, radius, status):
+    def get_users(self, user_id, network_id, tellzone_id, point, radius, status):
+        point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
         users = {}
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
                     SELECT
+                        api_users_locations.network_id AS network_id,
+                        api_users_locations.tellzone_id AS tellzone_id,
                         api_users.id AS id,
                         api_users.photo_original AS photo_original,
                         api_users.photo_preview AS photo_preview,
@@ -730,22 +747,11 @@ class RabbitMQ(object):
                         api_users_settings.key = 'show_photo'
                     ORDER BY distance ASC, api_users_locations.user_id ASC
                     ''',
-                    (
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=point['longitude'], latitude=point['latitude'],
-                        ),
-                        user_id,
-                        status,
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=point['longitude'], latitude=point['latitude'],
-                        ),
-                        radius,
-                    )
+                    (point, user_id, status, point, radius,),
                 )
                 columns = [column.name for column in cursor.description]
                 for record in cursor.fetchall():
                     record = dict(zip(columns, record))
-                    group = 1
                     if record['id'] not in users:
                         users[record['id']] = {}
                     if 'id' not in users[record['id']]:
@@ -761,8 +767,23 @@ class RabbitMQ(object):
                     if record['user_setting_key']:
                         if record['user_setting_key'] not in users[record['id']]['settings']:
                             users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
-                    if 'group' not in users[record['id']]:
-                        users[record['id']]['group'] = group
+                    users[record['id']]['group'] = 1
+                    if tellzone_id:
+                        if record['tellzone_id']:
+                            if tellzone_id == record['tellzone_id']:
+                                users[record['id']]['group'] = 1
+                            else:
+                                users[record['id']]['group'] = 2
+                        else:
+                            if record['distance'] <= 300.0:
+                                users[record['id']]['group'] = 1
+                            else:
+                                users[record['id']]['group'] = 2
+                    else:
+                        if record['distance'] <= 300.0:
+                            users[record['id']]['group'] = 1
+                        else:
+                            users[record['id']]['group'] = 2
         except Exception:
             report_exc_info()
         users = sorted(users.values(), key=lambda item: (item['distance'], item['id'],))

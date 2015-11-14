@@ -2385,13 +2385,16 @@ def get_point(latitude, longitude):
     return fromstr('POINT({longitude} {latitude})'.format(latitude=latitude, longitude=longitude))
 
 
-def get_users(user_id, point, radius, include_user_id):
+def get_users(user_id, network_id, tellzone_id, point, radius, include_user_id):
+    point = 'POINT({x} {y})'.format(x=point.x, y=point.y)
     users = {}
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             '''
             SELECT
                 api_users_locations.user_id,
+                api_users_locations.network_id,
+                api_users_locations.tellzone_id,
                 ST_AsGeoJSON(api_users_locations.point),
                 ST_Distance(
                     ST_Transform(ST_GeomFromText(%s, 4326), 2163),
@@ -2420,25 +2423,35 @@ def get_users(user_id, point, radius, include_user_id):
                 api_users.is_signed_in IS TRUE
             ORDER BY distance ASC, api_users_locations.user_id ASC
             ''',
-            (
-                'POINT({x} {y})'.format(x=point.x, y=point.y),
-                user_id,
-                include_user_id,
-                'POINT({x} {y})'.format(x=point.x, y=point.y),
-                radius,
-            )
+            (point, user_id, include_user_id, point, radius,),
         )
         for record in cursor.fetchall():
+            print record
             if record[0] not in users:
-                group = 1
-                p = loads(record[1])
+                p = loads(record[3])
                 p = get_point(p['coordinates'][1], p['coordinates'][0])
                 users[record[0]] = (
                     User.objects.get_queryset().filter(id=record[0]).first(),
                     p,
-                    record[2],
+                    record[4],
                 )
-                users[record[0]][0].group = group
+                users[record[0]][0].group = 1
+                if tellzone_id:
+                    if record[2]:
+                        if tellzone_id == record[2]:
+                            users[record[0]][0].group = 1
+                        else:
+                            users[record[0]][0].group = 2
+                    else:
+                        if record[4] <= 300.0:
+                            users[record[0]][0].group = 1
+                        else:
+                            users[record[0]][0].group = 2
+                else:
+                    if record[4] <= 300.0:
+                        users[record[0]][0].group = 1
+                    else:
+                        users[record[0]][0].group = 2
     return users
 
 
