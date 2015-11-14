@@ -2426,15 +2426,10 @@ def get_users(user_id, network_id, tellzone_id, point, radius, include_user_id):
             (point, user_id, include_user_id, point, radius,),
         )
         for record in cursor.fetchall():
-            print record
             if record[0] not in users:
                 p = loads(record[3])
                 p = get_point(p['coordinates'][1], p['coordinates'][0])
-                users[record[0]] = (
-                    User.objects.get_queryset().filter(id=record[0]).first(),
-                    p,
-                    record[4],
-                )
+                users[record[0]] = (User.objects.get_queryset().filter(id=record[0]).first(), p, record[4],)
                 users[record[0]][0].group = 1
                 if tellzone_id:
                     if record[2]:

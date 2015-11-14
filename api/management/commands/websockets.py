@@ -601,9 +601,13 @@ class RabbitMQ(object):
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
-                    SELECT api_users_locations_1.user_id, ST_AsGeoJSON(api_users_locations_1.point)
-                      FROM api_users_locations api_users_locations_1
-                      INNER JOIN (
+                    SELECT
+                        api_users_locations_1.user_id,
+                        api_users_locations_1.network_id,
+                        api_users_locations_1.tellzone_id,
+                        ST_AsGeoJSON(api_users_locations_1.point)
+                    FROM api_users_locations api_users_locations_1
+                    INNER JOIN (
                         SELECT user_id FROM api_users_locations WHERE id = %s
                     ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
                     ORDER BY api_users_locations_1.id DESC LIMIT 2
@@ -611,9 +615,11 @@ class RabbitMQ(object):
                     (data,)
                 )
                 for record in cursor.fetchall():
-                    point = loads(record[1])
+                    point = loads(record[3])
                     user_location = {
                         'user_id': record[0],
+                        'network_id': record[1],
+                        'tellzone_id': record[2],
                         'point': {
                             'latitude': point['coordinates'][1],
                             'longitude': point['coordinates'][0],
