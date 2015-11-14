@@ -261,6 +261,10 @@ class Tellzone(Model):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
 
     @cached_property
+    def networks(self):
+        return [network_tellzone.network for network_tellzone in self.networks_tellzones.get_queryset()]
+
+    @cached_property
     def tellecasters(self):
         return UserLocation.objects.get_queryset().filter(
             point__distance_lte=(self.point, D(ft=Tellzone.radius())),

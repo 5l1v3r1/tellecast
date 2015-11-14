@@ -2094,6 +2094,8 @@ class Radar(ViewSet):
                 point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
             ).prefetch_related(
                 'social_profiles',
+                'networks_tellzones',
+                'networks_tellzones__network',
             ).distance(
                 user_location.point,
             )
