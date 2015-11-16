@@ -279,7 +279,6 @@ class Tellzone(Model):
                     ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), %s)
                     AND
                     timestamp > NOW() - INTERVAL '1 minute'
-                ORDER BY id ASC
                 ''',
                 (
                     'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
