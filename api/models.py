@@ -267,22 +267,31 @@ class Tellzone(Model):
             key=lambda network: (network.name, -network.id,),
         )
 
+    @cached_property
+    def tellecasters(self):
+        count = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT COUNT(DISTINCT(user_id)) AS count
+                FROM api_users_locations
+                WHERE
+                    ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), %s)
+                    AND
+                    timestamp > NOW() - INTERVAL '1 minute'
+                ORDER BY id ASC
+                ''',
+                (
+                    'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
+                    models.Tellzone.radius() * 0.3048,
+                )
+            )
+            count = cursor.fetchone()[0]
+        return count
+
     @classmethod
     def radius(cls):
         return 300.00
-
-    @property
-    def tellecasters(self):
-        return UserLocation.objects.get_queryset().filter(
-            point__distance_lte=(self.point, D(ft=Tellzone.radius())),
-            timestamp__gt=datetime.now() - timedelta(minutes=1),
-            user__is_signed_in=True,
-        ).distinct(
-            'user_id',
-        ).order_by(
-            'user_id',
-            '-id',
-        ).count()
 
     def __str__(self):
         return self.name
