@@ -267,7 +267,11 @@ class Tellzone(Model):
             key=lambda network: (network.name, -network.id,),
         )
 
-    @cached_property
+    @classmethod
+    def radius(cls):
+        return 300.00
+
+    @property
     def tellecasters(self):
         return UserLocation.objects.get_queryset().filter(
             point__distance_lte=(self.point, D(ft=Tellzone.radius())),
@@ -279,10 +283,6 @@ class Tellzone(Model):
             'user_id',
             '-id',
         ).count()
-
-    @classmethod
-    def radius(cls):
-        return 300.00
 
     def __str__(self):
         return self.name
