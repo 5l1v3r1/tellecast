@@ -283,7 +283,7 @@ class Tellzone(Model):
                 ''',
                 (
                     'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
-                    models.Tellzone.radius() * 0.3048,
+                    Tellzone.radius() * 0.3048,
                 )
             )
             count = cursor.fetchone()[0]
