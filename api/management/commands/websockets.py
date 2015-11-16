@@ -671,8 +671,8 @@ class RabbitMQ(object):
                         api_networks.id AS api_networks_id,
                         api_networks.name AS api_networks_name
                     FROM api_tellzones
-                    INNER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
-                    INNER JOIN api_networks ON api_networks.id = api_networks_tellzones.network_id
+                    LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
+                    LEFT OUTER JOIN api_networks ON api_networks.id = api_networks_tellzones.network_id
                     WHERE ST_DWithin(
                         ST_Transform(api_tellzones.point, 2163),
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163),
@@ -689,11 +689,12 @@ class RabbitMQ(object):
                             'distance': record[2],
                             'networks': {},
                         }
-                    if record[3] not in tellzones[record[0]]['networks']:
-                        tellzones[record[0]]['networks'][record[3]] = {
-                            'id': record[3],
-                            'name': record[4],
-                        }
+                    if record[3] and record[4]:
+                        if record[3] not in tellzones[record[0]]['networks']:
+                            tellzones[record[0]]['networks'][record[3]] = {
+                                'id': record[3],
+                                'name': record[4],
+                            }
         except Exception:
             report_exc_info()
         for key, value in tellzones.items():
