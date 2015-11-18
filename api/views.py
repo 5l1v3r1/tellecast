@@ -833,8 +833,23 @@ class Messages(ViewSet):
         )
         serializer.is_valid(request.query_params)
         messages = []
+        blocks = []
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT user_source_id, user_destination_id
+                FROM api_blocks
+                WHERE user_source_id = %s OR user_destination_id = %s
+                ''',
+                (request.user.id, request.user.id,)
+            )
+            for record in cursor.fetchall():
+                if record[0] != request.user.id:
+                    blocks.append(record[0])
+                if record[1] != request.user.id:
+                    blocks.append(record[1])
         if serializer.validated_data.get('recent', True):
-            for user in models.User.objects.get_queryset().exclude(id=request.user.id):
+            for user in models.User.objects.get_queryset().exclude(id__in=[request.user.id] + blocks):
                 message = models.Message.objects.get_queryset().filter(
                     Q(user_source_id=request.user.id, user_destination_id=user.id) |
                     Q(user_source_id=user.id, user_destination_id=request.user.id),
@@ -848,6 +863,7 @@ class Messages(ViewSet):
         else:
             query = models.Message.objects.get_queryset().filter(
                 Q(user_source_id=request.user.id) | Q(user_destination_id=request.user.id),
+                ~Q(user_source_id__in=blocks) | ~Q(user_destination_id__in=blocks),
                 is_suppressed=False,
             )
             user_id = serializer.validated_data.get('user_id', None)
