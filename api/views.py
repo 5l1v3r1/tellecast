@@ -1458,6 +1458,14 @@ class Posts(ViewSet):
             - Type: a comma-separated list of Category IDs
             - Status: optional
 
+        + network_ids
+            - Type: a comma-separated list of Network IDs
+            - Status: optional
+
+        + tellzone_ids
+            - Type: a comma-separated list of Tellzone IDs
+            - Status: optional
+
         + keywords
             - Type: string
             - Status: optional
@@ -1479,6 +1487,14 @@ class Posts(ViewSet):
               paramType: query
               required: false
               type: string
+            - name: network_ids
+              paramType: query
+              required: false
+              type: string
+            - name: tellzone_ids
+              paramType: query
+              required: false
+              type: string
             - name: keywords
               paramType: query
               required: false
@@ -1493,6 +1509,8 @@ class Posts(ViewSet):
                 self.get_queryset(
                     user_ids=request.query_params.get('user_ids', None),
                     category_ids=request.query_params.get('category_ids', None),
+                    network_ids=request.query_params.get('network_ids', None),
+                    tellzone_ids=request.query_params.get('tellzone_ids', None),
                     keywords=request.query_params.get('keywords', None),
                 ),
                 context={
@@ -1929,7 +1947,9 @@ class Posts(ViewSet):
     def get_instance(self, id):
         return self.get_queryset().filter(id=id).first()
 
-    def get_queryset(self, user_id=None, user_ids=None, category_ids=None, keywords=None):
+    def get_queryset(
+        self, user_id=None, user_ids=None, category_ids=None, network_ids=None, tellzone_ids=None, keywords=None,
+    ):
         queryset = models.Post.objects.get_queryset().select_related(
             'user',
             'category',
@@ -1944,6 +1964,32 @@ class Posts(ViewSet):
             queryset = queryset.filter(user_id__in=map(int, user_ids.split(',')))
         if category_ids:
             queryset = queryset.filter(category_id__in=map(int, category_ids.split(',')))
+        if network_ids:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT post_id
+                    FROM api_posts_tellzones
+                    WHERE tellzone_id IN (
+                        SELECT tellzone_id
+                        FROM api_networks_tellzones
+                        WHERE network_id IN %s
+                    )
+                    ''',
+                    (tuple(map(int, network_ids.split(','))),),
+                )
+                queryset = queryset.filter(id__in=[record[0] for record in cursor.fetchall()])
+        if tellzone_ids:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT post_id
+                    FROM api_posts_tellzones
+                    WHERE tellzone_id IN %s
+                    ''',
+                    (tuple(map(int, tellzone_ids.split(','))),),
+                )
+                queryset = queryset.filter(id__in=[record[0] for record in cursor.fetchall()])
         if keywords:
             queryset = queryset.filter(Q(title__icontains=keywords) | Q(contents__icontains=keywords))
         return queryset
