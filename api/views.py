@@ -863,7 +863,7 @@ class Messages(ViewSet):
         else:
             query = models.Message.objects.get_queryset().filter(
                 Q(user_source_id=request.user.id) | Q(user_destination_id=request.user.id),
-                ~Q(user_source_id__in=blocks) | ~Q(user_destination_id__in=blocks),
+                ~Q(user_source_id__in=blocks) & ~Q(user_destination_id__in=blocks),
                 is_suppressed=False,
             )
             user_id = serializer.validated_data.get('user_id', None)
