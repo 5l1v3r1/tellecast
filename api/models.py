@@ -348,6 +348,7 @@ class TellzoneSocialProfile(Model):
             ('instagram.com', 'instagram.com',),
             ('linkedin.com', 'linkedin.com',),
             ('twitter.com', 'twitter.com',),
+            ('yelp.com', 'yelp.com',),
         ),
         db_index=True,
         max_length=255,
