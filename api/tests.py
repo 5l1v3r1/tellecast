@@ -1331,9 +1331,9 @@ class Posts(TransactionTestCase):
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['title'] == dictionary['title']
-        assert response.data['attachments'][0]['position'] == 1
+        assert response.data['attachments'][0]['position'] == 3
         assert response.data['attachments'][1]['position'] == 2
-        assert response.data['attachments'][2]['position'] == 3
+        assert response.data['attachments'][2]['position'] == 1
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert (
             datetime.strptime(response.data['inserted_at'], '%Y-%m-%dT%H:%M:%S.%f') +
@@ -1392,9 +1392,9 @@ class Posts(TransactionTestCase):
         assert response.data['title'] == dictionary['title']
         assert response.data['contents'] == dictionary['contents']
         assert len(response.data['attachments']) == 3
-        assert response.data['attachments'][0]['position'] == 1
+        assert response.data['attachments'][0]['position'] == 3
         assert response.data['attachments'][1]['position'] == 2
-        assert response.data['attachments'][2]['position'] == 3
+        assert response.data['attachments'][2]['position'] == 1
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
@@ -1433,9 +1433,9 @@ class Posts(TransactionTestCase):
         assert response.data['title'] == dictionary['title']
         assert response.data['contents'] == dictionary['contents']
         assert len(response.data['attachments']) == 3
-        assert response.data['attachments'][0]['position'] == 1
+        assert response.data['attachments'][0]['position'] == 3
         assert response.data['attachments'][1]['position'] == 2
-        assert response.data['attachments'][2]['position'] == 3
+        assert response.data['attachments'][2]['position'] == 1
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
