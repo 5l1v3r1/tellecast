@@ -261,17 +261,32 @@ class Tellzone(Model):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
 
     @cached_property
+    def networks(self):
+        return sorted(
+            [network_tellzone.network for network_tellzone in self.networks_tellzones.get_queryset()],
+            key=lambda network: (network.name, -network.id,),
+        )
+
+    @cached_property
     def tellecasters(self):
-        return UserLocation.objects.get_queryset().filter(
-            point__distance_lte=(self.point, D(ft=Tellzone.radius())),
-            timestamp__gt=datetime.now() - timedelta(minutes=1),
-            user__is_signed_in=True,
-        ).distinct(
-            'user_id',
-        ).order_by(
-            'user_id',
-            '-id',
-        ).count()
+        count = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT COUNT(DISTINCT(user_id)) AS count
+                FROM api_users_locations
+                WHERE
+                    ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), %s)
+                    AND
+                    timestamp > NOW() - INTERVAL '1 minute'
+                ''',
+                (
+                    'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
+                    Tellzone.radius() * 0.3048,
+                )
+            )
+            count = cursor.fetchone()[0]
+        return count
 
     @classmethod
     def radius(cls):
@@ -2064,6 +2079,10 @@ def user_url_pre_save(instance, **kwargs):
 
 @receiver(post_save, sender=Block)
 def block_post_save(instance, **kwargs):
+    Tellcard.objects.get_queryset().filter(
+        Q(user_source_id=instance.user_source_id, user_destination_id=instance.user_destination_id) |
+        Q(user_source_id=instance.user_destination_id, user_destination_id=instance.user_source_id),
+    ).delete()
     current_app.send_task(
         'api.management.commands.websockets',
         (
@@ -2374,13 +2393,16 @@ def get_point(latitude, longitude):
     return fromstr('POINT({longitude} {latitude})'.format(latitude=latitude, longitude=longitude))
 
 
-def get_users(user_id, point, radius, include_user_id):
+def get_users(user_id, network_id, tellzone_id, point, radius, include_user_id):
+    point = 'POINT({x} {y})'.format(x=point.x, y=point.y)
     users = {}
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             '''
             SELECT
                 api_users_locations.user_id,
+                api_users_locations.network_id,
+                api_users_locations.tellzone_id,
                 ST_AsGeoJSON(api_users_locations.point),
                 ST_Distance(
                     ST_Transform(ST_GeomFromText(%s, 4326), 2163),
@@ -2409,25 +2431,30 @@ def get_users(user_id, point, radius, include_user_id):
                 api_users.is_signed_in IS TRUE
             ORDER BY distance ASC, api_users_locations.user_id ASC
             ''',
-            (
-                'POINT({x} {y})'.format(x=point.x, y=point.y),
-                user_id,
-                include_user_id,
-                'POINT({x} {y})'.format(x=point.x, y=point.y),
-                radius,
-            )
+            (point, user_id, include_user_id, point, radius,),
         )
         for record in cursor.fetchall():
             if record[0] not in users:
-                group = 1
-                p = loads(record[1])
+                p = loads(record[3])
                 p = get_point(p['coordinates'][1], p['coordinates'][0])
-                users[record[0]] = (
-                    User.objects.get_queryset().filter(id=record[0]).first(),
-                    p,
-                    record[2],
-                )
-                users[record[0]][0].group = group
+                users[record[0]] = (User.objects.get_queryset().filter(id=record[0]).first(), p, record[4],)
+                users[record[0]][0].group = 1
+                if tellzone_id:
+                    if record[2]:
+                        if tellzone_id == record[2]:
+                            users[record[0]][0].group = 1
+                        else:
+                            users[record[0]][0].group = 2
+                    else:
+                        if record[4] <= 300.0:
+                            users[record[0]][0].group = 1
+                        else:
+                            users[record[0]][0].group = 2
+                else:
+                    if record[4] <= 300.0:
+                        users[record[0]][0].group = 1
+                    else:
+                        users[record[0]][0].group = 2
     return users
 
 

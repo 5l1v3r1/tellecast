@@ -249,7 +249,14 @@ class RabbitMQ(object):
                 'subject': 'users_locations_post',
                 'body': body,
             }))
-        users = yield self.get_users(users_locations[0]['user_id'], users_locations[0]['point'], 999999999, True)
+        users = yield self.get_users(
+            users_locations[0]['user_id'],
+            users_locations[0]['network_id'],
+            users_locations[0]['tellzone_id'],
+            users_locations[0]['point'],
+            999999999,
+            True,
+        )
         if not users:
             raise Return(None)
         blocks = {}
@@ -292,7 +299,14 @@ class RabbitMQ(object):
             (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
         ).m > 999999999:
             raise Return(None)
-        users = yield self.get_users(users_locations[1]['user_id'], users_locations[1]['point'], 999999999, False)
+        users = yield self.get_users(
+            users_locations[1]['user_id'],
+            users_locations[1]['network_id'],
+            users_locations[1]['tellzone_id'],
+            users_locations[1]['point'],
+            999999999,
+            False
+        )
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
@@ -587,9 +601,13 @@ class RabbitMQ(object):
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
-                    SELECT api_users_locations_1.user_id, ST_AsGeoJSON(api_users_locations_1.point)
-                      FROM api_users_locations api_users_locations_1
-                      INNER JOIN (
+                    SELECT
+                        api_users_locations_1.user_id,
+                        api_users_locations_1.network_id,
+                        api_users_locations_1.tellzone_id,
+                        ST_AsGeoJSON(api_users_locations_1.point)
+                    FROM api_users_locations api_users_locations_1
+                    INNER JOIN (
                         SELECT user_id FROM api_users_locations WHERE id = %s
                     ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
                     ORDER BY api_users_locations_1.id DESC LIMIT 2
@@ -597,9 +615,11 @@ class RabbitMQ(object):
                     (data,)
                 )
                 for record in cursor.fetchall():
-                    point = loads(record[1])
+                    point = loads(record[3])
                     user_location = {
                         'user_id': record[0],
+                        'network_id': record[1],
+                        'tellzone_id': record[2],
                         'point': {
                             'latitude': point['coordinates'][1],
                             'longitude': point['coordinates'][0],
@@ -633,38 +653,70 @@ class RabbitMQ(object):
 
     @coroutine
     def get_radar_post(self, user_location):
-        tellzones = []
+        point = 'POINT({longitude} {latitude})'.format(
+            longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
+        )
+        tellzones = {}
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
-                    SELECT id, name
+                    SELECT
+                        api_tellzones.id AS api_tellzones_id,
+                        api_tellzones.name AS api_tellzones_name,
+                        ST_Distance(
+                            ST_Transform(api_tellzones.point, 2163),
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163)
+                        ) * 3.28084 AS distance,
+                        api_networks.id AS api_networks_id,
+                        api_networks.name AS api_networks_name
                     FROM api_tellzones
-                    WHERE ST_DWithin(ST_Transform(point, 2163), ST_Transform(ST_GeomFromText(%s, 4326), 2163), 91.44)
+                    LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
+                    LEFT OUTER JOIN api_networks ON api_networks.id = api_networks_tellzones.network_id
+                    WHERE ST_DWithin(
+                        ST_Transform(api_tellzones.point, 2163),
+                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                        91.44
+                    )
                     ''',
-                    (
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
-                        ),
-                    ),
+                    (point, point,),
                 )
                 for record in cursor.fetchall():
-                    tellzones.append({
-                        'id': record[0],
-                        'name': record[1],
-                    })
+                    if record[0] not in tellzones:
+                        tellzones[record[0]] = {
+                            'id': record[0],
+                            'name': record[1],
+                            'distance': record[2],
+                            'networks': {},
+                        }
+                    if record[3] and record[4]:
+                        if record[3] not in tellzones[record[0]]['networks']:
+                            tellzones[record[0]]['networks'][record[3]] = {
+                                'id': record[3],
+                                'name': record[4],
+                            }
         except Exception:
             report_exc_info()
+        for key, value in tellzones.items():
+            tellzones[key]['networks'] = sorted(
+                tellzones[key]['networks'].values(), key=lambda network: (network['name'], -network['id'],),
+            )
+        tellzones = sorted(tellzones.values(), key=lambda tellzone: (tellzone['distance'], -tellzone['id'],))
+        for index, _ in enumerate(tellzones):
+            del tellzones[index]['distance']
         raise Return(tellzones)
 
     @coroutine
-    def get_users(self, user_id, point, radius, status):
+    def get_users(self, user_id, network_id, tellzone_id, point, radius, status):
+        point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
         users = {}
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
                     SELECT
+                        api_users_locations.network_id AS network_id,
+                        api_users_locations.tellzone_id AS tellzone_id,
                         api_users.id AS id,
                         api_users.photo_original AS photo_original,
                         api_users.photo_preview AS photo_preview,
@@ -702,22 +754,11 @@ class RabbitMQ(object):
                         api_users_settings.key = 'show_photo'
                     ORDER BY distance ASC, api_users_locations.user_id ASC
                     ''',
-                    (
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=point['longitude'], latitude=point['latitude'],
-                        ),
-                        user_id,
-                        status,
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=point['longitude'], latitude=point['latitude'],
-                        ),
-                        radius,
-                    )
+                    (point, user_id, status, point, radius,),
                 )
                 columns = [column.name for column in cursor.description]
                 for record in cursor.fetchall():
                     record = dict(zip(columns, record))
-                    group = 1
                     if record['id'] not in users:
                         users[record['id']] = {}
                     if 'id' not in users[record['id']]:
@@ -733,8 +774,23 @@ class RabbitMQ(object):
                     if record['user_setting_key']:
                         if record['user_setting_key'] not in users[record['id']]['settings']:
                             users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
-                    if 'group' not in users[record['id']]:
-                        users[record['id']]['group'] = group
+                    users[record['id']]['group'] = 1
+                    if tellzone_id:
+                        if record['tellzone_id']:
+                            if tellzone_id == record['tellzone_id']:
+                                users[record['id']]['group'] = 1
+                            else:
+                                users[record['id']]['group'] = 2
+                        else:
+                            if record['distance'] <= 300.0:
+                                users[record['id']]['group'] = 1
+                            else:
+                                users[record['id']]['group'] = 2
+                    else:
+                        if record['distance'] <= 300.0:
+                            users[record['id']]['group'] = 1
+                        else:
+                            users[record['id']]['group'] = 2
         except Exception:
             report_exc_info()
         users = sorted(users.values(), key=lambda item: (item['distance'], item['id'],))

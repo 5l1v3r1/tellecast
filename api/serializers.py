@@ -1542,13 +1542,20 @@ class RadarPostRequest(UserLocation):
     pass
 
 
+class RadarPostResponseNetwork(Network):
+    pass
+
+
 class RadarPostResponse(Tellzone):
+
+    networks = RadarPostResponseNetwork(many=True)
 
     class Meta:
 
         fields = (
             'id',
             'name',
+            'networks',
         )
         model = models.Tellzone
 

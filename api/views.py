@@ -2008,7 +2008,14 @@ class Radar(ViewSet):
         )
         serializer.is_valid(raise_exception=True)
         point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
-        users = models.get_users(request.user.id, point, serializer.validated_data['radius'] * 0.3048, True)
+        users = models.get_users(
+            request.user.id,
+            None,
+            None,
+            point,
+            serializer.validated_data['radius'] * 0.3048,
+            True,
+        )
         users = {key: value for key, value in users.items() if not models.is_blocked(request.user.id, key)}
         return Response(
             data=serializers.RadarGetResponse(
@@ -2106,12 +2113,17 @@ class Radar(ViewSet):
         serializer.is_valid(raise_exception=True)
         if 'point' in serializer.validated_data and serializer.validated_data['point']:
             user_location = serializer.insert()
-            tellzones = models.Tellzone.objects.get_queryset().filter(
-                point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
-            ).prefetch_related(
-                'social_profiles',
-            ).distance(
-                user_location.point,
+            tellzones = sorted(
+                models.Tellzone.objects.get_queryset().filter(
+                    point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
+                ).prefetch_related(
+                    'social_profiles',
+                    'networks_tellzones',
+                    'networks_tellzones__network',
+                ).distance(
+                    user_location.point,
+                ),
+                key=lambda tellzone: (tellzone.distance.ft, -tellzone.id),
             )
         else:
             tellzones = []
