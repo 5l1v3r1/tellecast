@@ -717,7 +717,7 @@ class MasterTells(TransactionTestCase):
 
         response = self.client.get('/api/master-tells/ids/', format='json')
         assert len(response.data) == 2
-        assert response.data[0] == id
+        assert response.data[1] == id
         assert response.status_code == 200
 
         response = self.client.delete('/api/master-tells/{id}/'.format(id=id), format='json')
@@ -1331,9 +1331,9 @@ class Posts(TransactionTestCase):
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['title'] == dictionary['title']
-        assert response.data['attachments'][0]['position'] == 3
+        assert response.data['attachments'][0]['position'] == 1
         assert response.data['attachments'][1]['position'] == 2
-        assert response.data['attachments'][2]['position'] == 1
+        assert response.data['attachments'][2]['position'] == 3
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert (
             datetime.strptime(response.data['inserted_at'], '%Y-%m-%dT%H:%M:%S.%f') +
@@ -1392,9 +1392,9 @@ class Posts(TransactionTestCase):
         assert response.data['title'] == dictionary['title']
         assert response.data['contents'] == dictionary['contents']
         assert len(response.data['attachments']) == 3
-        assert response.data['attachments'][0]['position'] == 3
+        assert response.data['attachments'][0]['position'] == 1
         assert response.data['attachments'][1]['position'] == 2
-        assert response.data['attachments'][2]['position'] == 1
+        assert response.data['attachments'][2]['position'] == 3
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
@@ -1433,9 +1433,9 @@ class Posts(TransactionTestCase):
         assert response.data['title'] == dictionary['title']
         assert response.data['contents'] == dictionary['contents']
         assert len(response.data['attachments']) == 3
-        assert response.data['attachments'][0]['position'] == 3
+        assert response.data['attachments'][0]['position'] == 1
         assert response.data['attachments'][1]['position'] == 2
-        assert response.data['attachments'][2]['position'] == 1
+        assert response.data['attachments'][2]['position'] == 3
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
@@ -2134,7 +2134,7 @@ class SlaveTells(TransactionTestCase):
 
         response = self.client.get('/api/slave-tells/ids/', format='json')
         assert len(response.data) == 2
-        assert response.data[0] == id
+        assert response.data[1] == id
         assert response.status_code == 200
 
         response = self.client.delete('/api/slave-tells/{id}/'.format(id=id), format='json')
