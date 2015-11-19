@@ -905,7 +905,8 @@ class UserPhoto(Model):
 
         db_table = 'api_users_photos'
         ordering = (
-            '-id',
+            '-user_id',
+            'position',
         )
         verbose_name = 'Users :: Photo'
         verbose_name_plural = 'Users :: Photos'
@@ -1073,7 +1074,8 @@ class UserStatusAttachment(Model):
 
         db_table = 'api_users_statuses_attachments'
         ordering = (
-            '-id',
+            '-user_status_id',
+            'position',
         )
         verbose_name = 'Users :: Statuses :: Attachment'
         verbose_name_plural = 'Users :: Statuses :: Attachments'
@@ -1159,7 +1161,8 @@ class UserURL(Model):
 
         db_table = 'api_users_urls'
         ordering = (
-            '-id',
+            '-user_id',
+            'position',
         )
         verbose_name = 'Users :: URL'
         verbose_name_plural = 'Users :: URLs'
@@ -1343,7 +1346,8 @@ class MasterTell(Model):
 
         db_table = 'api_master_tells'
         ordering = (
-            '-id',
+            '-owned_by_id',
+            'position',
         )
         verbose_name = 'Master Tell'
         verbose_name_plural = 'Master Tells'
@@ -1541,7 +1545,8 @@ class SlaveTell(Model):
 
         db_table = 'api_slave_tells'
         ordering = (
-            '-id',
+            '-master_tell_id',
+            'position',
         )
         verbose_name = 'Slave Tell'
         verbose_name_plural = 'Slave Tells'
@@ -1824,7 +1829,8 @@ class PostAttachment(Model):
     class Meta:
         db_table = 'api_posts_attachments'
         ordering = (
-            '-id',
+            '-post_id',
+            'position',
         )
         verbose_name = 'Posts :: Attachment'
         verbose_name_plural = 'Posts :: Attachments'
@@ -1961,7 +1967,8 @@ class MessageAttachment(Model):
 
         db_table = 'api_messages_attachments'
         ordering = (
-            '-id',
+            '-message_id',
+            'position',
         )
         verbose_name = 'Messages :: Attachment'
         verbose_name_plural = 'Messages :: Attachments'
