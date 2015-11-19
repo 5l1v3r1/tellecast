@@ -2171,6 +2171,41 @@ class Radar(ViewSet):
                 ),
                 key=lambda tellzone: (tellzone.distance.ft, -tellzone.id),
             )
+            if not tellzones:
+                network_ids = []
+                with closing(connection.cursor()) as cursor:
+                    cursor.execute(
+                        '''
+                        SELECT DISTINCT api_networks.id
+                        FROM api_tellzones
+                        INNER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
+                        INNER JOIN api_networks ON api_networks.id = api_networks_tellzones.network_id
+                        WHERE ST_DWithin(
+                            ST_Transform(api_tellzones.point, 2163),
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                            91.44
+                        )
+                        ORDER BY api_networks.id ASC
+                        ''',
+                        (
+                            'POINT({longitude} {latitude})'.format(
+                                longitude=user_location.point.x, latitude=user_location.point.y,
+                            ),
+                        ),
+                    )
+                    network_ids = list(sorted(set([record[0] for record in cursor.fetchall()])))
+                tellzones = sorted(
+                    models.Tellzone.objects.get_queryset().filter(
+                        networks_tellzones__network_id__in=network_ids,
+                    ).prefetch_related(
+                        'social_profiles',
+                        'networks_tellzones',
+                        'networks_tellzones__network',
+                    ).distance(
+                        user_location.point,
+                    ).distinct(),
+                    key=lambda tellzone: (tellzone.distance.ft, -tellzone.id),
+                )
         else:
             tellzones = []
         return Response(
