@@ -694,9 +694,6 @@ class RabbitMQ(object):
                 )
                 records = cursor.fetchall()
                 if not records:
-                    point = 'POINT({longitude} {latitude})'.format(
-                        longitude=user_location.point.x, latitude=user_location.point.y,
-                    )
                     cursor.execute(
                         '''
                         SELECT
