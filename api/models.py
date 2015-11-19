@@ -1677,7 +1677,7 @@ class Category(Model):
     class Meta:
         db_table = 'api_categories'
         ordering = (
-            '-id',
+            'name',
         )
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
