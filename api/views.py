@@ -2183,7 +2183,7 @@ class Radar(ViewSet):
                         WHERE ST_DWithin(
                             ST_Transform(api_tellzones.point, 2163),
                             ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                            91.44
+                            8046.72
                         )
                         ORDER BY api_networks.id ASC
                         ''',
@@ -2196,6 +2196,7 @@ class Radar(ViewSet):
                     network_ids = list(sorted(set([record[0] for record in cursor.fetchall()])))
                 tellzones = sorted(
                     models.Tellzone.objects.get_queryset().filter(
+                        status='Public',
                         networks_tellzones__network_id__in=network_ids,
                     ).prefetch_related(
                         'social_profiles',
