@@ -249,14 +249,7 @@ class RabbitMQ(object):
                 'subject': 'users_locations_post',
                 'body': body,
             }))
-        users = yield self.get_users(
-            users_locations[0]['user_id'],
-            users_locations[0]['network_id'],
-            users_locations[0]['tellzone_id'],
-            users_locations[0]['point'],
-            999999999,
-            True,
-        )
+        users = yield self.get_users(users_locations[0]['user_id'], users_locations[0]['point'], 999999999, True)
         if not users:
             raise Return(None)
         blocks = {}
@@ -286,7 +279,7 @@ class RabbitMQ(object):
                             u
                             for u in deepcopy(users[:])
                             if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
-                        ]
+                        ],
                     )
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
@@ -297,16 +290,9 @@ class RabbitMQ(object):
         if not vincenty(
             (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
             (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-        ).m > 999999999:
+        ).ft > 999999999:
             raise Return(None)
-        users = yield self.get_users(
-            users_locations[1]['user_id'],
-            users_locations[1]['network_id'],
-            users_locations[1]['tellzone_id'],
-            users_locations[1]['point'],
-            999999999,
-            False
-        )
+        users = yield self.get_users(users_locations[1]['user_id'], users_locations[1]['point'], 999999999, False)
         for user in users:
             for k, v in IOLoop.current().clients.items():
                 if v == user['id']:
@@ -316,7 +302,7 @@ class RabbitMQ(object):
                             u
                             for u in deepcopy(users[:])
                             if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
-                        ]
+                        ],
                     )
                     k.write_message(dumps({
                         'subject': 'users_locations_get',
@@ -640,6 +626,31 @@ class RabbitMQ(object):
                 users[key]['photo_preview'] if users[key]['settings']['show_photo'] == 'True' else None
             )
             del users[key]['settings']
+            users[key]['distance'] = vincenty(
+                (user['point']['longitude'], user['point']['latitude']),
+                (users[key]['point']['longitude'], users[key]['point']['latitude']),
+            ).ft
+            del users[key]['point']
+            users[key]['group'] = 1
+            if user['tellzone_id']:
+                if users[key]['tellzone_id']:
+                    if user['tellzone_id'] == users[key]['tellzone_id']:
+                        users[key]['group'] = 1
+                    else:
+                        users[key]['group'] = 2
+                else:
+                    if users[key]['distance'] <= 300.0:
+                        users[key]['group'] = 1
+                    else:
+                        users[key]['group'] = 2
+            else:
+                if users[key]['distance'] <= 300.0:
+                    users[key]['group'] = 1
+                else:
+                    users[key]['group'] = 2
+            del users[key]['network_id']
+            del users[key]['tellzone_id']
+        users = sorted(users, key=lambda item: (item['distance'], item['id'],))
         raise Return(
             [
                 {
@@ -707,7 +718,7 @@ class RabbitMQ(object):
         raise Return(tellzones)
 
     @coroutine
-    def get_users(self, user_id, network_id, tellzone_id, point, radius, status):
+    def get_users(self, user_id, point, radius, status):
         point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
         users = {}
         try:
@@ -717,15 +728,12 @@ class RabbitMQ(object):
                     SELECT
                         api_users_locations.network_id AS network_id,
                         api_users_locations.tellzone_id AS tellzone_id,
+                        ST_AsGeoJSON(api_users_locations.point) AS point,
                         api_users.id AS id,
                         api_users.photo_original AS photo_original,
                         api_users.photo_preview AS photo_preview,
                         api_users_settings.key AS user_setting_key,
-                        api_users_settings.value AS user_setting_value,
-                        ST_Distance(
-                            ST_Transform(api_users_locations.point, 2163),
-                            ST_Transform(ST_GeomFromText(%s, 4326), 2163)
-                        ) * 3.28084 AS distance
+                        api_users_settings.value AS user_setting_value
                     FROM api_users_locations
                     INNER JOIN (
                         SELECT MAX(api_users_locations.id) AS id
@@ -752,13 +760,14 @@ class RabbitMQ(object):
                         api_users.is_signed_in IS TRUE
                         AND
                         api_users_settings.key = 'show_photo'
-                    ORDER BY distance ASC, api_users_locations.user_id ASC
+                    ORDER BY api_users_locations.user_id ASC
                     ''',
-                    (point, user_id, status, point, radius,),
+                    (user_id, status, point, radius,),
                 )
                 columns = [column.name for column in cursor.description]
                 for record in cursor.fetchall():
                     record = dict(zip(columns, record))
+                    record['point'] = loads(record['point'])
                     if record['id'] not in users:
                         users[record['id']] = {}
                     if 'id' not in users[record['id']]:
@@ -767,33 +776,23 @@ class RabbitMQ(object):
                         users[record['id']]['photo_original'] = record['photo_original']
                     if 'photo_preview' not in users[record['id']]:
                         users[record['id']]['photo_preview'] = record['photo_preview']
-                    if 'distance' not in users[record['id']]:
-                        users[record['id']]['distance'] = record['distance']
                     if 'settings' not in users[record['id']]:
                         users[record['id']]['settings'] = {}
                     if record['user_setting_key']:
                         if record['user_setting_key'] not in users[record['id']]['settings']:
                             users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
-                    users[record['id']]['group'] = 1
-                    if tellzone_id:
-                        if record['tellzone_id']:
-                            if tellzone_id == record['tellzone_id']:
-                                users[record['id']]['group'] = 1
-                            else:
-                                users[record['id']]['group'] = 2
-                        else:
-                            if record['distance'] <= 300.0:
-                                users[record['id']]['group'] = 1
-                            else:
-                                users[record['id']]['group'] = 2
-                    else:
-                        if record['distance'] <= 300.0:
-                            users[record['id']]['group'] = 1
-                        else:
-                            users[record['id']]['group'] = 2
+                    if 'point' not in users[record['id']]:
+                        users[record['id']]['point'] = {
+                            'latitude': record['point']['coordinates'][1],
+                            'longitude': record['point']['coordinates'][0],
+                        }
+                    if 'network_id' not in users[record['id']]:
+                        users[record['id']]['network_id'] = record['network_id']
+                    if 'tellzone_id' not in users[record['id']]:
+                        users[record['id']]['tellzone_id'] = record['tellzone_id']
         except Exception:
             report_exc_info()
-        users = sorted(users.values(), key=lambda item: (item['distance'], item['id'],))
+        users = sorted(users.values(), key=lambda item: item['id'])
         raise Return(users)
 
 
