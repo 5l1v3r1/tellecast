@@ -2160,6 +2160,14 @@ def message_post_save(instance, **kwargs):
             if instance.user_destination.settings_['notifications_messages']:
                 status = True
         if status:
+            if instance.type in ['Ask', 'Message']:
+                body = 'From {first_name:s} {last_name:s}: {contents:s}'.format(
+                    first_name=instance.user_source.first_name,
+                    last_name=instance.user_source.last_name,
+                    contents=instance.contents,
+                )
+            else:
+                body = instance.contents
             current_app.send_task(
                 'api.tasks.push_notifications',
                 (
@@ -2167,7 +2175,7 @@ def message_post_save(instance, **kwargs):
                     {
                         'aps': {
                             'alert': {
-                                'body': instance.contents,
+                                'body': body,
                                 'title': 'New message from user',
                             },
                             'badge': get_badge(instance.user_destination_id),
