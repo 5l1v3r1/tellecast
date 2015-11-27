@@ -3001,6 +3001,10 @@ class Tellzones(ViewSet):
             - Type: float
             - Status: mandatory
 
+        + network_ids
+            - Type: a comma-separated list of Network IDs
+            - Status: optional
+
         Output
         ======
 
@@ -3022,6 +3026,10 @@ class Tellzones(ViewSet):
               paramType: query
               required: true
               type: number
+            - name: network_ids
+              paramType: query
+              required: false
+              type: string
         response_serializer: api.serializers.TellzonesResponse
         responseMessages:
             - code: 400
@@ -3035,19 +3043,23 @@ class Tellzones(ViewSet):
         )
         serializer.is_valid(raise_exception=True)
         point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
+        queryset = models.Tellzone.objects.get_queryset().prefetch_related(
+            'social_profiles',
+        ).filter(
+            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
+        )
+        network_ids = request.query_params.get('network_ids', None)
+        if network_ids:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    'SELECT tellzone_id FROM api_networks_tellzones WHERE network_id IN %s',
+                    (tuple(map(int, network_ids.split(','))),),
+                )
+                queryset = queryset.filter(id__in=[record[0] for record in cursor.fetchall()])
         return Response(
             data=serializers.TellzonesResponse(
                 sorted(
-                    [
-                        tellzone
-                        for tellzone in models.Tellzone.objects.get_queryset().prefetch_related(
-                            'social_profiles',
-                        ).filter(
-                            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
-                        ).distance(
-                            point,
-                        )
-                    ],
+                    [tellzone for tellzone in queryset.distance(point)],
                     key=lambda tellzone: (-tellzone.tellecasters, tellzone.distance.ft, -tellzone.id),
                 ),
                 context={
