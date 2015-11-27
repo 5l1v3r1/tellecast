@@ -26,7 +26,7 @@ from django.db.models import (
     Q,
     TextField,
 )
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy
@@ -2195,6 +2195,24 @@ def message_post_save(instance, **kwargs):
             {
                 'subject': 'messages',
                 'body': instance.id,
+            },
+        ),
+        queue='api.management.commands.websockets',
+        routing_key='api.management.commands.websockets',
+        serializer='json',
+    )
+
+
+@receiver(post_delete, sender=Message)
+def message_post_delete(instance, **kwargs):
+    current_app.send_task(
+        'api.management.commands.websockets',
+        (
+            {
+                'subject': 'messages',
+                'body': instance.id,
+                'action': 'deleted',
+                'users': [instance.user_source_id, instance.user_destination_id],
             },
         ),
         queue='api.management.commands.websockets',

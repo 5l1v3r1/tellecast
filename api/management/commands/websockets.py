@@ -120,7 +120,15 @@ class RabbitMQ(object):
             if message['subject'] == 'blocks':
                 yield self.blocks(message['body'])
             elif message['subject'] == 'messages':
-                yield self.messages(message['body'])
+                if 'users' in message:
+                    for user in [key for key, value in IOLoop.current().clients.items() if value in message['users']]:
+                        user.write_message(dumps({
+                            'subject': message['subject'],
+                            'body': message['body'],
+                            'action': message['action'],
+                        }))
+                else:
+                    yield self.messages(message['body'])
             elif message['subject'] == 'notifications':
                 yield self.notifications(message['body'])
             elif message['subject'] == 'profile':
