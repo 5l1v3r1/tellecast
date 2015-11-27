@@ -1159,6 +1159,16 @@ class WebSocket(WebSocketHandler):
                             (data['user_destination_id'], 'Unread',)
                         )
                         badge += cursor.fetchone()[0]
+                        if data['type'] in ['Ask', 'Message']:
+                            cursor.execute('SELECT first_name, last_name FROM api_users WHERE id = %s', (user_id,))
+                            user_source = cursor.fetchone()
+                            body = 'From {first_name:s} {last_name:s}: {contents:s}'.format(
+                                first_name=user_source[0],
+                                last_name=user_source[1],
+                                contents=data['contents'],
+                            )
+                        else:
+                            body = data['contents']
                         current_app.send_task(
                             'api.tasks.push_notifications',
                             (
@@ -1166,7 +1176,7 @@ class WebSocket(WebSocketHandler):
                                 {
                                     'aps': {
                                         'alert': {
-                                            'body': data['contents'],
+                                            'body': body,
                                             'title': 'New message from user',
                                         },
                                         'badge': badge,
