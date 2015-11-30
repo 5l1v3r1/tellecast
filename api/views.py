@@ -4684,7 +4684,7 @@ def messages_bulk_is_hidden(request):
         'user_status',
         'master_tell',
         'post',
-    ):
+    ).order_by('id'):
         if message.user_source_id == request.user.id:
             message.user_source_is_hidden = True
         if message.user_destination_id == request.user.id:
@@ -4766,7 +4766,7 @@ def messages_bulk_status(request):
         'user_status',
         'master_tell',
         'post',
-    ):
+    ).order_by('id'):
         message.status = 'Read'
         message.save()
         if not message.is_suppressed:

@@ -2189,7 +2189,6 @@ def message_post_save(instance, **kwargs):
                 routing_key='api.tasks.push_notifications',
                 serializer='json',
             )
-    if not instance.is_suppressed:
         current_app.send_task(
             'api.management.commands.websockets',
             (
