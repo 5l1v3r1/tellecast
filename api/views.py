@@ -4677,6 +4677,7 @@ def messages_bulk_is_hidden(request):
     for message in models.Message.objects.get_queryset().filter(
         Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
         Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+        is_suppressed=False,
     ).select_related(
         'user_source',
         'user_destination',
@@ -4758,6 +4759,7 @@ def messages_bulk_status(request):
     messages = []
     for message in models.Message.objects.get_queryset().filter(
         Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
+        is_suppressed=False,
     ).select_related(
         'user_source',
         'user_destination',
