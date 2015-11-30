@@ -2189,18 +2189,19 @@ def message_post_save(instance, **kwargs):
                 routing_key='api.tasks.push_notifications',
                 serializer='json',
             )
-    current_app.send_task(
-        'api.management.commands.websockets',
-        (
-            {
-                'subject': 'messages',
-                'body': instance.id,
-            },
-        ),
-        queue='api.management.commands.websockets',
-        routing_key='api.management.commands.websockets',
-        serializer='json',
-    )
+    if not instance.is_suppressed:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'subject': 'messages',
+                    'body': instance.id,
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
 
 
 @receiver(post_delete, sender=Message)
