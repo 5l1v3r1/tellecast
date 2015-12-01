@@ -2167,7 +2167,7 @@ def message_post_save(instance, **kwargs):
                 status = True
         if status:
             if instance.type in ['Ask', 'Message']:
-                body = 'From {first_name:s} {last_name:s}: {contents:s}'.format(
+                body = u'{first_name:s} {last_name:s}: {contents:s}'.format(
                     first_name=instance.user_source.first_name,
                     last_name=instance.user_source.last_name,
                     contents=instance.contents,

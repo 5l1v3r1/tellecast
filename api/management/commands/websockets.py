@@ -1162,7 +1162,7 @@ class WebSocket(WebSocketHandler):
                         if data['type'] in ['Ask', 'Message']:
                             cursor.execute('SELECT first_name, last_name FROM api_users WHERE id = %s', (user_id,))
                             user_source = cursor.fetchone()
-                            body = u'From {first_name:s} {last_name:s}: {contents:s}'.format(
+                            body = u'{first_name:s} {last_name:s}: {contents:s}'.format(
                                 first_name=user_source[0],
                                 last_name=user_source[1],
                                 contents=data['contents'],
