@@ -1896,7 +1896,7 @@ class Message(Model):
         db_index=True,
         max_length=255,
     )
-    contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    contents = TextField(ugettext_lazy('Contents'), blank=True, db_index=True)
     status = CharField(
         ugettext_lazy('Status'),
         choices=(
@@ -2130,6 +2130,12 @@ def master_tell_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
+
+
+@receiver(pre_save, sender=Message)
+def message_pre_save(instance, **kwargs):
+    if not instance.contents:
+        instance.contents = ''
 
 
 @receiver(post_save, sender=Message)

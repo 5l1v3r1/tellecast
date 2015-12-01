@@ -955,7 +955,7 @@ class Messages(ViewSet):
 
         + contents
             - Type: string
-            - Status: mandatory
+            - Status: mandatory (optional when type = 'Response - Blocked' or type = 'Response - Rejected')
 
         + status
             - Type: string

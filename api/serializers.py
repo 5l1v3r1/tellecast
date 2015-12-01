@@ -1119,6 +1119,12 @@ class Message(ModelSerializer):
         )
         model = models.Message
 
+    def validate(self, data):
+        if data['type'] not in ['Response - Blocked', 'Response - Rejected']:
+            if not 'contents' in data or not data['contents']:
+                raise ValidationError(ugettext_lazy('Invalid `contents`'))
+        return data
+
 
 class Ads(Ad):
     pass
@@ -1435,15 +1441,16 @@ class MessagesPostRequest(Message):
         return models.Message.insert(get_user_id(self.context), self.validated_data)
 
     def validate(self, attrs):
-        if 'user_status_id' in attrs:
-            if not attrs['user_status_id']:
-                del attrs['user_status_id']
-        if 'master_tell_id' in attrs:
-            if not attrs['master_tell_id']:
-                del attrs['master_tell_id']
-        if 'post_id' in attrs:
-            if not attrs['post_id']:
-                del attrs['post_id']
+        if super(MessagesPostRequest, self).validate(attrs):
+            if 'user_status_id' in attrs:
+                if not attrs['user_status_id']:
+                    del attrs['user_status_id']
+            if 'master_tell_id' in attrs:
+                if not attrs['master_tell_id']:
+                    del attrs['master_tell_id']
+            if 'post_id' in attrs:
+                if not attrs['post_id']:
+                    del attrs['post_id']
         return attrs
 
 
