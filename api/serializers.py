@@ -1120,9 +1120,10 @@ class Message(ModelSerializer):
         model = models.Message
 
     def validate(self, data):
-        if data['type'] not in ['Response - Blocked', 'Response - Rejected']:
-            if not 'contents' in data or not data['contents']:
-                raise ValidationError(ugettext_lazy('Invalid `contents`'))
+        if 'type' in data:
+            if data['type'] not in ['Response - Blocked', 'Response - Rejected']:
+                if 'contents' not in data or not data['contents']:
+                    raise ValidationError(ugettext_lazy('Invalid `contents`'))
         return data
 
 
