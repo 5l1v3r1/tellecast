@@ -1132,6 +1132,39 @@ class WebSocket(WebSocketHandler):
                             routing_key='api.management.commands.websockets',
                             serializer='json',
                         )
+                    if data['type'] in ['Response - Rejected', 'Response - Blocked']:
+                        cursor.execute('UPDATE api_messages SET is_suppressed = %s WHERE id = %s', (True, message_id,))
+                        connection.commit()
+                        cursor.execute(
+                            '''
+                            SELECT id, type
+                            FROM api_messages
+                            WHERE
+                                id < %s
+                                AND
+                                (
+                                    (user_source_id = %s AND user_destination_id = %s)
+                                    OR
+                                    (user_source_id = %s AND user_destination_id = %s)
+                                )
+                            ORDER BY id DESC
+                            ''',
+                            (
+                                message_id,
+                                user_id,
+                                data['user_destination_id'] if 'user_destination_id' in data else False,
+                                data['user_destination_id'] if 'user_destination_id' in data else False,
+                                user_id,
+                            )
+                        )
+                        records = cursor.fetchall()
+                        for record in records:
+                            if record[1] == 'Request':
+                                cursor.execute(
+                                    'UPDATE api_messages SET is_suppressed = %s WHERE id = %s', (True, record[0],)
+                                )
+                                connection.commit()
+                                break
                     notify = False
                     if data['type'] in ['Request', 'Response - Accepted']:
                         cursor.execute(
