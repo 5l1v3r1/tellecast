@@ -786,6 +786,7 @@ class Tellzone(ModelSerializer):
 
         fields = (
             'id',
+            'type',
             'name',
             'photo',
             'location',
@@ -859,6 +860,7 @@ class TellcardTellzone(Tellzone):
 
         fields = (
             'id',
+            'type',
             'name',
             'photo',
             'location',
@@ -961,6 +963,7 @@ class PostTellzone(Tellzone):
 
         fields = (
             'id',
+            'type',
             'name',
             'photo',
             'location',
@@ -1261,6 +1264,7 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
 
         fields = (
             'id',
+            'type',
             'name',
             'photo',
             'location',
@@ -1563,6 +1567,7 @@ class RadarPostResponse(Tellzone):
 
         fields = (
             'id',
+            'type',
             'name',
             'networks',
         )
@@ -2021,6 +2026,7 @@ class UsersTellzonesGet(Tellzone):
 
         fields = (
             'id',
+            'type',
             'name',
             'photo',
             'location',

@@ -221,6 +221,7 @@ class RecommendedTell(Model):
 
 class Tellzone(Model):
 
+    type = CharField(ugettext_lazy('Type'), blank=True, db_index=True, max_length=255)
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
     photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
     location = CharField(ugettext_lazy('Location'), db_index=True, max_length=255)

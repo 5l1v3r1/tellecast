@@ -754,6 +754,7 @@ class Tellzone(ModelAdmin):
 
     actions = [delete_selected]
     fields = (
+        'type',
         'name',
         'photo',
         'location',
@@ -765,6 +766,7 @@ class Tellzone(ModelAdmin):
     )
     list_display = (
         'id',
+        'type',
         'name',
         'location',
         'phone',
@@ -780,6 +782,7 @@ class Tellzone(ModelAdmin):
     )
     list_per_page = 10
     search_fields = (
+        'type',
         'name',
         'photo',
         'location',
