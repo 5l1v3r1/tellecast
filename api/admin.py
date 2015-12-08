@@ -822,6 +822,7 @@ class User(ModelAdmin):
 
     actions = [delete_selected]
     fields = (
+        'type',
         'email',
         'photo_original',
         'photo_preview',
@@ -837,6 +838,7 @@ class User(ModelAdmin):
     )
     list_display = (
         'id',
+        'type',
         'email',
         'first_name',
         'last_name',
@@ -846,6 +848,7 @@ class User(ModelAdmin):
         'token',
     )
     list_filter = (
+        'type',
         'is_signed_in',
         'inserted_at',
         'updated_at',

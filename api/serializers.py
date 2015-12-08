@@ -1142,6 +1142,7 @@ class AuthenticateResponse(User):
 
         fields = (
             'id',
+            'type',
             'email',
             'photo_original',
             'photo_preview',
@@ -1806,6 +1807,7 @@ class RegisterResponse(User):
 
         fields = (
             'id',
+            'type',
             'email',
             'photo_original',
             'photo_preview',

@@ -418,6 +418,17 @@ class NetworkTellzone(Model):
 
 class User(Model):
 
+    type = CharField(
+        ugettext_lazy('Type'),
+        choices=(
+            ('Root', 'Root',),
+            ('Network', 'Network',),
+            ('Regular', 'Regular',),
+        ),
+        default='Regular',
+        db_index=True,
+        max_length=255,
+    )
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
     photo_original = CharField(
         ugettext_lazy('Photo :: Original'),
