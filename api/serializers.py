@@ -144,17 +144,6 @@ class DeviceGCM(ModelSerializer):
         return models.DeviceGCM.insert_or_update(get_user_id(self.context), self.validated_data)
 
 
-class Network(ModelSerializer):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-        )
-        model = models.Network
-
-
 class Notification(ModelSerializer):
 
     contents = DictField()
@@ -667,6 +656,35 @@ class DevicesGCMResponse(DeviceGCM):
         model = models.DeviceGCM
 
 
+class NetworkUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
+class Network(ModelSerializer):
+
+    user = NetworkUser(required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'name',
+        )
+        model = models.Network
+
+
 class ShareUser(ModelSerializer):
 
     user_destination_id = IntegerField(default=None)
@@ -768,8 +786,24 @@ class TellzonePost(ModelSerializer):
         model = models.Post
 
 
+class TellzoneUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
 class Tellzone(ModelSerializer):
 
+    user = TellzoneUser(required=False)
     hours = DictField()
     point = PointField()
     views = IntegerField()
@@ -786,6 +820,7 @@ class Tellzone(ModelSerializer):
 
         fields = (
             'id',
+            'user',
             'type',
             'name',
             'photo',
@@ -860,6 +895,7 @@ class TellcardTellzone(Tellzone):
 
         fields = (
             'id',
+            'user',
             'type',
             'name',
             'photo',
@@ -963,6 +999,7 @@ class PostTellzone(Tellzone):
 
         fields = (
             'id',
+            'user',
             'type',
             'name',
             'photo',
@@ -1264,6 +1301,7 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
 
         fields = (
             'id',
+            'user',
             'type',
             'name',
             'photo',
@@ -1567,6 +1605,7 @@ class RadarPostResponse(Tellzone):
 
         fields = (
             'id',
+            'user',
             'type',
             'name',
             'networks',
@@ -2026,6 +2065,7 @@ class UsersTellzonesGet(Tellzone):
 
         fields = (
             'id',
+            'user',
             'type',
             'name',
             'photo',
