@@ -818,6 +818,8 @@ class Tellzone(ModelSerializer):
     hours = DictField()
     point = PointField()
     views = IntegerField()
+    started_at = DateTimeField(required=False)
+    ended_at = DateTimeField(required=False)
     favorites = IntegerField()
     distance = FloatField()
     connections = UsersProfile(many=True, required=False)
@@ -844,6 +846,8 @@ class Tellzone(ModelSerializer):
             'status',
             'inserted_at',
             'updated_at',
+            'started_at',
+            'ended_at',
             'social_profiles',
             'networks',
             'posts',
@@ -2061,11 +2065,43 @@ class TellcardsResponse(Tellcard):
         model = models.Tellcard
 
 
-class TellzonesRequest(Serializer):
+class TellzonesSearch(Serializer):
 
     latitude = FloatField()
     longitude = FloatField()
     radius = FloatField()
+
+
+class TellzonesRequest(Tellzone):
+
+    networks = ListField(child=IntegerField(), required=False)
+    posts = ListField(child=IntegerField(), required=False)
+
+    class Meta:
+
+        fields = (
+            'type',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'status',
+            'started_at',
+            'ended_at',
+            'social_profiles',
+            'networks',
+            'posts',
+        )
+        model = models.Tellzone
+
+    def insert(self):
+        return models.Tellzone.insert(get_user_id(self.context), self.validated_data)
+
+    def update(self):
+        return self.instance.update(self.validated_data)
 
 
 class TellzonesResponse(Tellzone):

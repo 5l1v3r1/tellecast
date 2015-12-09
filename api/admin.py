@@ -768,6 +768,8 @@ class Tellzone(ModelAdmin):
         'hours',
         'point',
         'status',
+        'started_at',
+        'ended_at',
     )
     list_display = (
         'id',

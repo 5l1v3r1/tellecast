@@ -279,14 +279,6 @@ class User(Model):
     def token(self):
         return TimestampSigner(settings.SECRET_KEY).sign(str(self.id))
 
-    @property
-    def settings_(self):
-        dictionary = UserSetting.dictionary
-        for setting in self.settings.get_queryset():
-            if setting.key in dictionary:
-                dictionary[setting.key] = True if setting.value == 'True' else False
-        return dictionary
-
     @classmethod
     def insert(cls, data):
         user = User.objects.create(
@@ -367,6 +359,14 @@ class User(Model):
             for master_tell in data['master_tells']:
                 MasterTell.insert(user.id, master_tell)
         return user
+
+    @property
+    def settings_(self):
+        dictionary = UserSetting.dictionary
+        for setting in self.settings.get_queryset():
+            if setting.key in dictionary:
+                dictionary[setting.key] = True if setting.value == 'True' else False
+        return dictionary
 
     def __str__(self):
         return '{first_name} {last_name} ({email})'.format(
@@ -674,6 +674,8 @@ class Tellzone(Model):
     )
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+    started_at = DateTimeField(ugettext_lazy('Inserted At'), db_index=True, null=True)
+    ended_at = DateTimeField(ugettext_lazy('Inserted At'), db_index=True, null=True)
 
     objects = GeoManager()
 
@@ -723,6 +725,45 @@ class Tellzone(Model):
         return count
 
     @classmethod
+    def insert(cls, user_id, data):
+        tellzone = Tellzone.objects.create(
+            user_id=user_id,
+            type=data['type'] if 'type' in data else None,
+            name=data['name'] if 'name' in data else None,
+            photo=data['photo'] if 'photo' in data else None,
+            location=data['location'] if 'location' in data else None,
+            phone=data['phone'] if 'phone' in data else None,
+            url=data['url'] if 'url' in data else None,
+            hours=data['hours'] if 'hours' in data else None,
+            point=data['point'] if 'point' in data else None,
+            status=data['status'] if 'status' in data else None,
+            started_at=data['started_at'] if 'started_at' in data else None,
+            ended_at=data['ended_at'] if 'ended_at' in data else None,
+        )
+        if 'social_profiles' in data:
+            for social_profile in data['social_profiles']:
+                TellzoneSocialProfile.objects.create(
+                    tellzone_id=tellzone.id, netloc=social_profile['netloc'], url=social_profile['url'],
+                )
+        if 'networks' in data:
+            for network in data['networks']:
+                network = Network.objects.get_queryset().filter(id=network).first()
+                if not network:
+                    continue
+                if not network.user:
+                    continue
+                if not network.user.id == tellzone.user_id:
+                    continue
+                NetworkTellzone.objects.create(network_id=network.id, tellzone_id=tellzone.id)
+        if 'posts' in data:
+            for post in data['posts']:
+                post = Post.objects.get_queryset().filter(id=post).first()
+                if not post:
+                    continue
+                PostTellzone.objects.create(post_id=post.id, tellzone_id=tellzone.id)
+        return tellzone
+
+    @classmethod
     def radius(cls):
         return 300.00
 
@@ -731,6 +772,72 @@ class Tellzone(Model):
 
     def __unicode__(self):
         return unicode(self.name)
+
+    def update(self, data):
+        if 'type' in data:
+            self.type = data['type']
+        if 'name' in data:
+            self.name = data['name']
+        if 'photo' in data:
+            self.photo = data['photo']
+        if 'location' in data:
+            self.location = data['location']
+        if 'phone' in data:
+            self.phone = data['phone']
+        if 'url' in data:
+            self.url = data['url']
+        if 'hours' in data:
+            self.hours = data['hours']
+        if 'point' in data:
+            self.point = data['point']
+        if 'status' in data:
+            self.status = data['status']
+        if 'started_at' in data:
+            self.started_at = data['started_at']
+        if 'ended_at' in data:
+            self.ended_at = data['ended_at']
+        self.save()
+        if 'social_profiles' in data:
+            ids = []
+            for social_profile in data['social_profiles']:
+                instance = TellzoneSocialProfile.objects.get_queryset().filter(
+                    tellzone_id=self.id,
+                    netloc=social_profile['netloc'] if 'netloc' in social_profile else None,
+                ).first()
+                if instance:
+                    instance.url = social_profile['url']
+                    instance.save()
+                else:
+                    instance = TellzoneSocialProfile.objects.create(
+                        tellzone_id=self.id, netloc=social_profile['netloc'], url=social_profile['url'],
+                    )
+                ids.append(instance.id)
+            TellzoneSocialProfile.objects.get_queryset().filter(~Q(id__in=ids), tellzone_id=self.id).delete()
+        if 'networks' in data:
+            for network in data['networks']:
+                network = Network.objects.get_queryset().filter(id=network).first()
+                if not network:
+                    continue
+                if not network.user:
+                    continue
+                if not network.user.id == self.user_id:
+                    continue
+                if NetworkTellzone.objects.get_queryset().filter(network_id=network.id, tellzone_id=self.id).count():
+                    continue
+                NetworkTellzone.objects.create(network_id=network.id, tellzone_id=self.id)
+            NetworkTellzone.objects.get_queryset().filter(
+                ~Q(network_id__in=data['networks']), tellzone_id=self.id,
+            ).delete()
+        if 'posts' in data:
+            for post in data['posts']:
+                post = Post.objects.get_queryset().filter(id=post).first()
+                if not post:
+                    continue
+                if PostTellzone.objects.get_queryset().filter(post_id=post.id, tellzone_id=self.id).count():
+                    continue
+                PostTellzone.objects.create(post_id=post.id, tellzone_id=self.id)
+            PostTellzone.objects.get_queryset().filter(~Q(post_id__in=data['posts']), tellzone_id=self.id).delete()
+        return self
 
     def get_connections(self, user_id):
         connections = []
@@ -823,12 +930,6 @@ class Network(Model):
         verbose_name = 'Network'
         verbose_name_plural = 'Networks'
 
-    def __str__(self):
-        return self.name
-
-    def __unicode__(self):
-        return unicode(self.name)
-
     @classmethod
     def insert(cls, user_id, data):
         network = Network.objects.create(
@@ -850,6 +951,12 @@ class Network(Model):
                     continue
                 NetworkTellzone.objects.create(network_id=network.id, tellzone_id=tellzone.id)
         return network
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
 
     def update(self, data):
         if 'name' in data:

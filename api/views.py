@@ -3339,7 +3339,7 @@ class Tellzones(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        serializer = serializers.TellzonesRequest(
+        serializer = serializers.TellzonesSearch(
             context={
                 'request': request,
             },
@@ -3414,6 +3414,429 @@ class Tellzones(ViewSet):
             ).data,
             status=HTTP_200_OK,
         )
+
+    def post(self, request):
+        '''
+        INSERT Tellzones
+
+        <pre>
+        Input
+        =====
+
+        + type
+            - Type: string
+            - Status: mandatory
+
+        + name
+            - Type: string
+            - Status: mandatory
+
+        + photo
+            - Type: string
+            - Status: mandatory
+
+        + location
+            - Type: string
+            - Status: mandatory
+
+        + phone
+            - Type: string
+            - Status: mandatory
+
+        + url
+            - Type: string
+            - Status: mandatory
+
+        + hours
+            - Type: string
+            - Status: mandatory
+
+            Example:
+
+            {
+                'Mon': '09:00 am - 05:00 pm',
+                'Tue': '09:00 am - 05:00 pm',
+                'Wed': '09:00 am - 05:00 pm',
+                'Thu': '09:00 am - 05:00 pm',
+                'Fri': '09:00 am - 05:00 pm',
+                'Sat': '09:00 am - 05:00 pm',
+                'Sun': '09:00 pm - 05:00 pm',
+            }
+
+        + point
+            - Type: dictionary (of floats)
+            - Status: optional
+
+            Example:
+
+            {
+                'latitude': 0.0000000000,
+                'longitude': 0.0000000000,
+            }
+
+        + status
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Public
+                - Private
+
+        + started_at
+            - Type: datetime
+            - Status: optional
+
+        + ended_at
+            - Type: datetime
+            - Status: optional
+
+        + social_profiles
+            - Type: list (a list of Social Profile objects; see below)
+            - Status: optional
+
+        + networks
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        + posts
+            - Type: list (a list of Post IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.TellzonesRequest
+        response_serializer: api.serializers.TellzonesResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.TellzonesRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.TellzonesResponse(
+                serializer.insert(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_201_CREATED,
+        )
+
+    def put(self, request, id):
+        '''
+        UPDATE Tellzones
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        + type
+            - Type: string
+            - Status: mandatory
+
+        + name
+            - Type: string
+            - Status: mandatory
+
+        + photo
+            - Type: string
+            - Status: mandatory
+
+        + location
+            - Type: string
+            - Status: mandatory
+
+        + phone
+            - Type: string
+            - Status: mandatory
+
+        + url
+            - Type: string
+            - Status: mandatory
+
+        + hours
+            - Type: string
+            - Status: mandatory
+
+            Example:
+
+            {
+                'Mon': '09:00 am - 05:00 pm',
+                'Tue': '09:00 am - 05:00 pm',
+                'Wed': '09:00 am - 05:00 pm',
+                'Thu': '09:00 am - 05:00 pm',
+                'Fri': '09:00 am - 05:00 pm',
+                'Sat': '09:00 am - 05:00 pm',
+                'Sun': '09:00 pm - 05:00 pm',
+            }
+
+        + point
+            - Type: dictionary (of floats)
+            - Status: optional
+
+            Example:
+
+            {
+                'latitude': 0.0000000000,
+                'longitude': 0.0000000000,
+            }
+
+        + status
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Public
+                - Private
+
+        + started_at
+            - Type: datetime
+            - Status: optional
+
+        + ended_at
+            - Type: datetime
+            - Status: optional
+
+        + social_profiles
+            - Type: list (a list of Social Profile objects; see below)
+            - Status: optional
+
+        + networks
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        + posts
+            - Type: list (a list of Post IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.TellzonesRequest
+        response_serializer: api.serializers.TellzonesResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        serializer = serializers.TellzonesRequest(
+            instance,
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.TellzonesResponse(
+                serializer.update(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def patch(self, request, id):
+        '''
+        UPDATE Tellzones
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        + type
+            - Type: string
+            - Status: mandatory
+
+        + name
+            - Type: string
+            - Status: mandatory
+
+        + photo
+            - Type: string
+            - Status: mandatory
+
+        + location
+            - Type: string
+            - Status: mandatory
+
+        + phone
+            - Type: string
+            - Status: mandatory
+
+        + url
+            - Type: string
+            - Status: mandatory
+
+        + hours
+            - Type: string
+            - Status: mandatory
+
+            Example:
+
+            {
+                'Mon': '09:00 am - 05:00 pm',
+                'Tue': '09:00 am - 05:00 pm',
+                'Wed': '09:00 am - 05:00 pm',
+                'Thu': '09:00 am - 05:00 pm',
+                'Fri': '09:00 am - 05:00 pm',
+                'Sat': '09:00 am - 05:00 pm',
+                'Sun': '09:00 pm - 05:00 pm',
+            }
+
+        + point
+            - Type: dictionary (of floats)
+            - Status: optional
+
+            Example:
+
+            {
+                'latitude': 0.0000000000,
+                'longitude': 0.0000000000,
+            }
+
+        + status
+            - Type: string
+            - Status: mandatory
+            - Choices:
+                - Public
+                - Private
+
+        + started_at
+            - Type: datetime
+            - Status: optional
+
+        + ended_at
+            - Type: datetime
+            - Status: optional
+
+        + social_profiles
+            - Type: list (a list of Social Profile objects; see below)
+            - Status: optional
+
+        + networks
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        + posts
+            - Type: list (a list of Post IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.TellzonesRequest
+        response_serializer: api.serializers.TellzonesResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        serializer = serializers.TellzonesRequest(
+            instance,
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.TellzonesResponse(
+                serializer.update(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def delete(self, request, id):
+        '''
+        DELETE Tellzones
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        instance.delete()
+        return Response(data=serializers.Null().data, status=HTTP_200_OK)
+
+    def get_instance(self, id):
+        return models.Tellzone.objects.get_queryset().filter(id=id).first()
 
 
 class Users(ViewSet):

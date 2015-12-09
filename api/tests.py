@@ -2333,6 +2333,10 @@ class Tellzones(TransactionTestCase):
     def setUp(self):
         self.user = middleware.mixer.blend('api.User')
 
+        self.network = middleware.mixer.blend('api.Network', user=self.user)
+
+        self.post = middleware.mixer.blend('api.Post')
+
         self.tellzone = middleware.mixer.blend('api.Tellzone')
         self.tellzone.point = get_point()
         self.tellzone.save()
@@ -2389,7 +2393,6 @@ class Tellzones(TransactionTestCase):
                 assert response.status_code == 200
 
     def test_a(self):
-
         response = self.client.get(
             '/api/tellzones/',
             {
@@ -2422,7 +2425,6 @@ class Tellzones(TransactionTestCase):
         assert response.status_code == 200
 
     def test_b(self):
-
         response = self.client.post(
             '/api/users/{id}/tellzones/'.format(id=self.user.id),
             {
@@ -2483,6 +2485,177 @@ class Tellzones(TransactionTestCase):
         assert response.status_code == 200
         assert response.data[0]['is_viewed']
         assert response.data[0]['is_favorited']
+
+    def test_c(self):
+        dictionary = {
+            'type': '1',
+            'name': '1',
+            'photo': '1',
+            'location': '1',
+            'phone': '1',
+            'url': '1',
+            'hours': {
+                'Mon': '09:00 am - 05:00 pm',
+                'Tue': '09:00 am - 05:00 pm',
+                'Wed': '09:00 am - 05:00 pm',
+                'Thu': '09:00 am - 05:00 pm',
+                'Fri': '09:00 am - 05:00 pm',
+                'Sat': '09:00 am - 05:00 pm',
+                'Sun': '09:00 pm - 05:00 pm',
+            },
+            'point': {
+                'latitude': 1.00,
+                'longitude': 1.00,
+            },
+            'status': 'Public',
+            'started_at': '1111-11-11T11:11:11.111111',
+            'ended_at': '1111-11-11T11:11:11.111111',
+            'social_profiles': [
+                {
+                    'netloc': 'linkedin.com',
+                    'url': '1',
+                },
+            ],
+            'networks': [
+                self.network.id,
+            ],
+            'posts': [
+                self.post.id,
+            ],
+        }
+
+        response = self.client.post('/api/tellzones/', dictionary, format='json')
+        assert response.data['type'] == dictionary['type']
+        assert response.data['name'] == dictionary['name']
+        assert response.data['photo'] == dictionary['photo']
+        assert response.data['location'] == dictionary['location']
+        assert response.data['phone'] == dictionary['phone']
+        assert response.data['url'] == dictionary['url']
+        assert response.data['hours'] == dictionary['hours']
+        assert float(response.data['point']['latitude']) == dictionary['point']['latitude']
+        assert float(response.data['point']['longitude']) == dictionary['point']['longitude']
+        assert response.data['status'] == dictionary['status']
+        assert response.data['started_at'] == dictionary['started_at']
+        assert response.data['ended_at'] == dictionary['ended_at']
+        assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
+        assert response.data['social_profiles'][0]['netloc'] == dictionary['social_profiles'][0]['netloc']
+        assert response.data['social_profiles'][0]['url'] == dictionary['social_profiles'][0]['url']
+        assert len(response.data['networks']) == len(dictionary['networks'])
+        assert response.data['networks'][0]['id'] == dictionary['networks'][0]
+        assert len(response.data['posts']) == len(dictionary['social_profiles'])
+        assert response.data['posts'][0]['id'] == dictionary['posts'][0]
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        dictionary = {
+            'type': '2',
+            'name': '2',
+            'photo': '2',
+            'location': '2',
+            'phone': '2',
+            'url': '2',
+            'hours': {
+                'Mon': '09:00 am - 05:00 pm',
+                'Tue': '09:00 am - 05:00 pm',
+                'Wed': '09:00 am - 05:00 pm',
+                'Thu': '09:00 am - 05:00 pm',
+                'Fri': '09:00 am - 05:00 pm',
+                'Sat': '09:00 am - 05:00 pm',
+                'Sun': '09:00 pm - 05:00 pm',
+            },
+            'point': {
+                'latitude': 2.00,
+                'longitude': 2.00,
+            },
+            'status': 'Public',
+            'started_at': '1111-11-11T11:11:11.111111',
+            'ended_at': '1111-11-11T11:11:11.111111',
+            'social_profiles': [],
+            'networks': [],
+            'posts': [],
+        }
+
+        response = self.client.put('/api/tellzones/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['type'] == dictionary['type']
+        assert response.data['name'] == dictionary['name']
+        assert response.data['photo'] == dictionary['photo']
+        assert response.data['location'] == dictionary['location']
+        assert response.data['phone'] == dictionary['phone']
+        assert response.data['url'] == dictionary['url']
+        assert response.data['hours'] == dictionary['hours']
+        assert float(response.data['point']['latitude']) == dictionary['point']['latitude']
+        assert float(response.data['point']['longitude']) == dictionary['point']['longitude']
+        assert response.data['status'] == dictionary['status']
+        assert response.data['started_at'] == dictionary['started_at']
+        assert response.data['ended_at'] == dictionary['ended_at']
+        assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
+        assert len(response.data['networks']) == len(dictionary['networks'])
+        assert len(response.data['posts']) == len(dictionary['social_profiles'])
+        assert response.status_code == 200
+
+        dictionary = {
+            'type': '3',
+            'name': '3',
+            'photo': '3',
+            'location': '3',
+            'phone': '3',
+            'url': '3',
+            'hours': {
+                'Mon': '09:00 am - 05:00 pm',
+                'Tue': '09:00 am - 05:00 pm',
+                'Wed': '09:00 am - 05:00 pm',
+                'Thu': '09:00 am - 05:00 pm',
+                'Fri': '09:00 am - 05:00 pm',
+                'Sat': '09:00 am - 05:00 pm',
+                'Sun': '09:00 pm - 05:00 pm',
+            },
+            'point': {
+                'latitude': 3.00,
+                'longitude': 3.00,
+            },
+            'status': 'Public',
+            'started_at': '1111-11-11T11:11:11.111111',
+            'ended_at': '1111-11-11T11:11:11.111111',
+            'social_profiles': [
+                {
+                    'netloc': 'linkedin.com',
+                    'url': '3',
+                },
+            ],
+            'networks': [
+                self.network.id,
+            ],
+            'posts': [
+                self.post.id,
+            ],
+        }
+
+        response = self.client.patch('/api/tellzones/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['type'] == dictionary['type']
+        assert response.data['name'] == dictionary['name']
+        assert response.data['photo'] == dictionary['photo']
+        assert response.data['location'] == dictionary['location']
+        assert response.data['phone'] == dictionary['phone']
+        assert response.data['url'] == dictionary['url']
+        assert response.data['hours'] == dictionary['hours']
+        assert float(response.data['point']['latitude']) == dictionary['point']['latitude']
+        assert float(response.data['point']['longitude']) == dictionary['point']['longitude']
+        assert response.data['status'] == dictionary['status']
+        assert response.data['started_at'] == dictionary['started_at']
+        assert response.data['ended_at'] == dictionary['ended_at']
+        assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
+        assert response.data['social_profiles'][0]['netloc'] == dictionary['social_profiles'][0]['netloc']
+        assert response.data['social_profiles'][0]['url'] == dictionary['social_profiles'][0]['url']
+        assert len(response.data['networks']) == len(dictionary['networks'])
+        assert response.data['networks'][0]['id'] == dictionary['networks'][0]
+        assert len(response.data['posts']) == len(dictionary['social_profiles'])
+        assert response.data['posts'][0]['id'] == dictionary['posts'][0]
+        assert response.status_code == 200
+
+        response = self.client.delete('/api/tellzones/{id}/'.format(id=id), format='json')
+        assert response.data == {}
+        assert response.status_code == 200
 
 
 class Users(TransactionTestCase):
