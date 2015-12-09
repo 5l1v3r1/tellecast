@@ -24,6 +24,7 @@ from django.db.models import (
     Model,
     OneToOneField,
     Q,
+    SET_NULL,
     TextField,
 )
 from django.db.models.signals import post_delete, post_save, pre_save
@@ -211,204 +212,6 @@ class RecommendedTell(Model):
         )
         verbose_name = 'Recommended Tell'
         verbose_name_plural = 'Recommended Tells'
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
-
-
-class Tellzone(Model):
-
-    type = CharField(ugettext_lazy('Type'), blank=True, db_index=True, max_length=255)
-    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
-    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
-    location = CharField(ugettext_lazy('Location'), db_index=True, max_length=255)
-    phone = CharField(ugettext_lazy('Phone'), db_index=True, max_length=255)
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-    hours = JSONField(ugettext_lazy('Hours'))
-    point = PointField(ugettext_lazy('Point'), db_index=True)
-    status = CharField(
-        ugettext_lazy('Status'),
-        choices=(
-            ('Public', 'Public',),
-            ('Private', 'Private',),
-        ),
-        db_index=True,
-        default='Public',
-        max_length=255,
-    )
-    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
-    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
-
-    objects = GeoManager()
-
-    class Meta:
-
-        db_table = 'api_tellzones'
-        ordering = (
-            '-id',
-        )
-        verbose_name = 'Tellzone'
-        verbose_name_plural = 'Tellzones'
-
-    @cached_property
-    def favorites(self):
-        return self.users.get_queryset().filter(favorited_at__isnull=False).count()
-
-    @cached_property
-    def views(self):
-        return self.users.get_queryset().filter(viewed_at__isnull=False).count()
-
-    @cached_property
-    def networks(self):
-        return sorted(
-            [network_tellzone.network for network_tellzone in self.networks_tellzones.get_queryset()],
-            key=lambda network: (network.name, -network.id,),
-        )
-
-    @cached_property
-    def tellecasters(self):
-        count = 0
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT COUNT(DISTINCT(user_id)) AS count
-                FROM api_users_locations
-                WHERE
-                    ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), %s)
-                    AND
-                    timestamp > NOW() - INTERVAL '1 minute'
-                ''',
-                (
-                    'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
-                    Tellzone.radius() * 0.3048,
-                )
-            )
-            count = cursor.fetchone()[0]
-        return count
-
-    @classmethod
-    def radius(cls):
-        return 300.00
-
-    def __str__(self):
-        return self.name
-
-    def __unicode__(self):
-        return unicode(self.name)
-
-    def get_connections(self, user_id):
-        connections = []
-        user_ids = [
-            user_location.user_id
-            for user_location in UserLocation.objects.get_queryset().filter(
-                ~Q(user_id=user_id),
-                point__distance_lte=(self.point, D(ft=Tellzone.radius())),
-                is_casting=True,
-                timestamp__gt=datetime.now() - timedelta(minutes=1),
-                user__is_signed_in=True,
-            )
-        ]
-        for tellcard in Tellcard.objects.get_queryset().filter(
-            Q(user_source_id=user_id, user_destination_id__in=user_ids) |
-            Q(user_source_id__in=user_ids, user_destination_id=user_id),
-            saved_at__isnull=False,
-        ).select_related(
-            'user_source',
-            'user_destination',
-        ):
-            if tellcard.user_source_id == user_id:
-                connections.append(tellcard.user_destination)
-            if tellcard.user_destination_id == user_id:
-                connections.append(tellcard.user_source)
-        return connections
-
-    def get_posts(self, user_id):
-        return [
-            post_tellzone.post
-            for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
-        ]
-
-    def is_viewed(self, user_id):
-        return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0
-
-    def is_favorited(self, user_id):
-        return self.users.get_queryset().filter(user_id=user_id, favorited_at__isnull=False).count() > 0
-
-
-class TellzoneSocialProfile(Model):
-
-    tellzone = ForeignKey(Tellzone, related_name='social_profiles')
-    netloc = CharField(
-        ugettext_lazy('Network Location'),
-        choices=(
-            ('facebook.com', 'facebook.com',),
-            ('google.com', 'google.com',),
-            ('instagram.com', 'instagram.com',),
-            ('linkedin.com', 'linkedin.com',),
-            ('twitter.com', 'twitter.com',),
-            ('yelp.com', 'yelp.com',),
-        ),
-        db_index=True,
-        max_length=255,
-    )
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-
-    class Meta:
-
-        db_table = 'api_tellzones_social_profiles'
-        ordering = (
-            '-id',
-        )
-        unique_together = (
-            'tellzone',
-            'netloc',
-        )
-        verbose_name = 'Tellzones :: Social Profile'
-        verbose_name_plural = 'Tellzones :: Social Profiles'
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
-
-
-class Network(Model):
-
-    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
-
-    class Meta:
-
-        db_table = 'api_networks'
-        ordering = (
-            '-id',
-        )
-        verbose_name = 'Network'
-        verbose_name_plural = 'Networks'
-
-    def __str__(self):
-        return self.name
-
-    def __unicode__(self):
-        return unicode(self.name)
-
-
-class NetworkTellzone(Model):
-
-    network = ForeignKey(Network, related_name='networks_tellzones')
-    tellzone = ForeignKey(Tellzone, related_name='networks_tellzones')
-
-    class Meta:
-
-        db_table = 'api_networks_tellzones'
-        ordering = (
-            '-id',
-        )
-        verbose_name = 'Networks :: Tellzone'
-        verbose_name_plural = 'Networks :: Tellzones'
 
     def __str__(self):
         return str(self.id)
@@ -846,6 +649,206 @@ class User(Model):
         except Exception:
             pass
         return False
+
+
+class Tellzone(Model):
+
+    user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
+    type = CharField(ugettext_lazy('Type'), blank=True, db_index=True, max_length=255)
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
+    location = CharField(ugettext_lazy('Location'), db_index=True, max_length=255)
+    phone = CharField(ugettext_lazy('Phone'), db_index=True, max_length=255)
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+    hours = JSONField(ugettext_lazy('Hours'))
+    point = PointField(ugettext_lazy('Point'), db_index=True)
+    status = CharField(
+        ugettext_lazy('Status'),
+        choices=(
+            ('Public', 'Public',),
+            ('Private', 'Private',),
+        ),
+        db_index=True,
+        default='Public',
+        max_length=255,
+    )
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+
+    objects = GeoManager()
+
+    class Meta:
+
+        db_table = 'api_tellzones'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Tellzone'
+        verbose_name_plural = 'Tellzones'
+
+    @cached_property
+    def favorites(self):
+        return self.users.get_queryset().filter(favorited_at__isnull=False).count()
+
+    @cached_property
+    def views(self):
+        return self.users.get_queryset().filter(viewed_at__isnull=False).count()
+
+    @cached_property
+    def networks(self):
+        return sorted(
+            [network_tellzone.network for network_tellzone in self.networks_tellzones.get_queryset()],
+            key=lambda network: (network.name, -network.id,),
+        )
+
+    @cached_property
+    def tellecasters(self):
+        count = 0
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT COUNT(DISTINCT(user_id)) AS count
+                FROM api_users_locations
+                WHERE
+                    ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), %s)
+                    AND
+                    timestamp > NOW() - INTERVAL '1 minute'
+                ''',
+                (
+                    'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
+                    Tellzone.radius() * 0.3048,
+                )
+            )
+            count = cursor.fetchone()[0]
+        return count
+
+    @classmethod
+    def radius(cls):
+        return 300.00
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+    def get_connections(self, user_id):
+        connections = []
+        user_ids = [
+            user_location.user_id
+            for user_location in UserLocation.objects.get_queryset().filter(
+                ~Q(user_id=user_id),
+                point__distance_lte=(self.point, D(ft=Tellzone.radius())),
+                is_casting=True,
+                timestamp__gt=datetime.now() - timedelta(minutes=1),
+                user__is_signed_in=True,
+            )
+        ]
+        for tellcard in Tellcard.objects.get_queryset().filter(
+            Q(user_source_id=user_id, user_destination_id__in=user_ids) |
+            Q(user_source_id__in=user_ids, user_destination_id=user_id),
+            saved_at__isnull=False,
+        ).select_related(
+            'user_source',
+            'user_destination',
+        ):
+            if tellcard.user_source_id == user_id:
+                connections.append(tellcard.user_destination)
+            if tellcard.user_destination_id == user_id:
+                connections.append(tellcard.user_source)
+        return connections
+
+    def get_posts(self, user_id):
+        return [
+            post_tellzone.post
+            for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
+        ]
+
+    def is_viewed(self, user_id):
+        return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0
+
+    def is_favorited(self, user_id):
+        return self.users.get_queryset().filter(user_id=user_id, favorited_at__isnull=False).count() > 0
+
+
+class TellzoneSocialProfile(Model):
+
+    tellzone = ForeignKey(Tellzone, related_name='social_profiles')
+    netloc = CharField(
+        ugettext_lazy('Network Location'),
+        choices=(
+            ('facebook.com', 'facebook.com',),
+            ('google.com', 'google.com',),
+            ('instagram.com', 'instagram.com',),
+            ('linkedin.com', 'linkedin.com',),
+            ('twitter.com', 'twitter.com',),
+            ('yelp.com', 'yelp.com',),
+        ),
+        db_index=True,
+        max_length=255,
+    )
+    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
+
+    class Meta:
+
+        db_table = 'api_tellzones_social_profiles'
+        ordering = (
+            '-id',
+        )
+        unique_together = (
+            'tellzone',
+            'netloc',
+        )
+        verbose_name = 'Tellzones :: Social Profile'
+        verbose_name_plural = 'Tellzones :: Social Profiles'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
+class Network(Model):
+
+    user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+
+    class Meta:
+
+        db_table = 'api_networks'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Network'
+        verbose_name_plural = 'Networks'
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
+class NetworkTellzone(Model):
+
+    network = ForeignKey(Network, related_name='networks_tellzones')
+    tellzone = ForeignKey(Tellzone, related_name='networks_tellzones')
+
+    class Meta:
+
+        db_table = 'api_networks_tellzones'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Networks :: Tellzone'
+        verbose_name_plural = 'Networks :: Tellzones'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class UserLocation(Model):

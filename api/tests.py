@@ -1539,7 +1539,7 @@ class Radar(TransactionTestCase):
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
         with middleware.mixer.ctx(commit=False):
-            for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone'):
+            for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None):
                 tellzone.point = get_point()
                 tellzone.save()
             for user in middleware.mixer.cycle(5).blend('api.User'):

@@ -429,13 +429,17 @@ class Network(ModelAdmin):
 
     actions = [delete_selected]
     fields = (
+        'user',
         'name',
     )
     list_display = (
         'id',
+        'user',
         'name',
     )
-    list_filter = ()
+    list_filter = (
+        'user',
+    )
     list_per_page = 10
     search_fields = (
         'name',
@@ -754,6 +758,7 @@ class Tellzone(ModelAdmin):
 
     actions = [delete_selected]
     fields = (
+        'user',
         'type',
         'name',
         'photo',
@@ -766,6 +771,7 @@ class Tellzone(ModelAdmin):
     )
     list_display = (
         'id',
+        'user',
         'type',
         'name',
         'location',
@@ -777,6 +783,8 @@ class Tellzone(ModelAdmin):
         'updated_at',
     )
     list_filter = (
+        'user',
+        'status',
         'inserted_at',
         'updated_at',
     )
@@ -789,7 +797,6 @@ class Tellzone(ModelAdmin):
         'phone',
         'url',
         'hours',
-        'status',
     )
 
 Tellzone.delete_view = delete_view
