@@ -43,6 +43,15 @@ def do_auth(self, access_token, *args, **kwargs):
 LinkedinOAuth2.do_auth = do_auth
 
 
+class IsAuthenticatedNetwork(IsAuthenticated):
+
+    def has_permission(self, request, view):
+        if super(IsAuthenticatedNetwork, self).has_permission(request, view):
+            if request.user.type in ['Root', 'Network']:
+                return True
+        return False
+
+
 class Blocks(ViewSet):
 
     permission_classes = (IsAuthenticated,)
@@ -1224,6 +1233,301 @@ class Messages(ViewSet):
             Q(user_source_id=self.request.user.id) | Q(user_destination_id=self.request.user.id),
             id=id,
         ).first()
+
+
+class Networks(ViewSet):
+
+    permission_classes = (IsAuthenticatedNetwork,)
+
+    def get_1(self, request):
+        '''
+        SELECT Networks
+
+        <pre>
+        Input
+        =====
+
+        + N/A
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.NetworksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.NetworksRequest(
+            context={
+                'request': request,
+            },
+            data=request.query_params,
+        )
+        serializer.is_valid(request.query_params)
+        return Response(
+            data=serializers.NetworksResponse(
+                self.get_queryset(),
+                context={
+                    'request': request,
+                },
+                many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def get_2(self, request, id):
+        '''
+        SELECT Network
+
+        <pre>
+        Input
+        =====
+
+        + N/A
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.NetworksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=serializers.NetworksResponse(
+                instance,
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def post(self, request):
+        '''
+        INSERT Networks
+
+        <pre>
+        Input
+        =====
+
+        + name
+            - Type: string
+            - Status: mandatory
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.NetworksRequest
+        response_serializer: api.serializers.NetworksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        serializer = serializers.NetworksRequest(
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.NetworksResponse(
+                serializer.insert(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_201_CREATED,
+        )
+
+    def put(self, request, id):
+        '''
+        UPDATE Networks
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        + name
+            - Type: string
+            - Status: mandatory
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.NetworksRequest
+        response_serializer: api.serializers.NetworksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        serializer = serializers.NetworksRequest(
+            instance,
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.NetworksResponse(
+                serializer.update(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def patch(self, request, id):
+        '''
+        UPDATE Networks
+
+        <pre>
+        Input
+        =====
+
+        + name
+            - Type: string
+            - Status: mandatory
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+              pytype: api.serializers.NetworksRequest
+        response_serializer: api.serializers.NetworksResponse
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        serializer = serializers.NetworksRequest(
+            instance,
+            context={
+                'request': request,
+            },
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            data=serializers.NetworksResponse(
+                serializer.update(),
+                context={
+                    'request': request,
+                },
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def delete(self, request, id):
+        '''
+        DELETE Networks
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.Null
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = self.get_instance(id)
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        instance.delete()
+        return Response(data=serializers.Null().data, status=HTTP_200_OK)
+
+    def get_instance(self, id):
+        return self.get_queryset().filter(id=id).first()
+
+    def get_queryset(self):
+        return models.Network.objects.get_queryset().filter(user_id=self.request.user.id)
 
 
 class Notifications(ViewSet):

@@ -829,6 +829,51 @@ class Network(Model):
     def __unicode__(self):
         return unicode(self.name)
 
+    @classmethod
+    def insert(cls, user_id, data):
+        network = Network.objects.create(
+            user_id=user_id,
+            name=data['name'] if 'name' in data else None,
+        )
+        if 'tellzones' in data:
+            for tellzone in data['tellzones']:
+                tellzone = Tellzone.objects.get_queryset().filter(id=tellzone).first()
+                if not tellzone:
+                    continue
+                if not tellzone.user:
+                    continue
+                if not tellzone.user.id == user_id:
+                    continue
+                if NetworkTellzone.objects.get_queryset().filter(
+                    network_id=network.id, tellzone_id=tellzone.id,
+                ).count():
+                    continue
+                NetworkTellzone.objects.create(network_id=network.id, tellzone_id=tellzone.id)
+        return network
+
+    def update(self, data):
+        if 'name' in data:
+            self.name = data['name']
+        self.save()
+        if 'tellzones' in data:
+            for tellzone in data['tellzones']:
+                tellzone = Tellzone.objects.get_queryset().filter(id=tellzone).first()
+                if not tellzone:
+                    continue
+                if not tellzone.user:
+                    continue
+                if not tellzone.user.id == self.user_id:
+                    continue
+                if NetworkTellzone.objects.get_queryset().filter(
+                    network_id=self.id, tellzone_id=tellzone.id,
+                ).count():
+                    continue
+                NetworkTellzone.objects.create(network_id=self.id, tellzone_id=tellzone.id)
+            NetworkTellzone.objects.get_queryset().filter(
+                ~Q(tellzone_id__in=data['tellzones']), network_id=self.id,
+            ).delete()
+        return self
+
 
 class NetworkTellzone(Model):
 

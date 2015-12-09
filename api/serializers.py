@@ -1530,6 +1530,70 @@ class MessagesBulkResponse(Message):
     pass
 
 
+class NetworksRequest(ModelSerializer):
+
+    tellzones = ListField(child=IntegerField(), required=False)
+
+    class Meta:
+
+        fields = (
+            'name',
+            'tellzones',
+        )
+        model = models.Network
+
+    def insert(self):
+        return models.Network.insert(get_user_id(self.context), self.validated_data)
+
+    def update(self):
+        return self.instance.update(self.validated_data)
+
+
+class NetworksResponseTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'type',
+            'name',
+        )
+        model = models.Tellzone
+
+
+class NetworksResponse(ModelSerializer):
+
+    tellzones = NetworksResponseTellzone(many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'tellzones',
+        )
+        model = models.Network
+
+    def to_representation(self, instance):
+        dictionary = OrderedDict()
+        for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'tellzones':
+                dictionary[field.field_name] = field.to_representation([
+                    network_tellzone.tellzone for network_tellzone in instance.networks_tellzones.get_queryset()
+                ])
+                continue
+            attribute = None
+            try:
+                attribute = field.get_attribute(instance)
+            except SkipField:
+                continue
+            if attribute is None:
+                dictionary[field.field_name] = None
+            else:
+                dictionary[field.field_name] = field.to_representation(attribute)
+        return dictionary
+
+
 class Notifications(Notification):
     pass
 

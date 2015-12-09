@@ -1139,6 +1139,72 @@ class Messages(TransactionTestCase):
         assert response.data['messages'] == 2
 
 
+class Networks(TransactionTestCase):
+
+    def setUp(self):
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+
+        self.user = middleware.mixer.blend('api.User', type='Root')
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/networks/', format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        dictionary = {
+            'name': '1',
+            'tellzones': [
+                self.tellzone.id,
+            ],
+        }
+
+        response = self.client.post('/api/networks/', dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert len(response.data['tellzones']) == 0
+        assert response.status_code == 201
+
+        id = response.data['id']
+
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=self.user)
+
+        dictionary = {
+            'name': '2',
+            'tellzones': [
+                self.tellzone.id,
+            ],
+        }
+
+        response = self.client.put('/api/networks/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert len(response.data['tellzones']) == 1
+        assert response.status_code == 200
+
+        dictionary = {
+            'name': '3',
+        }
+
+        response = self.client.patch('/api/networks/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert len(response.data['tellzones']) == 1
+        assert response.status_code == 200
+
+        dictionary = {
+            'name': '3',
+            'tellzones': [],
+        }
+
+        response = self.client.patch('/api/networks/{id}/'.format(id=id), dictionary, format='json')
+        assert response.data['name'] == dictionary['name']
+        assert len(response.data['tellzones']) == 0
+        assert response.status_code == 200
+
+        response = self.client.delete('/api/networks/{id}/'.format(id=id), format='json')
+        assert response.data == {}
+        assert response.status_code == 200
+
+
 class Notifications(TransactionTestCase):
 
     def setUp(self):
