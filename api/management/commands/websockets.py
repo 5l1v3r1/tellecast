@@ -666,7 +666,7 @@ class RabbitMQ(object):
                     'items': items,
                     'position': position + 1,
                 }
-                for position, items in enumerate([u.tolist() for u in array_split(users, len(users))])
+                for position, items in enumerate([u.tolist() for u in array_split(users, len(users) or 1)])
             ]
         )
 
