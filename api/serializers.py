@@ -801,6 +801,17 @@ class TellzoneUser(User):
         model = models.User
 
 
+class TellzoneNetwork(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Network
+
+
 class Tellzone(ModelSerializer):
 
     user = TellzoneUser(required=False)
@@ -814,6 +825,7 @@ class Tellzone(ModelSerializer):
     is_viewed = BooleanField()
     is_favorited = BooleanField()
     social_profiles = TellzoneSocialProfile(help_text='List of Tellzones :: Social Profiles', many=True, required=False)
+    networks = TellzoneNetwork(help_text='List of Networks', many=True, required=False)
     posts = TellzonePost(many=True, required=False)
 
     class Meta:
@@ -833,6 +845,7 @@ class Tellzone(ModelSerializer):
             'inserted_at',
             'updated_at',
             'social_profiles',
+            'networks',
             'posts',
             'views',
             'favorites',
@@ -848,6 +861,11 @@ class Tellzone(ModelSerializer):
         id = get_user_id(self.context)
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'networks':
+                dictionary[field.field_name] = field.to_representation([
+                    network_tellzone.network for network_tellzone in instance.networks_tellzones.get_queryset()
+                ])
+                continue
             if field.field_name == 'posts':
                 dictionary[field.field_name] = field.to_representation(instance.get_posts(id))
                 continue
@@ -908,6 +926,7 @@ class TellcardTellzone(Tellzone):
             'inserted_at',
             'updated_at',
             'social_profiles',
+            'networks',
         )
         model = models.Tellzone
 
@@ -1012,6 +1031,7 @@ class PostTellzone(Tellzone):
             'inserted_at',
             'updated_at',
             'social_profiles',
+            'networks',
             'views',
             'favorites',
             'tellecasters',
@@ -1314,6 +1334,7 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
             'inserted_at',
             'updated_at',
             'social_profiles',
+            'networks',
         )
         model = models.Tellzone
 
@@ -2142,6 +2163,7 @@ class UsersTellzonesGet(Tellzone):
             'inserted_at',
             'updated_at',
             'social_profiles',
+            'networks',
             'views',
             'favorites',
             'tellecasters',
