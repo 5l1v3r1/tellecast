@@ -1598,7 +1598,7 @@ class Radar(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 5
+        assert len(response.data) == 6
         for index in range(5):
             assert 'hash' in response.data[index]
             assert len(response.data[index]['hash'].split('-')) == len(response.data[index]['items'])
