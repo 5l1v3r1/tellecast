@@ -2421,7 +2421,7 @@ class Tellzones(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 5
+        assert len(response.data) == 25
         assert response.status_code == 200
 
     def test_b(self):

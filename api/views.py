@@ -5901,71 +5901,10 @@ def tellzones_master_tells(request, id):
             },
             status=HTTP_400_BAD_REQUEST,
         )
-    master_tells = {}
-    with closing(connection.cursor()) as cursor:
-        cursor.execute(
-            '''
-            SELECT
-                api_master_tells.id,
-                api_master_tells.created_by_id,
-                api_master_tells.owned_by_id,
-                api_master_tells.contents,
-                api_master_tells.position,
-                api_master_tells.is_visible,
-                api_master_tells.inserted_at,
-                api_master_tells.updated_at
-            FROM api_users_locations
-            INNER JOIN api_users ON api_users.id = api_users_locations.user_id
-            INNER JOIN api_master_tells ON api_master_tells.owned_by_id = api_users_locations.user_id
-            LEFT OUTER JOIN api_blocks ON
-                (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
-                OR
-                (api_blocks.user_source_id = api_users_locations.user_id AND api_blocks.user_destination_id = %s)
-            WHERE
-                api_users_locations.user_id != %s
-                AND
-                ST_DWithin(
-                    ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                    ST_Transform(api_users_locations.point, 2163),
-                    %s
-                )
-                AND
-                api_users_locations.is_casting IS TRUE
-                AND
-                api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
-                AND
-                api_users.is_signed_in IS TRUE
-                AND
-                api_blocks.id IS NULL
-            ORDER BY api_master_tells.id ASC
-            ''',
-            (
-                request.user.id,
-                request.user.id,
-                request.user.id,
-                'POINT({x} {y})'.format(x=tellzone.point.x, y=tellzone.point.y),
-                models.Tellzone.radius() * 0.3048,
-            )
-        )
-        for record in cursor.fetchall():
-            master_tells[record[3]] = {
-                'id': record[0],
-                'created_by_id': record[1],
-                'owned_by_id': record[2],
-                'contents': record[3],
-                'position': record[4],
-                'is_visible': record[5],
-                'inserted_at': record[6],
-                'updated_at': record[7],
-            }
     return Response(
-        data=serializers.TellzonesMasterTells(
-            sorted(master_tells.values(), key=lambda master_tell: master_tell['contents']),
-            context={
-                'request': request,
-            },
-            many=True,
-        ).data,
+        data=models.get_master_tells(
+            request.user.id, tellzone.point.y, tellzone.point.x, models.Tellzone.radius() * 0.3048,
+        ),
         status=HTTP_200_OK,
     )
 

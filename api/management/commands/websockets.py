@@ -335,6 +335,170 @@ class RabbitMQ(object):
         raise Return(block)
 
     @coroutine
+    def get_master_tells(self, user_id, latitude, longitude, radius):
+        master_tells = {}
+        try:
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT
+                        api_master_tells.id AS id,
+                        api_master_tells.contents AS contents,
+                        api_master_tells.position AS position,
+                        api_master_tells.is_visible AS is_visible,
+                        api_master_tells.inserted_at AS inserted_at,
+                        api_master_tells.updated_at AS updated_at,
+                        api_users_created_by.id AS created_by_id,
+                        api_users_created_by.photo_original AS created_by_photo_original,
+                        api_users_created_by.photo_preview AS created_by_photo_preview,
+                        api_users_created_by.first_name AS created_by_first_name,
+                        api_users_created_by.last_name AS created_by_last_name,
+                        api_users_created_by.location AS created_by_location,
+                        api_users_settings_created_by.key AS created_by_setting_key,
+                        api_users_settings_created_by.value AS created_by_setting_value,
+                        api_users_owned_by.id AS owned_by_id,
+                        api_users_owned_by.photo_original AS owned_by_photo_original,
+                        api_users_owned_by.photo_preview AS owned_by_photo_preview,
+                        api_users_owned_by.first_name AS owned_by_first_name,
+                        api_users_owned_by.last_name AS owned_by_last_name,
+                        api_users_owned_by.location AS owned_by_location,
+                        api_users_settings_owned_by.key AS owned_by_setting_key,
+                        api_users_settings_owned_by.value AS owned_by_setting_value
+                    FROM api_users_locations
+                    INNER JOIN api_users ON api_users.id = api_users_locations.user_id
+                    INNER JOIN api_master_tells ON api_master_tells.owned_by_id = api_users_locations.user_id
+                    INNER JOIN api_users AS api_users_created_by
+                        ON api_users_created_by.id = api_master_tells.created_by_id
+                    LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
+                        ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
+                    INNER JOIN api_users AS api_users_owned_by
+                        ON api_users_owned_by.id = api_master_tells.owned_by_id
+                    LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
+                        ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
+                    LEFT OUTER JOIN api_blocks ON
+                        (
+                            api_blocks.user_source_id = %s
+                            AND
+                            api_blocks.user_destination_id = api_users_locations.user_id
+                        )
+                        OR
+                        (
+                            api_blocks.user_source_id = api_users_locations.user_id
+                            AND
+                            api_blocks.user_destination_id = %s
+                        )
+                    WHERE
+                        api_users_locations.user_id != %s
+                        AND
+                        ST_DWithin(
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                            ST_Transform(api_users_locations.point, 2163),
+                            %s
+                        )
+                        AND
+                        api_users_locations.is_casting IS TRUE
+                        AND
+                        api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
+                        AND
+                        api_users.is_signed_in IS TRUE
+                        AND
+                        api_blocks.id IS NULL
+                    ORDER BY api_master_tells.id ASC
+                    ''',
+                    (
+                        user_id,
+                        user_id,
+                        user_id,
+                        'POINT({x} {y})'.format(x=longitude, y=latitude),
+                        radius,
+                    )
+                )
+                columns = [column.name for column in cursor.description]
+                for record in cursor.fetchall():
+                    record = dict(zip(columns, record))
+                    if record['id'] not in master_tells:
+                        master_tells[record['id']] = {}
+                    if 'id' not in master_tells[record['id']]:
+                        master_tells[record['id']]['id'] = record['id']
+                    if 'contents' not in master_tells[record['id']]:
+                        master_tells[record['id']]['contents'] = record['contents']
+                    if 'position' not in master_tells[record['id']]:
+                        master_tells[record['id']]['position'] = record['position']
+                    if 'is_visible' not in master_tells[record['id']]:
+                        master_tells[record['id']]['is_visible'] = record['is_visible']
+                    if 'inserted_at' not in master_tells[record['id']]:
+                        master_tells[record['id']]['inserted_at'] = record['inserted_at']
+                    if 'updated_at' not in master_tells[record['id']]:
+                        master_tells[record['id']]['updated_at'] = record['updated_at']
+                    if 'created_by' not in master_tells[record['id']]:
+                        master_tells[record['id']]['created_by'] = {
+                            'id': record['created_by_id'],
+                            'photo_original': record['created_by_photo_original'],
+                            'photo_preview': record['created_by_photo_preview'],
+                            'first_name': record['created_by_first_name'],
+                            'last_name': record['created_by_last_name'],
+                            'location': record['created_by_location'],
+                        }
+                    if 'settings' not in master_tells[record['id']]['created_by']:
+                        master_tells[record['id']]['created_by']['settings'] = {}
+                    if record['created_by_setting_key']:
+                        if record['created_by_setting_key'] not in master_tells[
+                            record['id']
+                        ]['created_by']['settings']:
+                            master_tells[record['id']]['created_by']['settings'][
+                                record['created_by_setting_key']
+                            ] = record['created_by_setting_value']
+                    if 'owned_by' not in master_tells[record['id']]:
+                        master_tells[record['id']]['owned_by'] = {
+                            'id': record['owned_by_id'],
+                            'photo_original': record['owned_by_photo_original'],
+                            'photo_preview': record['owned_by_photo_preview'],
+                            'first_name': record['owned_by_first_name'],
+                            'last_name': record['owned_by_last_name'],
+                            'location': record['owned_by_location'],
+                        }
+                    if 'settings' not in master_tells[record['id']]['owned_by']:
+                        master_tells[record['id']]['owned_by']['settings'] = {}
+                    if record['owned_by_setting_key']:
+                        if record['owned_by_setting_key'] not in master_tells[record['id']]['owned_by']['settings']:
+                            master_tells[record['id']]['owned_by']['settings'][
+                                record['owned_by_setting_key']
+                            ] = record['owned_by_setting_value']
+            master_tells = sorted(master_tells.values(), key=lambda item: item['id'])
+            for key, value in enumerate(master_tells):
+                master_tells[key]['created_by']['photo_original'] = (
+                    master_tells[key]['created_by']['photo_original']
+                    if master_tells[key]['created_by']['settings']['show_photo'] == 'True' else None
+                )
+                master_tells[key]['created_by']['photo_preview'] = (
+                    master_tells[key]['created_by']['photo_preview']
+                    if master_tells[key]['created_by']['settings']['show_photo'] == 'True' else None
+                )
+                master_tells[key]['created_by']['last_name'] = (
+                    master_tells[key]['created_by']['last_name']
+                    if master_tells[key]['created_by']['settings']['show_last_name'] == 'True' else None
+                )
+                master_tells[key]['owned_by']['photo_original'] = (
+                    master_tells[key]['owned_by']['photo_original']
+                    if master_tells[key]['owned_by']['settings']['show_photo'] == 'True' else None
+                )
+                master_tells[key]['owned_by']['photo_preview'] = (
+                    master_tells[key]['owned_by']['photo_preview']
+                    if master_tells[key]['owned_by']['settings']['show_photo'] == 'True' else None
+                )
+                master_tells[key]['owned_by']['last_name'] = (
+                    master_tells[key]['owned_by']['last_name']
+                    if master_tells[key]['owned_by']['settings']['show_last_name'] == 'True' else None
+                )
+                del master_tells[key]['created_by']['settings']
+                del master_tells[key]['owned_by']['settings']
+        except Exception:
+            report_exc_info()
+            from traceback import print_exc
+            print_exc()
+        raise Return(master_tells)
+
+    @coroutine
     def get_message(self, id):
         message = {}
         try:
@@ -683,6 +847,7 @@ class RabbitMQ(object):
                     SELECT
                         api_tellzones.id AS api_tellzones_id,
                         api_tellzones.name AS api_tellzones_name,
+                        ST_AsGeoJSON(api_tellzones.point) AS point,
                         ST_Distance(
                             ST_Transform(api_tellzones.point, 2163),
                             ST_Transform(ST_GeomFromText(%s, 4326), 2163)
@@ -707,6 +872,7 @@ class RabbitMQ(object):
                         SELECT
                             api_tellzones.id AS api_tellzones_id,
                             api_tellzones.name AS api_tellzones_name,
+                            ST_AsGeoJSON(api_tellzones.point) AS point,
                             ST_Distance(
                                 ST_Transform(api_tellzones.point, 2163),
                                 ST_Transform(ST_GeomFromText(%s, 4326), 2163)
@@ -741,27 +907,37 @@ class RabbitMQ(object):
                     records = cursor.fetchall()
                 for record in records:
                     if record[0] not in tellzones:
+                        point = loads(record[2])
                         tellzones[record[0]] = {
                             'id': record[0],
                             'name': record[1],
-                            'distance': record[2],
+                            'latitude': point['coordinates'][1],
+                            'longitude': point['coordinates'][0],
+                            'distance': record[3],
                             'networks': {},
                         }
-                    if record[3] and record[4]:
-                        if record[3] not in tellzones[record[0]]['networks']:
-                            tellzones[record[0]]['networks'][record[3]] = {
-                                'id': record[3],
-                                'name': record[4],
+                    if record[4] and record[5]:
+                        if record[4] not in tellzones[record[0]]['networks']:
+                            tellzones[record[0]]['networks'][record[4]] = {
+                                'id': record[4],
+                                'name': record[5],
                             }
+            for key, value in tellzones.items():
+                tellzones[key]['networks'] = sorted(
+                    tellzones[key]['networks'].values(), key=lambda network: (network['name'], -network['id'],),
+                )
+                tellzones[key]['master_tells'] = yield self.get_master_tells(
+                    tellzones[key]['id'], tellzones[key]['latitude'], tellzones[key]['longitude'], 91.44,
+                )
+            tellzones = sorted(tellzones.values(), key=lambda tellzone: (tellzone['distance'], -tellzone['id'],))
+            for index, _ in enumerate(tellzones):
+                del tellzones[index]['distance']
+                del tellzones[index]['latitude']
+                del tellzones[index]['longitude']
         except Exception:
             report_exc_info()
-        for key, value in tellzones.items():
-            tellzones[key]['networks'] = sorted(
-                tellzones[key]['networks'].values(), key=lambda network: (network['name'], -network['id'],),
-            )
-        tellzones = sorted(tellzones.values(), key=lambda tellzone: (tellzone['distance'], -tellzone['id'],))
-        for index, _ in enumerate(tellzones):
-            del tellzones[index]['distance']
+            from traceback import print_exc
+            print_exc()
         raise Return(tellzones)
 
     @coroutine

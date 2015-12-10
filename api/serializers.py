@@ -2108,14 +2108,32 @@ class TellzonesResponse(Tellzone):
     pass
 
 
-class TellzonesMasterTells(MasterTell):
+class TellzonesMasterTellsUser(User):
 
     class Meta:
 
         fields = (
             'id',
-            'created_by_id',
-            'owned_by_id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
+class TellzonesMasterTells(MasterTell):
+
+    created_by = TellzonesMasterTellsUser()
+    owned_by = TellzonesMasterTellsUser()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
             'contents',
             'position',
             'is_visible',
