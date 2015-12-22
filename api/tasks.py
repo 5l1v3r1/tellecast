@@ -281,7 +281,7 @@ def thumbnails_1(table, id):
 
 @celery.task
 def thumbnails_2(name, type, prefix, width):
-    bucket = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY).get_bucket('tellecast')
+    bucket = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY).get_bucket(settings.AWS_BUCKET)
     if not name:
         logger.critical('{name}: if not name (#1)'.format(name=name))
         return

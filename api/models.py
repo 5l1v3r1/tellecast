@@ -674,8 +674,8 @@ class Tellzone(Model):
     )
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
-    started_at = DateTimeField(ugettext_lazy('Inserted At'), db_index=True, null=True)
-    ended_at = DateTimeField(ugettext_lazy('Inserted At'), db_index=True, null=True)
+    started_at = DateTimeField(ugettext_lazy('Started At'), db_index=True, null=True)
+    ended_at = DateTimeField(ugettext_lazy('Ended At'), db_index=True, null=True)
 
     objects = GeoManager()
 

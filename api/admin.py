@@ -1,16 +1,22 @@
 # -*- coding: utf-8 -*-
 
+from uuid import uuid4
+
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
 from django.apps import apps
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin import helpers, ModelAdmin, site
-from django.contrib.admin.options import IS_POPUP_VAR, TO_FIELD_VAR
+from django.contrib.admin import helpers, ModelAdmin, site, widgets
 from django.contrib.admin.exceptions import DisallowedModelAdminToField
+from django.contrib.admin.options import IS_POPUP_VAR, TO_FIELD_VAR
 from django.contrib.admin.utils import model_ngettext, unquote
 from django.contrib.auth.admin import UserAdmin as AdministratorAdmin
 from django.contrib.auth.models import User as Administrator
 from django.contrib.gis.forms.widgets import BaseGeometryWidget
 from django.contrib.gis.geos import GEOSGeometry
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.forms import ModelForm
 from django.http import Http404
 from django.template.response import TemplateResponse
 from django.utils.encoding import force_text
@@ -18,6 +24,7 @@ from django.utils.html import escape
 from django.utils.translation import ugettext as _, ugettext_lazy
 from social.apps.django_app.default.admin import UserSocialAuthOption
 from social.apps.django_app.default.models import UserSocialAuth
+from ujson import loads
 
 from api import models
 
@@ -177,6 +184,55 @@ UserSocialAuthOption.search_fields = (
 
 site.register(Administrator, AdministratorAdmin)
 site.register(UserSocialAuth, UserSocialAuthOption)
+
+
+class Form(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(Form, self).__init__(*args, **kwargs)
+        self.fields['photo'].widget = widgets.AdminFileWidget()
+        if self.instance.pk:
+            self.fields['photo'].required = False
+        self.fields['user'].required = False
+        self.fields['type'].required = False
+        self.fields['phone'].required = False
+        self.fields['url'].required = False
+        self.fields['hours'].required = False
+        self.fields['status'].required = False
+        self.fields['started_at'].required = False
+        self.fields['ended_at'].required = False
+
+    def clean_hours(self):
+        try:
+            return loads(self.data.get('hours'))
+        except Exception:
+            pass
+        return {}
+
+    def clean_photo(self):
+        if self.instance.pk:
+            if 'photo' not in self.files:
+                return self.instance.photo
+        if self.files['photo'].content_type not in ['image/gif', 'image/jpeg', 'image/jpg', 'image/png']:
+            raise ValidationError('Invalid Photo')
+        uuid = '{prefix:s}.{suffix:s}'.format(
+            prefix=str(uuid4()), suffix=self.files['photo'].content_type.split('/')[-1],
+        )
+        try:
+            photo = Key(
+                S3Connection(
+                    settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY,
+                ).get_bucket(
+                    settings.AWS_BUCKET,
+                )
+            )
+            photo.content_type = self.files['photo'].content_type
+            photo.key = uuid
+            photo.set_contents_from_string(self.files['photo'].read())
+            return 'https://d2k6ktnea3auzx.cloudfront.net/{uuid:s}'.format(uuid=uuid)
+        except Exception:
+            pass
+        raise ValidationError('Invalid Photo')
 
 
 class Ad(ModelAdmin):
@@ -771,11 +827,12 @@ class Tellzone(ModelAdmin):
         'started_at',
         'ended_at',
     )
+    form = Form
     list_display = (
         'id',
         'user',
         'type',
-        'name',
+        'name_',
         'location',
         'phone',
         'url',
@@ -800,6 +857,17 @@ class Tellzone(ModelAdmin):
         'url',
         'hours',
     )
+
+    def name_(self, instance):
+        return '<a href="{photo:s}" target="_blank">{name:s}</a>'.format(photo=instance.photo, name=instance.name)
+
+    name_.allow_tags = True
+
+    def save_model(self, request, tellzone, form, change):
+        tellzone.hours = form.cleaned_data.get('hours')
+        tellzone.photo = form.cleaned_data.get('photo')
+        tellzone.save()
+
 
 Tellzone.delete_view = delete_view
 
