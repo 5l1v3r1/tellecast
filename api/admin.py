@@ -21,6 +21,7 @@ from django.http import Http404
 from django.template.response import TemplateResponse
 from django.utils.encoding import force_text
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
 from social.apps.django_app.default.admin import UserSocialAuthOption
 from social.apps.django_app.default.models import UserSocialAuth
@@ -186,11 +187,22 @@ site.register(Administrator, AdministratorAdmin)
 site.register(UserSocialAuth, UserSocialAuthOption)
 
 
+class AdminFileWidget(widgets.AdminFileWidget):
+
+    def render(self, name, value, attrs=None):
+        output = []
+        output.append(super(AdminFileWidget, self).render(name, value, attrs))
+        if value:
+            output.append(u'<br>')
+            output.append(u'<a href="{photo:s}" target="_blank">{photo:s}</a>'.format(photo=value))
+        return mark_safe(u''.join(output))
+
+
 class Form(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(Form, self).__init__(*args, **kwargs)
-        self.fields['photo'].widget = widgets.AdminFileWidget()
+        self.fields['photo'].widget = AdminFileWidget()
         if self.instance.pk:
             self.fields['photo'].required = False
         self.fields['user'].required = False
