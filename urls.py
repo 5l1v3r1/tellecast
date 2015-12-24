@@ -75,6 +75,7 @@ urlpatterns = patterns(
         }),
     ),
     url(r'^api/home/connections/$', views.home_connections),
+    url(r'^api/home/master-tells/$', views.home_master_tells),
     url(r'^api/home/statistics/frequent/$', views.home_statistics_frequent),
     url(r'^api/home/statistics/infrequent/$', views.home_statistics_infrequent),
     url(r'^api/home/tellzones/$', views.home_tellzones),
@@ -127,6 +128,7 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/networks/(?P<id>[0-9]+)/master-tells/$', views.networks_master_tells),
     url(
         r'^api/notifications/$',
         views.Notifications.as_view({
