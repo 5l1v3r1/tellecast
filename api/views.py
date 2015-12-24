@@ -5598,7 +5598,7 @@ def networks_master_tells(request, id):
         data=models.get_master_tells(
             request.user.id,
             [
-                (network_tellzone.point.y, network_tellzone.point.x,)
+                (network_tellzone.tellzone.point.x, network_tellzone.tellzone.point.y,)
                 for network_tellzone in network.networks_tellzones.get_queryset()
             ],
             models.Tellzone.radius() * 0.3048,
@@ -6003,7 +6003,7 @@ def tellzones_master_tells(request, id):
     return Response(
         data=models.get_master_tells(
             request.user.id,
-            [(tellzone.point.y, tellzone.point.x,)],
+            [(tellzone.point.x, tellzone.point.y,)],
             models.Tellzone.radius() * 0.3048,
         ),
         status=HTTP_200_OK,
