@@ -2195,6 +2195,76 @@ def user_location_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
+    if not instance.is_casting:
+        return
+    user_ids = {
+        'home': [],
+        'networks': [],
+        'tellzones': [],
+    }
+    for user_location in UserLocation.objects.get_queryset().filter(
+        ~Q(user_id=instance.user_id),
+        network_id=instance.network_id,
+        tellzone_id=instance.tellzone_id,
+        point__distance_lte=(instance.point, D(ft=Tellzone.radius())),
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ):
+        user_ids['home'].append(user_location.user_id)
+        if user_location.network_id:
+            user_ids['networks'].append(user_location.user_id)
+        if user_location.tellzone_id:
+            user_ids['tellzones'].append(user_location.user_id)
+    if user_ids['home']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids['home'],
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'home',
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+    if user_ids['networks']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids['networks'],
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'networks',
+                        'id': instance.network_id,
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+    if user_ids['tellzones']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids['tellzones'],
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'tellzones',
+                        'id': instance.tellzone_id,
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
 
 
 @receiver(pre_save, sender=UserPhoto)
@@ -2297,6 +2367,77 @@ def master_tell_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
+    user_location = UserLocation.objects.get_queryset().filter(user_id=instance.owned_by_id).first()
+    if not user_location.is_casting:
+        return
+    user_ids = {
+        'home': [],
+        'networks': [],
+        'tellzones': [],
+    }
+    for ul in UserLocation.objects.get_queryset().filter(
+        ~Q(user_id=user_location.user_id),
+        network_id=user_location.network_id,
+        tellzone_id=user_location.tellzone_id,
+        point__distance_lte=(user_location.point, D(ft=Tellzone.radius())),
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ):
+        user_ids['home'].append(ul.user_id)
+        if user_location.network_id:
+            user_ids['networks'].append(ul.user_id)
+        if user_location.tellzone_id:
+            user_ids['tellzones'].append(ul.user_id)
+    if user_ids['home']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids['home'],
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'home',
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+    if user_ids['networks']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids['networks'],
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'networks',
+                        'id': user_location.network_id,
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+    if user_ids['tellzones']:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids['tellzones'],
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'tellzones',
+                        'id': user_location.tellzone_id,
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
 
 
 @receiver(pre_save, sender=Message)
@@ -2557,6 +2698,38 @@ def tellcard_post_save(instance, **kwargs):
 @receiver(pre_save, sender=Post)
 def post_pre_save(instance, **kwargs):
     instance.expired_at = datetime.now() + timedelta(days=365)
+
+
+@receiver(post_save, sender=Post)
+def post_post_save(instance, **kwargs):
+    user_location = UserLocation.objects.get_queryset().filter(user_id=instance.user_id).first()
+    if not user_location.network_id:
+        return
+    if not user_location.is_casting:
+        return
+    user_ids = []
+    for ul in UserLocation.objects.get_queryset().filter(
+        ~Q(user_id=user_location.user_id),
+        network_id=user_location.network_id,
+        point__distance_lte=(user_location.point, D(ft=Tellzone.radius())),
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ):
+        user_ids.append(ul.user_id)
+    if user_ids:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids,
+                    'subject': 'posts',
+                    'body': user_location.network_id,
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
 
 
 @receiver(pre_save, sender=PostAttachment)
