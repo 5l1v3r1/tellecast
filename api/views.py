@@ -2492,7 +2492,7 @@ class Radar(ViewSet):
                         ORDER BY api_networks.id ASC
                         ''',
                         (
-                            'POINT({longitude} {latitude})'.format(
+                            'POINT({longitude:.14f} {latitude:.14f})'.format(
                                 longitude=user_location.point.x, latitude=user_location.point.y,
                             ),
                         ),
@@ -4842,6 +4842,59 @@ def home_connections(request):
 
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
+def home_master_tells(request):
+    '''
+    SELECT (Master Tells) Home
+
+    <pre>
+    Input
+    =====
+
+    + latitude
+        - Type: float
+        - Status: mandatory
+
+    + longitude
+        - Type: float
+        - Status: mandatory
+
+    + dummy
+        - Type: string
+        - Status: optional
+        - Choices:
+            - Yes
+            - No
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.HomeMasterTellsResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.HomeMasterTellsRequest(
+        context={
+            'request': request,
+        },
+        data=request.query_params,
+    )
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        data=models.get_master_tells(
+            request.user.id,
+            [(serializer.validated_data['longitude'], serializer.validated_data['latitude'],)],
+            models.Tellzone.radius() * 0.3048,
+        ),
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
 def home_statistics_frequent(request):
     '''
     SELECT Home/Statistics/Frequent
@@ -5508,6 +5561,52 @@ def messages_bulk_status(request):
     )
 
 
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def networks_master_tells(request, id):
+    '''
+    SELECT (Master Tells) Networks
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.NetworksMasterTells
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    network = models.Network.objects.get_queryset().filter(id=id).first()
+    if not network:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `id`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    return Response(
+        data=models.get_master_tells(
+            request.user.id,
+            [
+                (network_tellzone.point.y, network_tellzone.point.x,)
+                for network_tellzone in network.networks_tellzones.get_queryset()
+            ],
+            models.Tellzone.radius() * 0.3048,
+        ),
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('POST',))
 @permission_classes((IsAuthenticated,))
 def profiles(request):
@@ -5903,7 +6002,9 @@ def tellzones_master_tells(request, id):
         )
     return Response(
         data=models.get_master_tells(
-            request.user.id, tellzone.point.y, tellzone.point.x, models.Tellzone.radius() * 0.3048,
+            request.user.id,
+            [(tellzone.point.y, tellzone.point.x,)],
+            models.Tellzone.radius() * 0.3048,
         ),
         status=HTTP_200_OK,
     )
