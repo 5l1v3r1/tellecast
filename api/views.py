@@ -4871,6 +4871,21 @@ def home_master_tells(request):
     (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: latitude
+          paramType: query
+          required: true
+          type: number
+        - name: longitude
+          paramType: query
+          required: true
+          type: number
+        - name: dummy
+          paramType: query
+          required: false
+          type: string
     response_serializer: api.serializers.HomeMasterTellsResponse
     responseMessages:
         - code: 400
@@ -4887,7 +4902,7 @@ def home_master_tells(request):
         data=models.get_master_tells(
             request.user.id,
             [(serializer.validated_data['longitude'], serializer.validated_data['latitude'],)],
-            models.Tellzone.radius() * 0.3048,
+            (models.Tellzone.radius() * 0.3048) if not serializer.validated_data['dummy'] == 'Yes' else 999999999,
         ),
         status=HTTP_200_OK,
     )
