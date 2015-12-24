@@ -76,7 +76,7 @@ user_logged_in.disconnect(update_last_login)
 
 
 def __str__(self):
-    return '{first_name} {last_name} ({email})'.format(
+    return '{first_name:s} {last_name:s} ({email:s})'.format(
         email=self.email,
         first_name=self.first_name,
         last_name=self.last_name,
@@ -86,7 +86,7 @@ Administrator.__str__ = __str__
 
 
 def __unicode__(self):
-    return u'{first_name} {last_name} ({email})'.format(
+    return u'{first_name:s} {last_name:s} ({email:s})'.format(
         email=self.email,
         first_name=self.first_name,
         last_name=self.last_name,
@@ -106,13 +106,13 @@ Administrator._meta.verbose_name_plural = ugettext_lazy('administrators')
 
 
 def __str__(self):
-    return '{provider} - {uid}'.format(provider=self.provider, uid=self.uid)
+    return '{provider:s} - {uid:s}'.format(provider=self.provider, uid=self.uid)
 
 UserSocialAuth.__str__ = __str__
 
 
 def __unicode__(self):
-    return u'{provider} - {uid}'.format(provider=self.provider, uid=self.uid)
+    return u'{provider:s} - {uid:s}'.format(provider=self.provider, uid=self.uid)
 
 UserSocialAuth.__unicode__ = __unicode__
 
@@ -369,14 +369,14 @@ class User(Model):
         return dictionary
 
     def __str__(self):
-        return '{first_name} {last_name} ({email})'.format(
+        return '{first_name:s} {last_name:s} ({email:s})'.format(
             email=self.email,
             first_name=self.first_name,
             last_name=self.last_name,
         )
 
     def __unicode__(self):
-        return u'{first_name} {last_name} ({email})'.format(
+        return u'{first_name:s} {last_name:s} ({email:s})'.format(
             email=self.email,
             first_name=self.first_name,
             last_name=self.last_name,
@@ -717,7 +717,7 @@ class Tellzone(Model):
                     timestamp > NOW() - INTERVAL '1 minute'
                 ''',
                 (
-                    'POINT({x} {y})'.format(x=self.point.x, y=self.point.y),
+                    'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=self.point.x, latitude=self.point.y),
                     Tellzone.radius() * 0.3048,
                 )
             )
@@ -1658,12 +1658,12 @@ class ShareUser(Model):
     def get_dictionary(self):
         return {
             'email': {
-                'subject': 'Tellecast - Shares/Users - {id}'.format(id=self.id),
-                'body': 'Tellecast - Shares/Users - {id}'.format(id=self.id),
+                'subject': 'Tellecast - Shares/Users - {id:d}'.format(id=self.id),
+                'body': 'Tellecast - Shares/Users - {id:d}'.format(id=self.id),
             },
-            'sms': 'Tellecast - Shares/Users - {id}'.format(id=self.id),
-            'facebook_com': 'tellecast://shares/users/{id}'.format(id=self.id),
-            'twitter_com': 'tellecast://shares/users/{id}'.format(id=self.id),
+            'sms': 'Tellecast - Shares/Users - {id:d}'.format(id=self.id),
+            'facebook_com': 'tellecast://shares/users/{id:d}'.format(id=self.id),
+            'twitter_com': 'tellecast://shares/users/{id:d}'.format(id=self.id),
         }
 
 
@@ -2520,7 +2520,7 @@ def tellcard_post_save(instance, **kwargs):
                         ] else None,
                     },
                 )
-                string = u'{name} saved your profile'.format(
+                string = u'{name:s} saved your profile'.format(
                     name=' '.join(
                         filter(
                             None,
@@ -2596,7 +2596,7 @@ def get_items(items, count):
     return [item.tolist() for item in array_split(items, count)]
 
 
-def get_master_tells(user_id, latitude, longitude, radius):
+def get_master_tells(user_id, points, radius):
     master_tells = {}
     with closing(connection.cursor()) as cursor:
         cursor.execute(
@@ -2661,7 +2661,7 @@ def get_master_tells(user_id, latitude, longitude, radius):
                 user_id,
                 user_id,
                 user_id,
-                'POINT({x} {y})'.format(x=longitude, y=latitude),
+                'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=points[0][0], latitude=points[0][1]),
                 radius,
             )
         )
@@ -2746,11 +2746,11 @@ def get_master_tells(user_id, latitude, longitude, radius):
 
 
 def get_point(latitude, longitude):
-    return fromstr('POINT({longitude} {latitude})'.format(latitude=latitude, longitude=longitude))
+    return fromstr('POINT({longitude:.14f} {latitude:.14f})'.format(latitude=latitude, longitude=longitude))
 
 
 def get_users(user_id, network_id, tellzone_id, point, radius, include_user_id):
-    point = 'POINT({x} {y})'.format(x=point.x, y=point.y)
+    point = 'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=point.x, latitude=point.y)
     users = {}
     with closing(connection.cursor()) as cursor:
         cursor.execute(
