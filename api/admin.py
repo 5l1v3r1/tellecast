@@ -43,7 +43,7 @@ def delete_selected(modeladmin, request, queryset):
             queryset.delete()
             modeladmin.message_user(
                 request,
-                _('Successfully deleted {count} {items}.').format(
+                _('Successfully deleted {count:d} {items:s}.').format(
                     count=count, items=model_ngettext(modeladmin.opts, count),
                 ),
                 messages.SUCCESS,
@@ -62,10 +62,10 @@ def delete_selected(modeladmin, request, queryset):
     return TemplateResponse(
         request,
         modeladmin.delete_selected_confirmation_template or [
-            'admin/{app_label}/{model_name}/delete_selected_confirmation.html'.format(
+            'admin/{app_label:s}/{model_name:s}/delete_selected_confirmation.html'.format(
                 app_label=modeladmin.model._meta.app_label, model_name=modeladmin.model._meta.model_name,
             ),
-            'admin/{app_label}/delete_selected_confirmation.html'.format(app_label=modeladmin.model._meta.app_label),
+            'admin/{app_label:s}/delete_selected_confirmation.html'.format(app_label=modeladmin.model._meta.app_label),
             'admin/delete_selected_confirmation.html',
         ],
         context,
@@ -77,12 +77,12 @@ delete_selected.short_description = ugettext_lazy('Delete selected %(verbose_nam
 def delete_view(self, request, object_id, extra_context=None):
     to_field = request.POST.get(TO_FIELD_VAR, request.GET.get(TO_FIELD_VAR))
     if to_field and not self.to_field_allowed(request, to_field):
-        raise DisallowedModelAdminToField('The field {to_field} cannot be referenced.'.format(to_field=to_field))
+        raise DisallowedModelAdminToField('The field {to_field:s} cannot be referenced.'.format(to_field=to_field))
     object = self.get_object(request, unquote(object_id), to_field)
     if not self.has_delete_permission(request, object):
         raise PermissionDenied
     if object is None:
-        raise Http404(_('{name} object with primary key {key} does not exist.').format(
+        raise Http404(_('{name:} object with primary key {key:s} does not exist.').format(
             name=force_text(self.model._meta.verbose_name), key=escape(object_id),
         ))
     if request.POST:
