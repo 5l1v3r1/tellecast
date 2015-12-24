@@ -1359,6 +1359,45 @@ class HomeConnectionsResponse(Serializer):
     users = HomeConnectionsResponseItems(many=True, required=False)
 
 
+class HomeMasterTellsRequest(HomeRequest):
+    pass
+
+
+class HomeMasterTellsResponseUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'description',
+        )
+        model = models.User
+
+
+class HomeMasterTellsResponse(MasterTell):
+
+    created_by = HomeMasterTellsResponseUser()
+    owned_by = HomeMasterTellsResponseUser()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'contents',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.MasterTell
+
+
 class HomeStatisticsFrequentRequest(HomeRequest):
     pass
 
@@ -1617,6 +1656,41 @@ class NetworksResponse(ModelSerializer):
             else:
                 dictionary[field.field_name] = field.to_representation(attribute)
         return dictionary
+
+
+class NetworksMasterTellsUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'description',
+        )
+        model = models.User
+
+
+class NetworksMasterTells(MasterTell):
+
+    created_by = NetworksMasterTellsUser()
+    owned_by = NetworksMasterTellsUser()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'contents',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.MasterTell
 
 
 class Notifications(Notification):
@@ -2118,7 +2192,7 @@ class TellzonesMasterTellsUser(User):
             'photo_preview',
             'first_name',
             'last_name',
-            'location',
+            'description',
         )
         model = models.User
 
