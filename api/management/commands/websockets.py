@@ -120,8 +120,8 @@ class RabbitMQ(object):
             if message['subject'] == 'blocks':
                 yield self.blocks(message['body'])
             elif message['subject'] == 'master_tells':
-                user_ids = body['user_ids']
-                del body['user_ids']
+                user_ids = message['user_ids']
+                del message['user_ids']
                 for user in [key for key, value in IOLoop.current().clients.items() if value in user_ids]:
                     user.write_message(dumps(message))
             elif message['subject'] == 'messages':
@@ -137,8 +137,8 @@ class RabbitMQ(object):
             elif message['subject'] == 'notifications':
                 yield self.notifications(message['body'])
             elif message['subject'] == 'posts':
-                user_ids = body['user_ids']
-                del body['user_ids']
+                user_ids = message['user_ids']
+                del message['user_ids']
                 for user in [key for key, value in IOLoop.current().clients.items() if value in user_ids]:
                     user.write_message(dumps(message))
             elif message['subject'] == 'profile':
