@@ -119,6 +119,11 @@ class RabbitMQ(object):
             start = datetime.now()
             if message['subject'] == 'blocks':
                 yield self.blocks(message['body'])
+            elif message['subject'] == 'master_tells':
+                user_ids = body['user_ids']
+                del body['user_ids']
+                for user in [key for key, value in IOLoop.current().clients.items() if value in user_ids]:
+                    user.write_message(dumps(message))
             elif message['subject'] == 'messages':
                 if 'users' in message:
                     for user in [key for key, value in IOLoop.current().clients.items() if value in message['users']]:
@@ -131,6 +136,11 @@ class RabbitMQ(object):
                     yield self.messages(message['body'])
             elif message['subject'] == 'notifications':
                 yield self.notifications(message['body'])
+            elif message['subject'] == 'posts':
+                user_ids = body['user_ids']
+                del body['user_ids']
+                for user in [key for key, value in IOLoop.current().clients.items() if value in user_ids]:
+                    user.write_message(dumps(message))
             elif message['subject'] == 'profile':
                 yield self.profile(message['body'])
             elif message['subject'] == 'users_locations':
