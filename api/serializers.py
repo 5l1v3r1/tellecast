@@ -826,7 +826,9 @@ class Tellzone(ModelSerializer):
     tellecasters = IntegerField()
     is_viewed = BooleanField()
     is_favorited = BooleanField()
-    social_profiles = TellzoneSocialProfile(help_text='List of Tellzones :: Social Profiles', many=True, required=False)
+    social_profiles = TellzoneSocialProfile(
+        help_text='List of Tellzones :: Social Profiles', many=True, required=False,
+    )
     networks = TellzoneNetwork(help_text='List of Networks', many=True, required=False)
     posts = TellzonePost(many=True, required=False)
 
