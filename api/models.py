@@ -2613,7 +2613,7 @@ def get_master_tells(user_id, latitude, longitude, radius):
                 api_users_created_by.photo_preview AS created_by_photo_preview,
                 api_users_created_by.first_name AS created_by_first_name,
                 api_users_created_by.last_name AS created_by_last_name,
-                api_users_created_by.location AS created_by_location,
+                api_users_created_by.description AS created_by_description,
                 api_users_settings_created_by.key AS created_by_setting_key,
                 api_users_settings_created_by.value AS created_by_setting_value,
                 api_users_owned_by.id AS owned_by_id,
@@ -2621,7 +2621,7 @@ def get_master_tells(user_id, latitude, longitude, radius):
                 api_users_owned_by.photo_preview AS owned_by_photo_preview,
                 api_users_owned_by.first_name AS owned_by_first_name,
                 api_users_owned_by.last_name AS owned_by_last_name,
-                api_users_owned_by.location AS owned_by_location,
+                api_users_owned_by.description AS owned_by_description,
                 api_users_settings_owned_by.key AS owned_by_setting_key,
                 api_users_settings_owned_by.value AS owned_by_setting_value
             FROM api_users_locations
@@ -2689,7 +2689,7 @@ def get_master_tells(user_id, latitude, longitude, radius):
                     'photo_preview': record['created_by_photo_preview'],
                     'first_name': record['created_by_first_name'],
                     'last_name': record['created_by_last_name'],
-                    'location': record['created_by_location'],
+                    'description': record['created_by_description'],
                 }
             if 'settings' not in master_tells[record['id']]['created_by']:
                 master_tells[record['id']]['created_by']['settings'] = {}
@@ -2705,7 +2705,7 @@ def get_master_tells(user_id, latitude, longitude, radius):
                     'photo_preview': record['owned_by_photo_preview'],
                     'first_name': record['owned_by_first_name'],
                     'last_name': record['owned_by_last_name'],
-                    'location': record['owned_by_location'],
+                    'description': record['owned_by_description'],
                 }
             if 'settings' not in master_tells[record['id']]['owned_by']:
                 master_tells[record['id']]['owned_by']['settings'] = {}
