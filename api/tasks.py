@@ -94,7 +94,7 @@ def thumbnails_1(table, id):
     if table == 'User':
         instance = models.User.objects.get_queryset().filter(id=id).first()
         if not instance:
-            logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
+            logger.critical('{table:s}/{id:d}: if not instance'.format(table=table, id=id))
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
@@ -128,7 +128,7 @@ def thumbnails_1(table, id):
     if table == 'UserPhoto':
         instance = models.UserPhoto.objects.get_queryset().filter(id=id).first()
         if not instance:
-            logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
+            logger.critical('{table:s}/{id:d}: if not instance'.format(table=table, id=id))
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
@@ -162,7 +162,7 @@ def thumbnails_1(table, id):
     if table == 'UserStatusAttachment':
         instance = models.UserStatusAttachment.objects.get_queryset().filter(id=id).first()
         if not instance:
-            logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
+            logger.critical('{table:s}/{id:d}: if not instance'.format(table=table, id=id))
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
@@ -196,7 +196,7 @@ def thumbnails_1(table, id):
     if table == 'SlaveTell':
         instance = models.SlaveTell.objects.get_queryset().filter(id=id).first()
         if not instance:
-            logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
+            logger.critical('{table:s}/{id:d}: if not instance'.format(table=table, id=id))
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
@@ -245,7 +245,7 @@ def thumbnails_1(table, id):
     if table == 'PostAttachment':
         instance = models.PostAttachment.objects.get_queryset().filter(id=id).first()
         if not instance:
-            logger.critical('{table}/{id}: if not instance'.format(table=table, id=id))
+            logger.critical('{table:s}/{id:d}: if not instance'.format(table=table, id=id))
             raise thumbnails_1.retry(countdown=1)
         if instance.type.startswith('image'):
             current_app.send_task(
@@ -283,20 +283,20 @@ def thumbnails_1(table, id):
 def thumbnails_2(name, type, prefix, width):
     bucket = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY).get_bucket(settings.AWS_BUCKET)
     if not name:
-        logger.critical('{name}: if not name (#1)'.format(name=name))
+        logger.critical('{name:s}: if not name (#1)'.format(name=name))
         return
     name = name.split('/')[-1]
     if not name:
-        logger.critical('{name}: if not name (#2)'.format(name=name))
+        logger.critical('{name:s}: if not name (#2)'.format(name=name))
         return
     key = bucket.get_key(name)
     if not key:
-        logger.critical('{name}: if not key'.format(name=name))
+        logger.critical('{name:s}: if not key'.format(name=name))
         return
-    n = '{prefix}_{suffix}'.format(prefix=prefix, suffix=name)
+    n = '{prefix:s}_{suffix:s}'.format(prefix=prefix, suffix=name)
     k = bucket.get_key(n)
     if k:
-        logger.info('{name}: Success (#1)'.format(name=n))
+        logger.info('{name:s}: Success (#1)'.format(name=n))
         return
     _, source = mkstemp()
     key.get_contents_to_filename(source)
@@ -306,14 +306,14 @@ def thumbnails_2(name, type, prefix, width):
     except Exception:
         report_exc_info()
     if not destination:
-        logger.critical('{name}: Failure'.format(name=n))
+        logger.critical('{name:s}: Failure'.format(name=n))
         return
     k = Key(bucket)
     k.key = n
     k.set_contents_from_filename(destination)
     remove(destination)
     remove(source)
-    logger.info('{name}: Success (#2)'.format(name=n))
+    logger.info('{name:s}: Success (#2)'.format(name=n))
     return
 
 
