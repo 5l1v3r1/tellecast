@@ -54,6 +54,7 @@ class RabbitMQ(object):
             )
         except Exception:
             report_exc_info()
+        raise Return(None)
 
     def on_connection_open(self, connection):
         try:
@@ -62,10 +63,16 @@ class RabbitMQ(object):
             report_exc_info()
 
     def on_connection_open_error(self, connection, error_message):
-        report_message(error_message)
+        try:
+            report_message(error_message)
+        except Exception:
+            report_exc_info()
 
     def on_connection_close(self, connection, reply_code, reply_text):
-        report_message(reply_text)
+        try:
+            report_message(reply_text)
+        except Exception:
+            report_exc_info()
 
     def on_channel_open(self, channel):
         try:
@@ -160,11 +167,16 @@ class RabbitMQ(object):
         block = yield self.get_block(id)
         if not block:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == block['user_destination_id']]:
-            user.write_message(dumps({
-                'subject': 'blocks',
-                'body': block['user_source_id'],
-            }))
+        try:
+            for user in [
+                key for key, value in IOLoop.current().clients.items() if value == block['user_destination_id']
+            ]:
+                user.write_message(dumps({
+                    'subject': 'blocks',
+                    'body': block['user_source_id'],
+                }))
+        except Exception:
+            report_exc_info()
         raise Return(None)
 
     @coroutine
@@ -172,62 +184,69 @@ class RabbitMQ(object):
         message = yield self.get_message(id)
         if not message:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == message['user_source_id']]:
-            body = deepcopy(message)
-            body['user_destination']['email'] = (
-                body['user_destination']['email']
-                if body['user_destination']['settings']['show_email'] == 'True' else None
-            )
-            body['user_destination']['last_name'] = (
-                body['user_destination']['last_name']
-                if body['user_destination']['settings']['show_last_name'] == 'True' else None
-            )
-            body['user_destination']['phone'] = (
-                body['user_destination']['phone']
-                if body['user_destination']['settings']['show_phone'] == 'True' else None
-            )
-            body['user_destination']['photo_original'] = (
-                body['user_destination']['photo_original']
-                if body['user_destination']['settings']['show_photo'] == 'True' else None
-            )
-            body['user_destination']['photo_preview'] = (
-                body['user_destination']['photo_preview']
-                if body['user_destination']['settings']['show_photo'] == 'True' else None
-            )
-            del body['user_source']['settings']
-            del body['user_destination']['settings']
-            user.write_message(dumps({
-                'subject': 'messages',
-                'body': body,
-            }))
-        for user in [key for key, value in IOLoop.current().clients.items() if value == message['user_destination_id']]:
-            body = deepcopy(message)
-            body['user_source']['email'] = (
-                body['user_source']['email']
-                if body['user_source']['settings']['show_email'] == 'True' else None
-            )
-            body['user_source']['last_name'] = (
-                body['user_source']['last_name']
-                if body['user_source']['settings']['show_last_name'] == 'True' else None
-            )
-            body['user_source']['phone'] = (
-                body['user_source']['phone']
-                if body['user_source']['settings']['show_phone'] == 'True' else None
-            )
-            body['user_source']['photo_original'] = (
-                body['user_source']['photo_original']
-                if body['user_source']['settings']['show_photo'] == 'True' else None
-            )
-            body['user_source']['photo_preview'] = (
-                body['user_source']['photo_preview']
-                if body['user_source']['settings']['show_photo'] == 'True' else None
-            )
-            del body['user_source']['settings']
-            del body['user_destination']['settings']
-            user.write_message(dumps({
-                'subject': 'messages',
-                'body': body,
-            }))
+        try:
+            for user in [
+                key for key, value in IOLoop.current().clients.items() if value == message['user_source_id']
+            ]:
+                body = deepcopy(message)
+                body['user_destination']['email'] = (
+                    body['user_destination']['email']
+                    if body['user_destination']['settings']['show_email'] == 'True' else None
+                )
+                body['user_destination']['last_name'] = (
+                    body['user_destination']['last_name']
+                    if body['user_destination']['settings']['show_last_name'] == 'True' else None
+                )
+                body['user_destination']['phone'] = (
+                    body['user_destination']['phone']
+                    if body['user_destination']['settings']['show_phone'] == 'True' else None
+                )
+                body['user_destination']['photo_original'] = (
+                    body['user_destination']['photo_original']
+                    if body['user_destination']['settings']['show_photo'] == 'True' else None
+                )
+                body['user_destination']['photo_preview'] = (
+                    body['user_destination']['photo_preview']
+                    if body['user_destination']['settings']['show_photo'] == 'True' else None
+                )
+                del body['user_source']['settings']
+                del body['user_destination']['settings']
+                user.write_message(dumps({
+                    'subject': 'messages',
+                    'body': body,
+                }))
+            for user in [
+                key for key, value in IOLoop.current().clients.items() if value == message['user_destination_id']
+            ]:
+                body = deepcopy(message)
+                body['user_source']['email'] = (
+                    body['user_source']['email']
+                    if body['user_source']['settings']['show_email'] == 'True' else None
+                )
+                body['user_source']['last_name'] = (
+                    body['user_source']['last_name']
+                    if body['user_source']['settings']['show_last_name'] == 'True' else None
+                )
+                body['user_source']['phone'] = (
+                    body['user_source']['phone']
+                    if body['user_source']['settings']['show_phone'] == 'True' else None
+                )
+                body['user_source']['photo_original'] = (
+                    body['user_source']['photo_original']
+                    if body['user_source']['settings']['show_photo'] == 'True' else None
+                )
+                body['user_source']['photo_preview'] = (
+                    body['user_source']['photo_preview']
+                    if body['user_source']['settings']['show_photo'] == 'True' else None
+                )
+                del body['user_source']['settings']
+                del body['user_destination']['settings']
+                user.write_message(dumps({
+                    'subject': 'messages',
+                    'body': body,
+                }))
+        except Exception:
+            report_exc_info()
         raise Return(None)
 
     @coroutine
@@ -235,11 +254,14 @@ class RabbitMQ(object):
         notification = yield self.get_notification(id)
         if not notification:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value == notification['user_id']]:
-            user.write_message(dumps({
-                'subject': 'notifications',
-                'body': notification,
-            }))
+        try:
+            for user in [key for key, value in IOLoop.current().clients.items() if value == notification['user_id']]:
+                user.write_message(dumps({
+                    'subject': 'notifications',
+                    'body': notification,
+                }))
+        except Exception:
+            report_exc_info()
         raise Return(None)
 
     @coroutine
@@ -247,11 +269,14 @@ class RabbitMQ(object):
         profile = yield self.get_profile(id)
         if not profile:
             raise Return(None)
-        for user in [key for key, value in IOLoop.current().clients.items() if value in profile['ids']]:
-            user.write_message(dumps({
-                'subject': 'profile',
-                'body': profile['id'],
-            }))
+        try:
+            for user in [key for key, value in IOLoop.current().clients.items() if value in profile['ids']]:
+                user.write_message(dumps({
+                    'subject': 'profile',
+                    'body': profile['id'],
+                }))
+        except Exception:
+            report_exc_info()
         raise Return(None)
 
     @coroutine
@@ -259,73 +284,208 @@ class RabbitMQ(object):
         users_locations = yield self.get_user_locations(data)
         if not users_locations:
             raise Return(None)
-        for user in [
-            key for key, value in IOLoop.current().clients.items() if value == users_locations[0]['user_id']
-        ]:
-            body = yield self.get_radar_post(users_locations[0])
-            user.write_message(dumps({
-                'subject': 'users_locations_post',
-                'body': body,
-            }))
-        users = yield self.get_users(users_locations[0]['user_id'], users_locations[0]['point'], 999999999, True)
+        try:
+            yield self.users_locations_1(users_locations)
+            if len(users_locations) >= 1:
+                yield self.users_locations_2(users_locations[0])
+            if len(users_locations) >= 2:
+                if not vincenty(
+                    (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
+                    (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
+                ).ft > 999999999:
+                    yield self.users_locations_2(users_locations[1])
+            yield self.users_locations_3(users_locations)
+        except Exception:
+            report_exc_info()
+        raise Return(None)
+
+    @coroutine
+    def users_locations_1(self, users_locations):
+        try:
+            for user in [
+                key for key, value in IOLoop.current().clients.items() if value == users_locations[0]['user_id']
+            ]:
+                body = yield self.get_radar_post(users_locations[0])
+                user.write_message(dumps({
+                    'subject': 'users_locations_post',
+                    'body': body,
+                }))
+        except Exception:
+            report_exc_info()
+        raise Return(None)
+
+    @coroutine
+    def users_locations_2(self, users_location):
+        users = yield self.get_users(users_location['user_id'], users_location['point'], 999999999, True)
         if not users:
             raise Return(None)
-        blocks = {}
-        users_ids = tuple([user['id'] for user in users])
-        with closing(connection.cursor()) as cursor:
-            cursor.execute(
-                '''
-                SELECT user_source_id, user_destination_id
-                FROM api_blocks
-                WHERE user_source_id IN %s OR user_destination_id IN %s
-                ''',
-                (users_ids, users_ids,)
-            )
-            for record in cursor.fetchall():
-                if not record[0] in blocks:
-                    blocks[record[0]] = []
-                blocks[record[0]].append(record[1])
-                if not record[1] in blocks:
-                    blocks[record[1]] = []
-                blocks[record[1]].append(record[0])
-        for user in users:
-            for k, v in IOLoop.current().clients.items():
-                if v == user['id']:
-                    body = yield self.get_radar_get(
-                        user,
-                        [
-                            u
-                            for u in deepcopy(users[:])
-                            if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
-                        ],
-                    )
-                    k.write_message(dumps({
-                        'subject': 'users_locations_get',
-                        'body': body,
-                    }))
-        if len(users_locations) == 1:
-            raise Return(None)
-        if not vincenty(
-            (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
-            (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-        ).ft > 999999999:
-            raise Return(None)
-        users = yield self.get_users(users_locations[1]['user_id'], users_locations[1]['point'], 999999999, False)
-        for user in users:
-            for k, v in IOLoop.current().clients.items():
-                if v == user['id']:
-                    body = yield self.get_radar_get(
-                        user,
-                        [
-                            u
-                            for u in deepcopy(users[:])
-                            if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
-                        ],
-                    )
-                    k.write_message(dumps({
-                        'subject': 'users_locations_get',
-                        'body': body,
-                    }))
+        try:
+            blocks = {}
+            users_ids = tuple([user['id'] for user in users])
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT user_source_id, user_destination_id
+                    FROM api_blocks
+                    WHERE user_source_id IN %s OR user_destination_id IN %s
+                    ''',
+                    (users_ids, users_ids,)
+                )
+                for record in cursor.fetchall():
+                    if not record[0] in blocks:
+                        blocks[record[0]] = []
+                    blocks[record[0]].append(record[1])
+                    if not record[1] in blocks:
+                        blocks[record[1]] = []
+                    blocks[record[1]].append(record[0])
+            for user in users:
+                for k, v in IOLoop.current().clients.items():
+                    if v == user['id']:
+                        body = yield self.get_radar_get(
+                            user,
+                            [
+                                u
+                                for u in deepcopy(users[:])
+                                if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
+                            ],
+                        )
+                        k.write_message(dumps({
+                            'subject': 'users_locations_get',
+                            'body': body,
+                        }))
+        except Exception:
+            report_exc_info()
+        raise Return(None)
+
+    @coroutine
+    def users_locations_3(self, users_locations):
+        if len(users_locations) == 2:
+            if (
+                users_locations[0]['network_id'] == users_locations[1]['network_id'] and
+                users_locations[0]['tellzone_id'] == users_locations[1]['tellzone_id']
+            ):
+                raise Return(None)
+        try:
+            user_ids = {
+                'home': [],
+                'networks': [],
+                'tellzones': [],
+            }
+            blocks = {}
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT user_source_id, user_destination_id
+                    FROM api_blocks
+                    WHERE user_source_id = %s OR user_destination_id = %s
+                    ''',
+                    (users_locations[0]['user_id'], users_locations[0]['user_id'],)
+                )
+                for record in cursor.fetchall():
+                    if not record[0] in blocks:
+                        blocks[record[0]] = []
+                    blocks[record[0]].append(record[1])
+                    if not record[1] in blocks:
+                        blocks[record[1]] = []
+                    blocks[record[1]].append(record[0])
+            with closing(connection.cursor()) as cursor:
+                cursor.execute(
+                    '''
+                    SELECT
+                        api_users_locations.user_id AS user_id,
+                        api_users_locations.network_id AS network_id,
+                        api_users_locations.tellzone_id AS tellzone_id
+                    FROM api_users_locations
+                    WHERE
+                        api_users_locations.user_id != %s
+                        AND
+                        (
+                            api_users_locations.network_id = %s
+                            OR
+                            api_users_locations.tellzone_id = %s
+                            OR
+                            ST_DWithin(
+                                ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                                ST_Transform(api_users_locations.point, 2163),
+                                %s
+                            )
+                        )
+                        AND
+                        api_users_locations.is_casting IS TRUE
+                        AND
+                        api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
+                    ORDER BY api_users_locations.user_id ASC
+                    ''',
+                    (
+                        users_locations[0]['user_id'],
+                        users_locations[0]['network_id'],
+                        users_locations[0]['tellzone_id'],
+                        'POINT({longitude} {latitude})'.format(
+                            longitude=users_locations[0]['point']['longitude'],
+                            latitude=users_locations[0]['point']['latitude'],
+                        ),
+                        999999999,
+                    ),
+                )
+                for record in cursor.fetchall():
+                    if record[0] not in blocks.get(users_locations[0]['user_id'], []):
+                        user_ids['home'].append(record[0])
+                        if record[1]:
+                            user_ids['networks'].append(record[0])
+                        if record[0]:
+                            user_ids['tellzones'].append(record[0])
+            if user_ids['home']:
+                current_app.send_task(
+                    'api.management.commands.websockets',
+                    (
+                        {
+                            'user_ids': user_ids['home'],
+                            'subject': 'master_tells',
+                            'body': {
+                                'type': 'home',
+                            },
+                        },
+                    ),
+                    queue='api.management.commands.websockets',
+                    routing_key='api.management.commands.websockets',
+                    serializer='json',
+                )
+            if user_ids['networks']:
+                current_app.send_task(
+                    'api.management.commands.websockets',
+                    (
+                        {
+                            'user_ids': user_ids['networks'],
+                            'subject': 'master_tells',
+                            'body': {
+                                'type': 'networks',
+                                'id': users_locations[0]['network_id'],
+                            },
+                        },
+                    ),
+                    queue='api.management.commands.websockets',
+                    routing_key='api.management.commands.websockets',
+                    serializer='json',
+                )
+            if user_ids['tellzones']:
+                current_app.send_task(
+                    'api.management.commands.websockets',
+                    (
+                        {
+                            'user_ids': user_ids['tellzones'],
+                            'subject': 'master_tells',
+                            'body': {
+                                'type': 'tellzones',
+                                'id': users_locations[0]['tellzone_id'],
+                            },
+                        },
+                    ),
+                    queue='api.management.commands.websockets',
+                    routing_key='api.management.commands.websockets',
+                    serializer='json',
+                )
+        except Exception:
+            report_exc_info()
         raise Return(None)
 
     @coroutine
@@ -547,16 +707,16 @@ class RabbitMQ(object):
                                 'string_preview': record['user_status_attachment_string_preview'],
                                 'position': record['user_status_attachment_position'],
                             }
+            if message:
+                if 'attachments' in message:
+                    message['attachments'] = sorted(message['attachments'].values(), key=lambda item: item['position'])
+                if 'user_status' in message:
+                    if 'attachments' in message['user_status']:
+                        message['user_status']['attachments'] = sorted(
+                            message['user_status']['attachments'].values(), key=lambda item: item['position'],
+                        )
         except Exception:
             report_exc_info()
-        if message:
-            if 'attachments' in message:
-                message['attachments'] = sorted(message['attachments'].values(), key=lambda item: item['position'])
-            if 'user_status' in message:
-                if 'attachments' in message['user_status']:
-                    message['user_status']['attachments'] = sorted(
-                        message['user_status']['attachments'].values(), key=lambda item: item['position'],
-                    )
         raise Return(message)
 
     @coroutine
@@ -636,41 +796,41 @@ class RabbitMQ(object):
 
     @coroutine
     def get_radar_get(self, user, users):
-        for key, value in enumerate(users):
-            users[key]['photo_original'] = (
-                users[key]['photo_original'] if users[key]['settings']['show_photo'] == 'True' else None
-            )
-            users[key]['photo_preview'] = (
-                users[key]['photo_preview'] if users[key]['settings']['show_photo'] == 'True' else None
-            )
-            del users[key]['settings']
-            users[key]['distance'] = vincenty(
-                (user['point']['longitude'], user['point']['latitude']),
-                (users[key]['point']['longitude'], users[key]['point']['latitude']),
-            ).ft
-            del users[key]['point']
-            users[key]['group'] = 1
-            if user['tellzone_id']:
-                if users[key]['tellzone_id']:
-                    if user['tellzone_id'] == users[key]['tellzone_id']:
-                        users[key]['group'] = 1
+        try:
+            for key, value in enumerate(users):
+                users[key]['photo_original'] = (
+                    users[key]['photo_original'] if users[key]['settings']['show_photo'] == 'True' else None
+                )
+                users[key]['photo_preview'] = (
+                    users[key]['photo_preview'] if users[key]['settings']['show_photo'] == 'True' else None
+                )
+                del users[key]['settings']
+                users[key]['distance'] = vincenty(
+                    (user['point']['longitude'], user['point']['latitude']),
+                    (users[key]['point']['longitude'], users[key]['point']['latitude']),
+                ).ft
+                del users[key]['point']
+                users[key]['group'] = 1
+                if user['tellzone_id']:
+                    if users[key]['tellzone_id']:
+                        if user['tellzone_id'] == users[key]['tellzone_id']:
+                            users[key]['group'] = 1
+                        else:
+                            users[key]['group'] = 2
                     else:
-                        users[key]['group'] = 2
+                        if users[key]['distance'] <= 300.0:
+                            users[key]['group'] = 1
+                        else:
+                            users[key]['group'] = 2
                 else:
                     if users[key]['distance'] <= 300.0:
                         users[key]['group'] = 1
                     else:
                         users[key]['group'] = 2
-            else:
-                if users[key]['distance'] <= 300.0:
-                    users[key]['group'] = 1
-                else:
-                    users[key]['group'] = 2
-            del users[key]['network_id']
-            del users[key]['tellzone_id']
-        users = sorted(users, key=lambda item: (item['distance'], item['id'],))
-        raise Return(
-            [
+                del users[key]['network_id']
+                del users[key]['tellzone_id']
+            users = sorted(users, key=lambda item: (item['distance'], item['id'],))
+            users = [
                 {
                     'hash': '-'.join(map(str, [item['id'] for item in items])),
                     'items': items,
@@ -678,15 +838,17 @@ class RabbitMQ(object):
                 }
                 for position, items in enumerate([u.tolist() for u in array_split(users, len(users) or 1)])
             ]
-        )
+        except Exception:
+            report_exc_info()
+        raise Return(users)
 
     @coroutine
     def get_radar_post(self, user_location):
-        point = 'POINT({longitude} {latitude})'.format(
-            longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
-        )
         tellzones = {}
         try:
+            point = 'POINT({longitude} {latitude})'.format(
+                longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
+            )
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
@@ -779,15 +941,13 @@ class RabbitMQ(object):
                 del tellzones[index]['longitude']
         except Exception:
             report_exc_info()
-            from traceback import print_exc
-            print_exc()
         raise Return(tellzones)
 
     @coroutine
     def get_users(self, user_id, point, radius, status):
-        point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
         users = {}
         try:
+            point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
@@ -856,9 +1016,9 @@ class RabbitMQ(object):
                         users[record['id']]['network_id'] = record['network_id']
                     if 'tellzone_id' not in users[record['id']]:
                         users[record['id']]['tellzone_id'] = record['tellzone_id']
+            users = sorted(users.values(), key=lambda item: item['id'])
         except Exception:
             report_exc_info()
-        users = sorted(users.values(), key=lambda item: item['id'])
         raise Return(users)
 
 
