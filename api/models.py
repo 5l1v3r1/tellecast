@@ -2197,16 +2197,28 @@ def user_location_post_save(instance, **kwargs):
     )
     if not instance.is_casting:
         return
+    user_location_1 = instance
+    user_location_2 = UserLocation.objects.get_queryset().filter(
+        id__lt=user_location_1.id,
+        user_id=user_location_1.user_id,
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ).first()
+    if (
+        user_location_1.network_id == user_location_2.network_id and
+        user_location_1.tellzone_id == user_location_2.tellzone_id
+    ):
+        return
     user_ids = {
         'home': [],
         'networks': [],
         'tellzones': [],
     }
     for user_location in UserLocation.objects.get_queryset().filter(
-        ~Q(user_id=instance.user_id),
-        network_id=instance.network_id,
-        tellzone_id=instance.tellzone_id,
-        point__distance_lte=(instance.point, D(ft=Tellzone.radius())),
+        ~Q(user_id=user_location_1.user_id),
+        Q(network_id=user_location_1.network_id) |
+        Q(tellzone_id=user_location_1.tellzone_id) |
+        Q(point__distance_lte=(user_location_1.point, D(ft=Tellzone.radius()))),
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
@@ -2240,7 +2252,7 @@ def user_location_post_save(instance, **kwargs):
                     'subject': 'master_tells',
                     'body': {
                         'type': 'networks',
-                        'id': instance.network_id,
+                        'id': user_location_1.network_id,
                     },
                 },
             ),
@@ -2257,7 +2269,7 @@ def user_location_post_save(instance, **kwargs):
                     'subject': 'master_tells',
                     'body': {
                         'type': 'tellzones',
-                        'id': instance.tellzone_id,
+                        'id': user_location_1.tellzone_id,
                     },
                 },
             ),
@@ -2377,16 +2389,16 @@ def master_tell_post_save(instance, **kwargs):
     }
     for ul in UserLocation.objects.get_queryset().filter(
         ~Q(user_id=user_location.user_id),
-        network_id=user_location.network_id,
-        tellzone_id=user_location.tellzone_id,
-        point__distance_lte=(user_location.point, D(ft=Tellzone.radius())),
+        Q(network_id=user_location.network_id) |
+        Q(tellzone_id=user_location.tellzone_id) |
+        Q(point__distance_lte=(user_location.point, D(ft=Tellzone.radius()))),
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
         user_ids['home'].append(ul.user_id)
-        if user_location.network_id:
+        if ul.network_id:
             user_ids['networks'].append(ul.user_id)
-        if user_location.tellzone_id:
+        if ul.tellzone_id:
             user_ids['tellzones'].append(ul.user_id)
     if user_ids['home']:
         current_app.send_task(
@@ -2711,7 +2723,6 @@ def post_post_save(instance, **kwargs):
     for ul in UserLocation.objects.get_queryset().filter(
         ~Q(user_id=user_location.user_id),
         network_id=user_location.network_id,
-        point__distance_lte=(user_location.point, D(ft=Tellzone.radius())),
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
