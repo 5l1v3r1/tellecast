@@ -2222,11 +2222,12 @@ def user_location_post_save(instance, **kwargs):
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
-        user_ids['home'].append(user_location.user_id)
-        if user_location.network_id:
-            user_ids['networks'].append(user_location.user_id)
-        if user_location.tellzone_id:
-            user_ids['tellzones'].append(user_location.user_id)
+        if not is_blocked(user_location_1.user_id, user_location.user_id):
+            user_ids['home'].append(user_location.user_id)
+            if user_location.network_id:
+                user_ids['networks'].append(user_location.user_id)
+            if user_location.tellzone_id:
+                user_ids['tellzones'].append(user_location.user_id)
     if user_ids['home']:
         current_app.send_task(
             'api.management.commands.websockets',
@@ -2395,11 +2396,12 @@ def master_tell_post_save(instance, **kwargs):
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
-        user_ids['home'].append(ul.user_id)
-        if ul.network_id:
-            user_ids['networks'].append(ul.user_id)
-        if ul.tellzone_id:
-            user_ids['tellzones'].append(ul.user_id)
+        if not is_blocked(user_location.user_id, ul.user_id):
+            user_ids['home'].append(ul.user_id)
+            if ul.network_id:
+                user_ids['networks'].append(ul.user_id)
+            if ul.tellzone_id:
+                user_ids['tellzones'].append(ul.user_id)
     if user_ids['home']:
         current_app.send_task(
             'api.management.commands.websockets',
@@ -2726,7 +2728,8 @@ def post_post_save(instance, **kwargs):
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
-        user_ids.append(ul.user_id)
+        if not is_blocked(user_location.user_id, ul.user_id):
+            user_ids.append(ul.user_id)
     if user_ids:
         current_app.send_task(
             'api.management.commands.websockets',
