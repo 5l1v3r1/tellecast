@@ -2204,11 +2204,12 @@ def user_location_post_save(instance, **kwargs):
         is_casting=True,
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ).first()
-    if (
-        user_location_1.network_id == user_location_2.network_id and
-        user_location_1.tellzone_id == user_location_2.tellzone_id
-    ):
-        return
+    if user_location_2:
+        if (
+            user_location_1.network_id == user_location_2.network_id and
+            user_location_1.tellzone_id == user_location_2.tellzone_id
+        ):
+            return
     user_ids = {
         'home': [],
         'networks': [],
