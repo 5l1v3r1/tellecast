@@ -2382,6 +2382,8 @@ def master_tell_post_save(instance, **kwargs):
         serializer='json',
     )
     user_location = UserLocation.objects.get_queryset().filter(user_id=instance.owned_by_id).first()
+    if not user_location:
+        return
     if not user_location.is_casting:
         return
     user_ids = {
