@@ -6046,13 +6046,28 @@ def users_messages(request, id):
     Output
     ======
 
-    {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 0
-    }
+    [
+        {
+            "id": "1":
+            "messages": 0
+        },
+        {
+            "id": "2",
+            "messages": 0
+        },
+        {
+            "id": "3",
+            "messages": 0
+        },
+        {
+            "id": "4",
+            "messages": 0
+        },
+        {
+            "id": "5",
+            "messages": 0
+        }
+    ]
 
     </pre>
     ---
@@ -6066,7 +6081,7 @@ def users_messages(request, id):
         - code: 400
           message: Invalid Input
     '''
-    items = {}
+    items = []
     user_ids = []
     try:
         user_ids = sorted(set(request.DATA))
@@ -6074,7 +6089,10 @@ def users_messages(request, id):
         pass
     for user_id in user_ids:
         if not models.is_blocked(request.user.id, user_id):
-            items[user_id] = request.user.get_messages(user_id)
+            items.append({
+                'id': user_id,
+                'messages': request.user.get_messages(user_id),
+            })
     return Response(data=items, status=HTTP_200_OK)
 
 
