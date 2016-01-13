@@ -2867,6 +2867,14 @@ class Users(TransactionTestCase):
         assert response.status_code == 200
 
     def test_b(self):
+        user_ids = [1, 2, 3, 4, 5]
+        response = self.client.post('/api/users/{id:d}/messages/'.format(id=self.user.id), user_ids, format='json')
+        for user_id in user_ids:
+            assert user_id in response.data
+            assert response.data[user_id] == 0
+        assert response.status_code == 200
+
+    def test_c(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token 0.0')
         response = self.client.get('/api/ads/', format='json')
         assert response.data['detail'] == 'Invalid Token - #2'

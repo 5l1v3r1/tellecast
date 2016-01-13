@@ -2720,6 +2720,8 @@ def post_pre_save(instance, **kwargs):
 @receiver(post_save, sender=Post)
 def post_post_save(instance, **kwargs):
     user_location = UserLocation.objects.get_queryset().filter(user_id=instance.user_id).first()
+    if not user_location:
+        return
     if not user_location.network_id:
         return
     if not user_location.is_casting:

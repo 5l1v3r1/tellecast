@@ -6025,6 +6025,59 @@ def tellzones_master_tells(request, id):
     )
 
 
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def users_messages(request, id):
+    '''
+    SELECT (Messages) Users
+
+    <pre>
+    Input
+    =====
+
+    [
+        1,
+        2,
+        3,
+        4,
+        5
+    ]
+
+    Output
+    ======
+
+    {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+    }
+
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+    response_serializer: api.serializers.Null
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    items = {}
+    user_ids = []
+    try:
+        user_ids = sorted(set(request.DATA))
+    except Exception:
+        pass
+    for user_id in user_ids:
+        if not models.is_blocked(request.user.id, user_id):
+            items[user_id] = request.user.get_messages(user_id)
+    return Response(data=items, status=HTTP_200_OK)
+
+
 @api_view(('GET',))
 @permission_classes(())
 def users_profile(request, id):

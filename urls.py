@@ -221,6 +221,7 @@ urlpatterns = patterns(
             'delete': 'delete',
         }),
     ),
+    url(r'^api/users/(?P<id>[0-9]+)/messages/$', views.users_messages),
     url(r'^api/users/(?P<id>[0-9]+)/profile/$', views.users_profile),
     url(
         r'^api/users/(?P<id>[0-9]+)/tellzones/delete/$',
