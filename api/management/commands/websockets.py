@@ -292,7 +292,7 @@ class RabbitMQ(object):
                 if not vincenty(
                     (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
                     (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-                ).ft > 999999999:
+                ).ft > 300.0:
                     yield self.users_locations_2(users_locations[1])
             yield self.users_locations_3(users_locations)
         except Exception:
@@ -316,7 +316,7 @@ class RabbitMQ(object):
 
     @coroutine
     def users_locations_2(self, users_location):
-        users = yield self.get_users(users_location['user_id'], users_location['point'], 999999999, True)
+        users = yield self.get_users(users_location['user_id'], users_location['point'], 300.0, True)
         if not users:
             raise Return(None)
         try:
@@ -424,7 +424,7 @@ class RabbitMQ(object):
                             longitude=users_locations[0]['point']['longitude'],
                             latitude=users_locations[0]['point']['latitude'],
                         ),
-                        999999999,
+                        300.0,
                     ),
                 )
                 for record in cursor.fetchall():
