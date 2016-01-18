@@ -2367,6 +2367,11 @@ def master_tell_pre_save(instance, **kwargs):
         instance.position = position + 1 if position else 1
 
 
+@receiver(post_delete, sender=MasterTell)
+def master_tell_post_delete(instance, **kwargs):
+    master_tells_websockets(instance)
+
+
 @receiver(post_save, sender=MasterTell)
 def master_tell_post_save(instance, **kwargs):
     current_app.send_task(
@@ -2381,6 +2386,10 @@ def master_tell_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
+    master_tells_websockets(instance)
+
+
+def master_tells_websockets(instance):
     user_location = UserLocation.objects.get_queryset().filter(user_id=instance.owned_by_id).first()
     if not user_location:
         return
@@ -2717,8 +2726,17 @@ def post_pre_save(instance, **kwargs):
     instance.expired_at = datetime.now() + timedelta(days=365)
 
 
+@receiver(post_delete, sender=Post)
+def post_post_delete(instance, **kwargs):
+    posts_websockets(instance)
+
+
 @receiver(post_save, sender=Post)
 def post_post_save(instance, **kwargs):
+    posts_websockets(instance)
+
+
+def posts_websockets(instance):
     user_location = UserLocation.objects.get_queryset().filter(user_id=instance.user_id).first()
     if not user_location:
         return
