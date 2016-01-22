@@ -4858,6 +4858,10 @@ def home_master_tells(request):
         - Type: float
         - Status: mandatory
 
+    + tellzone_id
+        - Type: integer
+        - Status: optional
+
     + dummy
         - Type: string
         - Status: optional
@@ -4882,6 +4886,10 @@ def home_master_tells(request):
           paramType: query
           required: true
           type: number
+        - name: tellzone_id
+          paramType: query
+          required: false
+          type: integer
         - name: dummy
           paramType: query
           required: false
@@ -4901,6 +4909,7 @@ def home_master_tells(request):
     return Response(
         data=models.get_master_tells(
             request.user.id,
+            serializer.validated_data['tellzone_id'],
             [(serializer.validated_data['longitude'], serializer.validated_data['latitude'],)],
             (models.Tellzone.radius() * 0.3048) if not serializer.validated_data['dummy'] == 'Yes' else 999999999,
         ),
@@ -5596,7 +5605,14 @@ def networks_master_tells(request, id):
     (see below; "Response Class" -> "Model Schema")
     </pre>
     ---
-    response_serializer: api.serializers.NetworksMasterTells
+    omit_parameters:
+        - form
+    parameters:
+        - name: tellzone_id
+          paramType: query
+          required: false
+          type: integer
+    response_serializer: api.serializers.NetworksMasterTellsResponse
     responseMessages:
         - code: 400
           message: Invalid Input
@@ -5609,9 +5625,17 @@ def networks_master_tells(request, id):
             },
             status=HTTP_400_BAD_REQUEST,
         )
+    serializer = serializers.NetworksMasterTellsRequest(
+        context={
+            'request': request,
+        },
+        data=request.query_params,
+    )
+    serializer.is_valid(raise_exception=True)
     return Response(
         data=models.get_master_tells(
             request.user.id,
+            serializer.validated_data['tellzone_id'],
             [
                 (network_tellzone.tellzone.point.x, network_tellzone.tellzone.point.y,)
                 for network_tellzone in network.networks_tellzones.get_queryset()
@@ -6018,6 +6042,7 @@ def tellzones_master_tells(request, id):
     return Response(
         data=models.get_master_tells(
             request.user.id,
+            0,
             [(tellzone.point.x, tellzone.point.y,)],
             models.Tellzone.radius() * 0.3048,
         ),

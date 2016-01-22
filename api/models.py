@@ -2806,7 +2806,7 @@ def get_items(items, count):
     return [item.tolist() for item in array_split(items, count)]
 
 
-def get_master_tells(user_id, points, radius):
+def get_master_tells(user_id, tellzone_id, points, radius):
     master_tells = {}
     for point in points:
         with closing(connection.cursor()) as cursor:
@@ -2853,6 +2853,8 @@ def get_master_tells(user_id, points, radius):
                 WHERE
                     api_users_locations.user_id != %s
                     AND
+                    api_users_locations.tellzone_id != %s
+                    AND
                     ST_DWithin(
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163),
                         ST_Transform(api_users_locations.point, 2163),
@@ -2872,6 +2874,7 @@ def get_master_tells(user_id, points, radius):
                     user_id,
                     user_id,
                     user_id,
+                    tellzone_id,
                     'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=point[0], latitude=point[1]),
                     radius,
                 )

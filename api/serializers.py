@@ -1361,8 +1361,19 @@ class HomeConnectionsResponse(Serializer):
     users = HomeConnectionsResponseItems(many=True, required=False)
 
 
-class HomeMasterTellsRequest(HomeRequest):
-    pass
+class HomeMasterTellsRequest(Serializer):
+
+    latitude = FloatField()
+    longitude = FloatField()
+    tellzone_id = IntegerField(default=0, required=False)
+    dummy = ChoiceField(
+        choices=(
+            ('No', 'No',),
+            ('Yes', 'Yes',),
+        ),
+        default='No',
+        required=False,
+    )
 
 
 class HomeMasterTellsResponseUser(User):
@@ -1660,7 +1671,12 @@ class NetworksResponse(ModelSerializer):
         return dictionary
 
 
-class NetworksMasterTellsUser(User):
+class NetworksMasterTellsRequest(Serializer):
+
+    tellzone_id = IntegerField(default=0, required=False)
+
+
+class NetworksMasterTellsResponseUser(User):
 
     class Meta:
 
@@ -1675,10 +1691,10 @@ class NetworksMasterTellsUser(User):
         model = models.User
 
 
-class NetworksMasterTells(MasterTell):
+class NetworksMasterTellsResponse(MasterTell):
 
-    created_by = NetworksMasterTellsUser()
-    owned_by = NetworksMasterTellsUser()
+    created_by = NetworksMasterTellsResponseUser()
+    owned_by = NetworksMasterTellsResponseUser()
 
     class Meta:
 

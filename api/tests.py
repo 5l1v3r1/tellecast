@@ -516,11 +516,18 @@ class Home(TransactionTestCase):
     def setUp(self):
         self.user = middleware.mixer.blend('api.User')
 
-        middleware.mixer.cycle(5).blend('api.User')
-        middleware.mixer.cycle(5).blend('api.Tellzone')
-
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        network = middleware.mixer.blend('api.Network')
+
+        tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+        tellzone.point = get_point()
+        tellzone.save()
+
+        network_tellzone = middleware.mixer.blend('api.NetworkTellzone', network=network, tellzone=tellzone)
+        network_tellzone.save()
 
         with middleware.mixer.ctx(commit=False):
             for user in middleware.mixer.cycle(5).blend('api.User'):
@@ -537,6 +544,8 @@ class Home(TransactionTestCase):
                 response = client.post(
                     '/api/radar/',
                     {
+                        'network_id': network.id,
+                        'tellzone_id': tellzone.id,
                         'point': {
                             'latitude': 1.00,
                             'longitude': 1.00,
@@ -547,16 +556,76 @@ class Home(TransactionTestCase):
                     },
                     format='json',
                 )
-                assert len(response.data) == 5
+                assert len(response.data) == 1
                 assert 'id' in response.data[0]
                 assert 'name' in response.data[0]
                 assert response.status_code == 200
 
-    def test_a(self):
+        response = self.client.get(
+            '/api/home/master-tells/',
+            {
+                'latitude': 1.00,
+                'longitude': 1.00,
+            },
+            format='json',
+        )
+        assert len(response.data) == 25
+        assert response.status_code == 200
+
+        response = self.client.get(
+            '/api/home/master-tells/',
+            {
+                'latitude': 1.00,
+                'longitude': 1.00,
+                'tellzone_id': models.Tellzone.objects.get_queryset().order_by('?').first().id,
+            },
+            format='json',
+        )
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+    def test_b(self):
+        network = middleware.mixer.blend('api.Network')
+
+        tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+        tellzone.point = get_point()
+        tellzone.save()
+
+        network_tellzone = middleware.mixer.blend('api.NetworkTellzone', network=network, tellzone=tellzone)
+        network_tellzone.save()
+
+        with middleware.mixer.ctx(commit=False):
+            for user in middleware.mixer.cycle(5).blend('api.User'):
+                user.point = get_point()
+                user.is_signed_in = True
+                user.save()
+
+                client = APIClient()
+                client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+                response = client.post(
+                    '/api/radar/',
+                    {
+                        'network_id': network.id,
+                        'tellzone_id': tellzone.id,
+                        'point': {
+                            'latitude': 1.00,
+                            'longitude': 1.00,
+                        },
+                        'accuracies_horizontal': 1.00,
+                        'accuracies_vertical': 1.00,
+                        'is_casting': True,
+                    },
+                    format='json',
+                )
+                assert len(response.data) == 1
+                assert 'id' in response.data[0]
+                assert 'name' in response.data[0]
+                assert response.status_code == 200
+
         dictionary = {
             'latitude': 1.00,
             'longitude': 1.00,
-            'dummy': 'Yes',
+            'dummy': 'No',
         }
 
         response = self.client.get('/api/home/connections/', dictionary, format='json')
@@ -564,11 +633,7 @@ class Home(TransactionTestCase):
         assert len(response.data['days'].keys()) == 7
         assert 'trailing_24_hours' in response.data
         assert 'users' in response.data
-        assert len(response.data['users']) == 5
-        assert response.status_code == 200
-
-        response = self.client.get('/api/home/master-tells/', dictionary, format='json')
-        assert len(response.data) == 25
+        assert len(response.data['users']) == 0
         assert response.status_code == 200
 
         response = self.client.get('/api/home/statistics/frequent/', dictionary, format='json')
@@ -594,8 +659,23 @@ class Home(TransactionTestCase):
         assert 'months' in response.data['saves']
         assert response.status_code == 200
 
-        response = self.client.get('/api/home/tellzones/', dictionary, format='json')
-        assert len(response.data) == 5
+    def test_c(self):
+        count = 5
+
+        for tellzone in middleware.mixer.cycle(count).blend('api.Tellzone', user=None):
+            tellzone.point = get_point()
+            tellzone.save()
+
+        response = self.client.get(
+            '/api/home/tellzones/',
+            {
+                'latitude': 1.00,
+                'longitude': 1.00,
+                'dummy': 'No',
+            },
+            format='json',
+        )
+        assert len(response.data) == count
         assert response.status_code == 200
 
 
@@ -1279,6 +1359,7 @@ class Networks(TransactionTestCase):
                 assert response.status_code == 200
 
         user = middleware.mixer.blend('api.User', type='Root')
+
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
         response = client.get(
@@ -1286,6 +1367,18 @@ class Networks(TransactionTestCase):
             format='json',
         )
         assert len(response.data) == 25
+        assert response.status_code == 200
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+        response = client.get(
+            '/api/networks/{id:d}/master-tells/'.format(id=network.id),
+            {
+                'tellzone_id': models.Tellzone.objects.get_queryset().order_by('?').first().id,
+            },
+            format='json',
+        )
+        assert len(response.data) == 20
         assert response.status_code == 200
 
 
