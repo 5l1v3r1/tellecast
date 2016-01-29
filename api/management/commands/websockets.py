@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from logging import CRITICAL, DEBUG, Formatter, StreamHandler, getLogger
 
-from bcrypt import gensalt, hashpw
+from bcrypt import hashpw
 from celery import current_app
 from django.conf import settings
 from django.core.management.base import BaseCommand
