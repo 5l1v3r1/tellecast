@@ -3,6 +3,7 @@
 from contextlib import closing
 from datetime import datetime, timedelta
 
+from bcrypt import gensalt, hashpw
 from celery import current_app
 from django.conf import settings
 from django.contrib.auth.models import update_last_login, User as Administrator
@@ -32,7 +33,6 @@ from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy
 from django_extensions.db.fields import UUIDField
-from itsdangerous import TimestampSigner
 from jsonfield import JSONField
 from numpy import array_split
 from push_notifications.apns import apns_send_message
@@ -277,7 +277,11 @@ class User(Model):
 
     @cached_property
     def token(self):
-        return TimestampSigner(settings.SECRET_KEY).sign(str(self.id))
+        return (
+            str(self.id) +
+            settings.SEPARATOR +
+            hashpw((str(self.id) + settings.SECRET_KEY).encode('utf-8'), gensalt(rounds=12))
+        )
 
     @classmethod
     def insert(cls, data):
@@ -645,7 +649,8 @@ class User(Model):
 
     def is_valid(self, token):
         try:
-            return str(self.id) == TimestampSigner(settings.SECRET_KEY).unsign(token)
+            id, hash = token.split(settings.SEPARATOR, 1)
+            return hashpw((id + settings.SECRET_KEY).encode('utf-8'), hash.encode('utf-8')) == hash
         except Exception:
             pass
         return False

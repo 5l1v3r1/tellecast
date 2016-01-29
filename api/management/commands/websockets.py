@@ -5,12 +5,12 @@ from copy import deepcopy
 from datetime import datetime
 from logging import CRITICAL, DEBUG, Formatter, StreamHandler, getLogger
 
+from bcrypt import gensalt, hashpw
 from celery import current_app
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
 from geopy.distance import vincenty
-from itsdangerous import TimestampSigner
 from numpy import array_split
 from pika import TornadoConnection, URLParameters
 from rollbar import init, report_exc_info, report_message
@@ -1100,8 +1100,8 @@ class WebSocket(WebSocketHandler):
 
     @coroutine
     def users(self, data):
-        id = data.split('.')[0]
-        if str(id) != TimestampSigner(settings.SECRET_KEY).unsign(data):
+        id, hash = data.split(settings.SEPARATOR, 1)
+        if hashpw((id + settings.SECRET_KEY).encode('utf-8'), hash.encode('utf-8')) != hash:
             self.write_message(dumps({
                 'subject': 'users',
                 'body': False,
