@@ -264,6 +264,8 @@ class User(Model):
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
 
+    tellzone = ForeignKey('Tellzone', blank=True, default=None, null=True, related_name='+')
+
     objects = GeoManager()
 
     class Meta:

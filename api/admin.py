@@ -914,6 +914,7 @@ class User(ModelAdmin):
 
     actions = [delete_selected]
     fields = (
+        'tellzone',
         'type',
         'email',
         'photo_original',
@@ -930,6 +931,7 @@ class User(ModelAdmin):
     )
     list_display = (
         'id',
+        'tellzone',
         'type',
         'email',
         'first_name',
@@ -940,6 +942,7 @@ class User(ModelAdmin):
         'token',
     )
     list_filter = (
+        'tellzone',
         'type',
         'is_signed_in',
         'inserted_at',
