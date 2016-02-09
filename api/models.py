@@ -2312,10 +2312,13 @@ def user_location_post_save(instance, **kwargs):
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
         if not is_blocked(user_location_1.user_id, user_location.user_id):
-            user_ids['home'].append(user_location.user_id)
-            if user_location.network_id:
+            if vincenty(
+                (user_location.point.x, user_location.point.y), (user_location_1.point.x, user_location_1.point.y)
+            ).ft <= 300.00:
+                user_ids['home'].append(user_location.user_id)
+            if user_location.network_id == user_location_1.network_id:
                 user_ids['networks'].append(user_location.user_id)
-            if user_location.tellzone_id:
+            if user_location.tellzone_id == user_location_1.tellzone_id:
                 user_ids['tellzones'].append(user_location.user_id)
     if user_ids['home']:
         current_app.send_task(
