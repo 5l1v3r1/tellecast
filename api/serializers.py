@@ -1391,10 +1391,34 @@ class HomeMasterTellsResponseUser(User):
         model = models.User
 
 
+class HomeMasterTellsResponseSlaveTell(SlaveTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents_original',
+            'contents_preview',
+            'description',
+            'position',
+            'is_editable',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
+
+
 class HomeMasterTellsResponse(MasterTell):
 
     created_by = HomeMasterTellsResponseUser()
     owned_by = HomeMasterTellsResponseUser()
+    slave_tell = HomeMasterTellsResponseSlaveTell()
 
     class Meta:
 
@@ -1407,6 +1431,7 @@ class HomeMasterTellsResponse(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'slave_tell',
         )
         model = models.MasterTell
 
@@ -1691,10 +1716,34 @@ class NetworksMasterTellsResponseUser(User):
         model = models.User
 
 
+class NetworksMasterTellsResponseSlaveTell(SlaveTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents_original',
+            'contents_preview',
+            'description',
+            'position',
+            'is_editable',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
+
+
 class NetworksMasterTellsResponse(MasterTell):
 
     created_by = NetworksMasterTellsResponseUser()
     owned_by = NetworksMasterTellsResponseUser()
+    slave_tell = NetworksMasterTellsResponseSlaveTell()
 
     class Meta:
 
@@ -1707,6 +1756,7 @@ class NetworksMasterTellsResponse(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'slave_tell',
         )
         model = models.MasterTell
 
@@ -2215,10 +2265,34 @@ class TellzonesMasterTellsUser(User):
         model = models.User
 
 
+class TellzonesMasterTellsSlaveTell(SlaveTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents_original',
+            'contents_preview',
+            'description',
+            'position',
+            'is_editable',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
+
+
 class TellzonesMasterTells(MasterTell):
 
     created_by = TellzonesMasterTellsUser()
     owned_by = TellzonesMasterTellsUser()
+    slave_tell = TellzonesMasterTellsSlaveTell()
 
     class Meta:
 
@@ -2231,6 +2305,7 @@ class TellzonesMasterTells(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'slave_tell',
         )
         model = models.MasterTell
 
