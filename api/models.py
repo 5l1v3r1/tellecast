@@ -422,10 +422,12 @@ class User(Model):
                     (user_location_2.point.x, user_location_2.point.y)
                 ).ft <= 300.00:
                     user_ids['home'].append(user_location_2.user_id)
-                if user_location_1.network_id == user_location_2.network_id:
-                    user_ids['networks'].append(user_location_2.user_id)
-                if user_location_1.tellzone_id == user_location_2.tellzone_id:
-                    user_ids['tellzones'].append(user_location_2.user_id)
+                if user_location_1.network_id:
+                    if user_location_1.network_id == user_location_2.network_id:
+                        user_ids['networks'].append(user_location_2.user_id)
+                if user_location_1.tellzone_id:
+                    if user_location_1.tellzone_id == user_location_2.tellzone_id:
+                        user_ids['tellzones'].append(user_location_2.user_id)
         if user_ids['home']:
             current_app.send_task(
                 'api.management.commands.websockets',
@@ -2316,10 +2318,12 @@ def user_location_post_save(instance, **kwargs):
                 (user_location.point.x, user_location.point.y), (user_location_1.point.x, user_location_1.point.y)
             ).ft <= 300.00:
                 user_ids['home'].append(user_location.user_id)
-            if user_location.network_id == user_location_1.network_id:
-                user_ids['networks'].append(user_location.user_id)
-            if user_location.tellzone_id == user_location_1.tellzone_id:
-                user_ids['tellzones'].append(user_location.user_id)
+            if user_location_1.network_id:
+                if user_location.network_id == user_location_1.network_id:
+                    user_ids['networks'].append(user_location.user_id)
+            if user_location_1.tellzone_id:
+                if user_location.tellzone_id == user_location_1.tellzone_id:
+                    user_ids['tellzones'].append(user_location.user_id)
     if user_ids['home']:
         current_app.send_task(
             'api.management.commands.websockets',
