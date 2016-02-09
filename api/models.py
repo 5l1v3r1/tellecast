@@ -33,6 +33,7 @@ from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy
 from django_extensions.db.fields import UUIDField
+from geopy.distance import vincenty
 from jsonfield import JSONField
 from numpy import array_split
 from push_notifications.apns import apns_send_message
@@ -395,6 +396,86 @@ class User(Model):
     def sign_out(self):
         self.is_signed_in = False
         self.save()
+        user_location_1 = UserLocation.objects.get_queryset().filter(
+            user_id=self.id,
+            is_casting=True,
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
+        ).first()
+        if not user_location_1:
+            return
+        user_ids = {
+            'home': [],
+            'networks': [],
+            'tellzones': [],
+        }
+        for user_location_2 in UserLocation.objects.get_queryset().filter(
+            ~Q(user_id=user_location_1.user_id),
+            Q(network_id=user_location_1.network_id) |
+            Q(tellzone_id=user_location_1.tellzone_id) |
+            Q(point__distance_lte=(user_location_1.point, D(ft=Tellzone.radius()))),
+            is_casting=True,
+            timestamp__gt=datetime.now() - timedelta(minutes=1),
+        ):
+            if not is_blocked(user_location_1.user_id, user_location_2.user_id):
+                if vincenty(
+                    (user_location_1.point.x, user_location_1.point.y),
+                    (user_location_2.point.x, user_location_2.point.y)
+                ).ft <= 300.00:
+                    user_ids['home'].append(user_location_2.user_id)
+                if user_location_1.network_id == user_location_2.network_id:
+                    user_ids['networks'].append(user_location_2.user_id)
+                if user_location_1.tellzone_id == user_location_2.tellzone_id:
+                    user_ids['tellzones'].append(user_location_2.user_id)
+        if user_ids['home']:
+            current_app.send_task(
+                'api.management.commands.websockets',
+                (
+                    {
+                        'user_ids': user_ids['home'],
+                        'subject': 'master_tells',
+                        'body': {
+                            'type': 'home',
+                        },
+                    },
+                ),
+                queue='api.management.commands.websockets',
+                routing_key='api.management.commands.websockets',
+                serializer='json',
+            )
+        if user_ids['networks']:
+            current_app.send_task(
+                'api.management.commands.websockets',
+                (
+                    {
+                        'user_ids': user_ids['networks'],
+                        'subject': 'master_tells',
+                        'body': {
+                            'type': 'networks',
+                            'id': user_location_1.network_id,
+                        },
+                    },
+                ),
+                queue='api.management.commands.websockets',
+                routing_key='api.management.commands.websockets',
+                serializer='json',
+            )
+        if user_ids['tellzones']:
+            current_app.send_task(
+                'api.management.commands.websockets',
+                (
+                    {
+                        'user_ids': user_ids['tellzones'],
+                        'subject': 'master_tells',
+                        'body': {
+                            'type': 'tellzones',
+                            'id': user_location_1.tellzone_id,
+                        },
+                    },
+                ),
+                queue='api.management.commands.websockets',
+                routing_key='api.management.commands.websockets',
+                serializer='json',
+            )
 
     def update(self, data):
         if 'email' in data:
