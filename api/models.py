@@ -2317,8 +2317,8 @@ def user_location_post_save(instance, **kwargs):
         #         serializer='json',
         #     )
         if (
-            user_location_1.network_id == user_location_2.network_id and
-            user_location_1.tellzone_id == user_location_2.tellzone_id
+            (user_location_1.network_id and user_location_1.network_id == user_location_2.network_id) and
+            (user_location_1.tellzone_id and user_location_1.tellzone_id == user_location_2.tellzone_id)
         ):
             return
     user_ids = {
@@ -2340,10 +2340,10 @@ def user_location_post_save(instance, **kwargs):
             ).ft <= 300.00:
                 user_ids['home'].append(user_location.user_id)
             if user_location_1.network_id:
-                if user_location.network_id == user_location_1.network_id:
+                if user_location_1.network_id == user_location.network_id:
                     user_ids['networks'].append(user_location.user_id)
             if user_location_1.tellzone_id:
-                if user_location.tellzone_id == user_location_1.tellzone_id:
+                if user_location_1.tellzone_id == user_location.tellzone_id:
                     user_ids['tellzones'].append(user_location.user_id)
     if user_ids['home']:
         current_app.send_task(
@@ -2532,7 +2532,7 @@ def master_tells_websockets(instance):
             if user_location.network_id:
                 if user_location.network_id == ul.network_id:
                     user_ids['networks'].append(ul.user_id)
-            if ul.tellzone_id:
+            if user_location.tellzone_id:
                 if user_location.tellzone_id == ul.tellzone_id:
                     user_ids['tellzones'].append(ul.user_id)
     if user_ids['home']:
