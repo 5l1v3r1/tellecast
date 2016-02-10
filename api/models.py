@@ -2506,10 +2506,12 @@ def master_tell_post_save(instance, **kwargs):
 
 
 def master_tells_websockets(instance):
-    user_location = UserLocation.objects.get_queryset().filter(user_id=instance.owned_by_id).first()
+    user_location = UserLocation.objects.get_queryset().filter(
+        user_id=instance.owned_by_id,
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ).first()
     if not user_location:
-        return
-    if not user_location.is_casting:
         return
     user_ids = {
         'home': [],
@@ -2525,11 +2527,14 @@ def master_tells_websockets(instance):
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
         if not is_blocked(user_location.user_id, ul.user_id):
-            user_ids['home'].append(ul.user_id)
-            if ul.network_id:
-                user_ids['networks'].append(ul.user_id)
+            if vincenty((user_location.point.x, user_location.point.y), (ul.point.x, ul.point.y)).ft <= 300.00:
+                user_ids['home'].append(ul.user_id)
+            if user_location.network_id:
+                if user_location.network_id == ul.network_id:
+                    user_ids['networks'].append(ul.user_id)
             if ul.tellzone_id:
-                user_ids['tellzones'].append(ul.user_id)
+                if user_location.tellzone_id == ul.tellzone_id:
+                    user_ids['tellzones'].append(ul.user_id)
     if user_ids['home']:
         current_app.send_task(
             'api.management.commands.websockets',
