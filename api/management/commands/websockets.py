@@ -359,13 +359,45 @@ class RabbitMQ(object):
 
     @coroutine
     def users_locations_3(self, users_locations):
-        if len(users_locations) == 2:
-            if (
-                users_locations[0]['network_id'] == users_locations[1]['network_id'] and
-                users_locations[0]['tellzone_id'] == users_locations[1]['tellzone_id']
-            ):
-                raise Return(None)
         try:
+            if len(users_locations) == 2:
+                if (
+                    users_locations[0]['tellzone_id'] and
+                    users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
+                ):
+                    string = 'You are now at {name:s} Zone'.format(name=users_locations[0]['tellzone_name'])
+                    badge = 0
+                    with closing(connection.cursor()) as cursor:
+                        cursor.execute(
+                            'SELECT COUNT(id) FROM api_messages WHERE user_destination_id = %s AND status = %s',
+                            (users_locations[0]['user_id'], 'Unread',)
+                        )
+                        badge += cursor.fetchone()[0]
+                        cursor.execute(
+                            'SELECT COUNT(id) FROM api_notifications WHERE user_id = %s AND status = %s',
+                            (users_locations[0]['user_id'], 'Unread',)
+                        )
+                        badge += cursor.fetchone()[0]
+                        connection.commit()
+                    current_app.send_task(
+                        'api.tasks.push_notifications',
+                        (
+                            users_locations[0]['user_id'],
+                            {
+                                'aps': {
+                                    'alert': {
+                                        'body': string,
+                                        'title': string,
+                                    },
+                                    'badge': badge,
+                                },
+                                'type': '...',
+                            },
+                        ),
+                        queue='api.tasks.push_notifications',
+                        routing_key='api.tasks.push_notifications',
+                        serializer='json',
+                    )
             user_ids = {
                 'home': [],
                 'networks': [],
@@ -394,7 +426,8 @@ class RabbitMQ(object):
                     SELECT
                         api_users_locations.user_id AS user_id,
                         api_users_locations.network_id AS network_id,
-                        api_users_locations.tellzone_id AS tellzone_id
+                        api_users_locations.tellzone_id AS tellzone_id,
+                        ST_AsGeoJSON(api_users_locations.point) AS point
                     FROM api_users_locations
                     WHERE
                         api_users_locations.user_id != %s
@@ -429,11 +462,33 @@ class RabbitMQ(object):
                 )
                 for record in cursor.fetchall():
                     if record[0] not in blocks.get(users_locations[0]['user_id'], []):
-                        user_ids['home'].append(record[0])
-                        if record[1]:
-                            user_ids['networks'].append(record[0])
-                        if record[0]:
-                            user_ids['tellzones'].append(record[0])
+                        point = loads(record[3])
+                        if (
+                            len(users_locations) == 1 or
+                                vincenty(
+                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
+                                (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
+                            ).ft > 300.00
+                        ):
+                            if vincenty(
+                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
+                                (point['coordinates'][0], point['coordinates'][1])
+                            ).ft <= 300.00:
+                                user_ids['home'].append(record[0])
+                        if users_locations[0]['network_id']:
+                            if (
+                                len(users_locations) == 1 or
+                                users_locations[0]['network_id'] != users_locations[1]['network_id']
+                            ):
+                                if users_locations[0]['network_id'] == record[1]:
+                                    user_ids['networks'].append(record[0])
+                        if users_locations[0]['tellzone_id']:
+                            if (
+                                len(users_locations) == 1 or
+                                users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
+                            ):
+                                if users_locations[0]['tellzone_id'] == record[2]:
+                                    user_ids['tellzones'].append(record[0])
             if user_ids['home']:
                 current_app.send_task(
                     'api.management.commands.websockets',
@@ -769,11 +824,14 @@ class RabbitMQ(object):
                         api_users_locations_1.user_id,
                         api_users_locations_1.network_id,
                         api_users_locations_1.tellzone_id,
-                        ST_AsGeoJSON(api_users_locations_1.point)
+                        ST_AsGeoJSON(api_users_locations_1.point),
+                        api_tellzones.name
                     FROM api_users_locations api_users_locations_1
                     INNER JOIN (
                         SELECT user_id FROM api_users_locations WHERE id = %s
                     ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
+                    LEFT OUTER JOIN api_tellzones ON api_tellzones.id = api_users_locations_1.tellzone_id
+                    WHERE api_users_locations_1.timestamp > NOW() - INTERVAL '1 minute'
                     ORDER BY api_users_locations_1.id DESC LIMIT 2
                     ''',
                     (data,)
@@ -784,6 +842,7 @@ class RabbitMQ(object):
                         'user_id': record[0],
                         'network_id': record[1],
                         'tellzone_id': record[2],
+                        'tellzone_name': record[4],
                         'point': {
                             'latitude': point['coordinates'][1],
                             'longitude': point['coordinates'][0],

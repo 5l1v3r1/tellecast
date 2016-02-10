@@ -2295,32 +2295,27 @@ def user_location_post_save(instance, **kwargs):
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ).first()
     if user_location_2:
-        # if user_location_1.tellzone_id and user_location_1.tellzone_id != user_location_2.tellzone_id:
-        #     string = 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name)
-        #     current_app.send_task(
-        #         'api.tasks.push_notifications',
-        #         (
-        #             user_location_1.user_id,
-        #             {
-        #                 'aps': {
-        #                     'alert': {
-        #                         'body': string,
-        #                         'title': string,
-        #                     },
-        #                     'badge': get_badge(user_location_1.user_id),
-        #                 },
-        #                 'type': '...',
-        #             },
-        #         ),
-        #         queue='api.tasks.push_notifications',
-        #         routing_key='api.tasks.push_notifications',
-        #         serializer='json',
-        #     )
-        if (
-            (user_location_1.network_id and user_location_1.network_id == user_location_2.network_id) and
-            (user_location_1.tellzone_id and user_location_1.tellzone_id == user_location_2.tellzone_id)
-        ):
-            return
+        if user_location_1.tellzone_id and user_location_1.tellzone_id != user_location_2.tellzone_id:
+            string = 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name)
+            current_app.send_task(
+                'api.tasks.push_notifications',
+                (
+                    user_location_1.user_id,
+                    {
+                        'aps': {
+                            'alert': {
+                                'body': string,
+                                'title': string,
+                            },
+                            'badge': get_badge(user_location_1.user_id),
+                        },
+                        'type': '...',
+                    },
+                ),
+                queue='api.tasks.push_notifications',
+                routing_key='api.tasks.push_notifications',
+                serializer='json',
+            )
     user_ids = {
         'home': [],
         'networks': [],
@@ -2335,16 +2330,21 @@ def user_location_post_save(instance, **kwargs):
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
         if not is_blocked(user_location_1.user_id, user_location.user_id):
-            if vincenty(
-                (user_location.point.x, user_location.point.y), (user_location_1.point.x, user_location_1.point.y)
-            ).ft <= 300.00:
-                user_ids['home'].append(user_location.user_id)
+            if not user_location_2 or vincenty(
+                (user_location_1.point.x, user_location_1.point.y), (user_location_2.point.x, user_location_2.point.y)
+            ).ft > 300.00:
+                if vincenty(
+                    (user_location.point.x, user_location.point.y), (user_location_1.point.x, user_location_1.point.y)
+                ).ft <= 300.00:
+                    user_ids['home'].append(user_location.user_id)
             if user_location_1.network_id:
-                if user_location_1.network_id == user_location.network_id:
-                    user_ids['networks'].append(user_location.user_id)
+                if not user_location_2 or user_location_1.network_id != user_location_2.network_id:
+                    if user_location_1.network_id == user_location.network_id:
+                        user_ids['networks'].append(user_location.user_id)
             if user_location_1.tellzone_id:
-                if user_location_1.tellzone_id == user_location.tellzone_id:
-                    user_ids['tellzones'].append(user_location.user_id)
+                if not user_location_2 or user_location_1.tellzone_id != user_location_2.tellzone_id:
+                    if user_location_1.tellzone_id == user_location.tellzone_id:
+                        user_ids['tellzones'].append(user_location.user_id)
     if user_ids['home']:
         current_app.send_task(
             'api.management.commands.websockets',
