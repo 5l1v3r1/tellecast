@@ -2295,30 +2295,30 @@ def user_location_post_save(instance, **kwargs):
         timestamp__gt=datetime.now() - timedelta(minutes=1),
     ).first()
     if user_location_2:
-        if (
-            user_location_1.tellzone_id and user_location_2.tellzone_id and
-            user_location_1.tellzone_id != user_location_2.tellzone_id
-        ):
-            string = 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name)
-            current_app.send_task(
-                'api.tasks.push_notifications',
-                (
-                    user_location_1.user_id,
-                    {
-                        'aps': {
-                            'alert': {
-                                'body': string,
-                                'title': string,
-                            },
-                            'badge': get_badge(user_location_1.user_id),
-                        },
-                        'type': 'tellzone',
-                    },
-                ),
-                queue='api.tasks.push_notifications',
-                routing_key='api.tasks.push_notifications',
-                serializer='json',
-            )
+        # if (
+        #     user_location_1.tellzone_id and user_location_2.tellzone_id and
+        #     user_location_1.tellzone_id != user_location_2.tellzone_id
+        # ):
+        #     string = 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name)
+        #     current_app.send_task(
+        #         'api.tasks.push_notifications',
+        #         (
+        #             user_location_1.user_id,
+        #             {
+        #                 'aps': {
+        #                     'alert': {
+        #                         'body': string,
+        #                         'title': string,
+        #                     },
+        #                     'badge': get_badge(user_location_1.user_id),
+        #                 },
+        #                 'type': '...',
+        #             },
+        #         ),
+        #         queue='api.tasks.push_notifications',
+        #         routing_key='api.tasks.push_notifications',
+        #         serializer='json',
+        #     )
         if (
             user_location_1.network_id == user_location_2.network_id and
             user_location_1.tellzone_id == user_location_2.tellzone_id

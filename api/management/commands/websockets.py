@@ -936,7 +936,6 @@ class RabbitMQ(object):
                 )
             tellzones = sorted(tellzones.values(), key=lambda tellzone: (tellzone['distance'], -tellzone['id'],))
             for index, _ in enumerate(tellzones):
-                del tellzones[index]['distance']
                 del tellzones[index]['latitude']
                 del tellzones[index]['longitude']
         except Exception:
