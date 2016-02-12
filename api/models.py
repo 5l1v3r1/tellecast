@@ -2970,7 +2970,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 FROM api_users_locations
                 INNER JOIN api_users ON api_users.id = api_users_locations.user_id
                 INNER JOIN api_master_tells ON api_master_tells.owned_by_id = api_users_locations.user_id
-                INNER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
+                LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
                 INNER JOIN api_users AS api_users_created_by
                     ON api_users_created_by.id = api_master_tells.created_by_id
                 LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
@@ -3032,22 +3032,24 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 if 'updated_at' not in master_tells[record['id']]:
                     master_tells[record['id']]['updated_at'] = record['updated_at']
                 if 'slave_tell' not in master_tells[record['id']]:
-                    master_tells[record['id']]['slave_tell'] = {
-                        'id': record['slave_tell_id'],
-                        'created_by_id': record['slave_tell_created_by_id'],
-                        'owned_by_id': record['slave_tell_owned_by_id'],
-                        'photo': record['slave_tell_photo'],
-                        'first_name': record['slave_tell_first_name'],
-                        'last_name': record['slave_tell_last_name'],
-                        'type': record['slave_tell_type'],
-                        'contents_original': record['slave_tell_contents_original'],
-                        'contents_preview': record['slave_tell_contents_preview'],
-                        'description': record['slave_tell_description'],
-                        'position': record['slave_tell_position'],
-                        'is_editable': record['slave_tell_is_editable'],
-                        'inserted_at': record['slave_tell_inserted_at'],
-                        'updated_at': record['slave_tell_updated_at'],
-                    }
+                    master_tells[record['id']]['slave_tell'] =  None
+                    if record['slave_tell_id']:
+                        master_tells[record['id']]['slave_tell'] = {
+                            'id': record['slave_tell_id'],
+                            'created_by_id': record['slave_tell_created_by_id'],
+                            'owned_by_id': record['slave_tell_owned_by_id'],
+                            'photo': record['slave_tell_photo'],
+                            'first_name': record['slave_tell_first_name'],
+                            'last_name': record['slave_tell_last_name'],
+                            'type': record['slave_tell_type'],
+                            'contents_original': record['slave_tell_contents_original'],
+                            'contents_preview': record['slave_tell_contents_preview'],
+                            'description': record['slave_tell_description'],
+                            'position': record['slave_tell_position'],
+                            'is_editable': record['slave_tell_is_editable'],
+                            'inserted_at': record['slave_tell_inserted_at'],
+                            'updated_at': record['slave_tell_updated_at'],
+                        }
                 if 'created_by' not in master_tells[record['id']]:
                     master_tells[record['id']]['created_by'] = {
                         'id': record['created_by_id'],
