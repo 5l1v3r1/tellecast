@@ -2931,7 +2931,6 @@ def get_master_tells(user_id, tellzone_id, points, radius):
             cursor.execute(
                 '''
                 SELECT
-                    DISTINCT ON(api_users_locations.user_id)
                     api_master_tells.id AS id,
                     api_master_tells.contents AS contents,
                     api_master_tells.position AS position,
@@ -3008,7 +3007,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users.is_signed_in IS TRUE
                     AND
                     api_blocks.id IS NULL
-                ORDER BY api_users_locations.user_id, api_master_tells.id ASC, api_slave_tells.position ASC
+                ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
                 ''',
                 (
                     user_id,
