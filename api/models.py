@@ -2296,7 +2296,6 @@ def user_location_post_save(instance, **kwargs):
     ).first()
     if user_location_2:
         if user_location_1.tellzone_id and user_location_1.tellzone_id != user_location_2.tellzone_id:
-            string = 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name)
             current_app.send_task(
                 'api.tasks.push_notifications',
                 (
@@ -2304,12 +2303,11 @@ def user_location_post_save(instance, **kwargs):
                     {
                         'aps': {
                             'alert': {
-                                'body': string,
-                                'title': string,
+                                'title': 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name),
                             },
                             'badge': get_badge(user_location_1.user_id),
                         },
-                        'type': '...',
+                        'type': 'zone_change',
                     },
                 ),
                 queue='api.tasks.push_notifications',

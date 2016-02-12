@@ -365,7 +365,7 @@ class RabbitMQ(object):
                     users_locations[0]['tellzone_id'] and
                     users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
                 ):
-                    string = 'You are now at {name:s} Zone'.format(name=users_locations[0]['tellzone_name'])
+                    string =
                     badge = 0
                     with closing(connection.cursor()) as cursor:
                         cursor.execute(
@@ -386,12 +386,13 @@ class RabbitMQ(object):
                             {
                                 'aps': {
                                     'alert': {
-                                        'body': string,
-                                        'title': string,
+                                        'title': 'You are now at {name:s} Zone'.format(
+                                            name=users_locations[0]['tellzone_name'],
+                                        ),
                                     },
                                     'badge': badge,
                                 },
-                                'type': '...',
+                                'type': 'zone_change',
                             },
                         ),
                         queue='api.tasks.push_notifications',
