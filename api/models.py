@@ -2984,16 +2984,22 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     OR
                     (api_blocks.user_source_id = api_users_locations.user_id AND api_blocks.user_destination_id = %s)
                 WHERE
-                    api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
+                    (
+                        api_slave_tells.id IS NULL
+                        OR
+                        api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
+                    )
                     AND
                     api_users_locations.user_id != %s
                     AND
-                    api_users_locations.tellzone_id != %s
-                    AND
-                    ST_DWithin(
-                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                        ST_Transform(api_users_locations.point, 2163),
-                        %s
+                    (
+                        api_users_locations.tellzone_id = %s
+                        OR
+                        ST_DWithin(
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                            ST_Transform(api_users_locations.point, 2163),
+                            %s
+                        )
                     )
                     AND
                     api_users_locations.is_casting IS TRUE
