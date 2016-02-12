@@ -2984,12 +2984,12 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     OR
                     (api_blocks.user_source_id = api_users_locations.user_id AND api_blocks.user_destination_id = %s)
                 WHERE
-                    (
-                        api_slave_tells.id IS NULL
-                        OR
-                        api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
+                    api_users_locations.id IN (
+                        SELECT DISTINCT ON(user_id) id
+                        FROM api_users_locations
+                        WHERE timestamp > NOW() - INTERVAL '1 minute'
+                        ORDER BY user_id ASC, id DESC
                     )
-                    AND
                     api_users_locations.user_id != %s
                     AND
                     api_users_locations.tellzone_id != %s
@@ -3005,6 +3005,12 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                     AND
                     api_users.is_signed_in IS TRUE
+                    AND
+                    (
+                        api_slave_tells.id IS NULL
+                        OR
+                        api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
+                    )
                     AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
