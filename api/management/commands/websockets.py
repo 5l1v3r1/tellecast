@@ -400,8 +400,8 @@ class RabbitMQ(object):
                     )
             user_ids = {
                 'home': [],
-                'networks': [],
-                'tellzones': [],
+                'networks': {},
+                'tellzones': {},
             }
             blocks = {}
             with closing(connection.cursor()) as cursor:
@@ -432,63 +432,53 @@ class RabbitMQ(object):
                     WHERE
                         api_users_locations.user_id != %s
                         AND
-                        (
-                            api_users_locations.network_id = %s
-                            OR
-                            api_users_locations.tellzone_id = %s
-                            OR
-                            ST_DWithin(
-                                ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                                ST_Transform(api_users_locations.point, 2163),
-                                %s
-                            )
-                        )
-                        AND
                         api_users_locations.is_casting IS TRUE
                         AND
                         api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                     ORDER BY api_users_locations.user_id ASC
                     ''',
-                    (
-                        users_locations[0]['user_id'],
-                        users_locations[0]['network_id'],
-                        users_locations[0]['tellzone_id'],
-                        'POINT({longitude} {latitude})'.format(
-                            longitude=users_locations[0]['point']['longitude'],
-                            latitude=users_locations[0]['point']['latitude'],
-                        ),
-                        300.0,
-                    ),
+                    (users_locations[0]['user_id'],),
                 )
                 for record in cursor.fetchall():
                     if record[0] not in blocks.get(users_locations[0]['user_id'], []):
                         point = loads(record[3])
-                        if (
-                            len(users_locations) == 1 or
-                                vincenty(
-                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
-                                (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-                            ).ft > 300.00
-                        ):
+                        if len(users_locations) == 1:
                             if vincenty(
-                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
-                                (point['coordinates'][0], point['coordinates'][1])
+                                (point['coordinates'][0], point['coordinates'][1]),
+                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude'])
                             ).ft <= 300.00:
                                 user_ids['home'].append(record[0])
-                        if users_locations[0]['network_id']:
-                            if (
-                                len(users_locations) == 1 or
-                                users_locations[0]['network_id'] != users_locations[1]['network_id']
-                            ):
-                                if users_locations[0]['network_id'] == record[1]:
-                                    user_ids['networks'].append(record[0])
-                        if users_locations[0]['tellzone_id']:
-                            if (
-                                len(users_locations) == 1 or
-                                users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
-                            ):
-                                if users_locations[0]['tellzone_id'] == record[2]:
-                                    user_ids['tellzones'].append(record[0])
+                            if record[1] and record[1] == users_locations[0]['network_id']:
+                                if record[1] not in user_ids['networks']:
+                                    user_ids['networks'][record[1]] = []
+                                user_ids['networks'][record[1]].append(record[0])
+                            if record[2] and record[2] == users_locations[0]['tellzone_id']:
+                                if record[2] not in user_ids['tellzones']:
+                                    user_ids['tellzones'][record[2]] = []
+                                user_ids['tellzones'][record[2]].append(record[0])
+                        if len(users_locations) == 2:
+                            if vincenty(
+                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
+                                (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
+                            ).ft > 300.00:
+                                if vincenty(
+                                    (point['coordinates'][0], point['coordinates'][1])
+                                    (
+                                        users_locations[1]['point']['longitude'],
+                                        users_locations[1]['point']['latitude'],
+                                    ),
+                                ).ft <= 300.00:
+                                    user_ids['home'].append(record[0])
+                            if users_locations[0]['network_id'] != users_locations[1]['network_id']:
+                                if record[1] and record[1] == users_locations[1]['network_id']:
+                                    if record[1] not in user_ids['networks']:
+                                        user_ids['networks'][record[1]] = []
+                                    user_ids['networks'][record[1]].append(record[0])
+                            if users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']:
+                                if record[2] and record[2] == users_locations[1]['tellzone_id']:
+                                    if record[2] not in user_ids['tellzones']:
+                                        user_ids['tellzones'][record[2]] = []
+                                    user_ids['tellzones'][record[2]].append(record[0])
             if user_ids['home']:
                 current_app.send_task(
                     'api.management.commands.websockets',
@@ -505,16 +495,16 @@ class RabbitMQ(object):
                     routing_key='api.management.commands.websockets',
                     serializer='json',
                 )
-            if user_ids['networks']:
+            for network_id in user_ids['networks']:
                 current_app.send_task(
                     'api.management.commands.websockets',
                     (
                         {
-                            'user_ids': user_ids['networks'],
+                            'user_ids': user_ids['networks'][network_id],
                             'subject': 'master_tells',
                             'body': {
                                 'type': 'networks',
-                                'id': users_locations[0]['network_id'],
+                                'id': network_id,
                             },
                         },
                     ),
@@ -522,16 +512,16 @@ class RabbitMQ(object):
                     routing_key='api.management.commands.websockets',
                     serializer='json',
                 )
-            if user_ids['tellzones']:
+            for tellzone_id in user_ids['tellzones']:
                 current_app.send_task(
                     'api.management.commands.websockets',
                     (
                         {
-                            'user_ids': user_ids['tellzones'],
+                            'user_ids': user_ids['tellzones'][tellzone_id],
                             'subject': 'master_tells',
                             'body': {
                                 'type': 'tellzones',
-                                'id': users_locations[0]['tellzone_id'],
+                                'id': tellzone_id,
                             },
                         },
                     ),
