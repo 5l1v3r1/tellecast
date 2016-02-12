@@ -1159,7 +1159,14 @@ class WebSocket(WebSocketHandler):
     @coroutine
     def users(self, data):
         id, hash = data.split(settings.SEPARATOR, 1)
-        if hashpw((id + settings.SECRET_KEY).encode('utf-8'), hash.encode('utf-8')) != hash:
+        try:
+            if hashpw((id + settings.SECRET_KEY).encode('utf-8'), hash.encode('utf-8')) != hash:
+                self.write_message(dumps({
+                    'subject': 'users',
+                    'body': False,
+                }))
+                raise Return(None)
+        except Exception:
             self.write_message(dumps({
                 'subject': 'users',
                 'body': False,
