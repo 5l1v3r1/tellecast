@@ -3032,7 +3032,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 if 'updated_at' not in master_tells[record['id']]:
                     master_tells[record['id']]['updated_at'] = record['updated_at']
                 if 'slave_tell' not in master_tells[record['id']]:
-                    master_tells[record['id']]['slave_tell'] =  None
+                    master_tells[record['id']]['slave_tell'] = None
                     if record['slave_tell_id']:
                         master_tells[record['id']]['slave_tell'] = {
                             'id': record['slave_tell_id'],
