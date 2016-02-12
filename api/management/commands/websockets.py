@@ -365,7 +365,6 @@ class RabbitMQ(object):
                     users_locations[0]['tellzone_id'] and
                     users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
                 ):
-                    string =
                     badge = 0
                     with closing(connection.cursor()) as cursor:
                         cursor.execute(
