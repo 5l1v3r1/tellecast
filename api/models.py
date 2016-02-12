@@ -2990,6 +2990,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                         WHERE timestamp > NOW() - INTERVAL '1 minute'
                         ORDER BY user_id ASC, id DESC
                     )
+                    AND
                     api_users_locations.user_id != %s
                     AND
                     api_users_locations.tellzone_id != %s
