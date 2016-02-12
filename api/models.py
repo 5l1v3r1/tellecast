@@ -2335,7 +2335,7 @@ def user_location_post_save(instance, **kwargs):
                     if user_location.tellzone_id and user_location.tellzone_id == user_location_1.tellzone_id:
                         if user_location.tellzone_id not in user_ids['tellzones']:
                             user_ids['tellzones'][user_location.tellzone_id] = []
-                        user_ids['tellzones'][user_location.network_id].append(user_location.user_id)
+                        user_ids['tellzones'][user_location.tellzone_id].append(user_location.user_id)
             else:
                 if vincenty(
                     (user_location.point.x, user_location.point.y), (user_location_1.point.x, user_location_1.point.y)
@@ -2348,7 +2348,7 @@ def user_location_post_save(instance, **kwargs):
                 if user_location.tellzone_id and user_location.tellzone_id == user_location_1.tellzone_id:
                     if user_location.tellzone_id not in user_ids['tellzones']:
                         user_ids['tellzones'][user_location.tellzone_id] = []
-                    user_ids['tellzones'][user_location.network_id].append(user_location.user_id)
+                    user_ids['tellzones'][user_location.tellzone_id].append(user_location.user_id)
     if user_ids['home']:
         current_app.send_task(
             'api.management.commands.websockets',
