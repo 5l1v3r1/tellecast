@@ -462,7 +462,7 @@ class RabbitMQ(object):
                                 (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
                             ).ft > 300.00:
                                 if vincenty(
-                                    (point['coordinates'][0], point['coordinates'][1])
+                                    (point['coordinates'][0], point['coordinates'][1]),
                                     (
                                         users_locations[1]['point']['longitude'],
                                         users_locations[1]['point']['latitude'],
