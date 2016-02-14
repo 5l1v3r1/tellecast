@@ -209,16 +209,16 @@ urlpatterns = patterns(
         r'^api/tellzones/(?P<id>[0-9]+)/$',
         views.Tellzones.as_view({
             'get': 'get_2',
-            'post': 'post',
+            'put': 'put',
+            'patch': 'patch',
+            'delete': 'delete',
         }),
     ),
     url(
         r'^api/tellzones/$',
         views.Tellzones.as_view({
             'get': 'get_1',
-            'put': 'put',
-            'patch': 'patch',
-            'delete': 'delete',
+            'post': 'post',
         }),
     ),
     url(r'^api/users/(?P<id>[0-9]+)/messages/$', views.users_messages),
