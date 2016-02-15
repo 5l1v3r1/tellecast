@@ -739,11 +739,11 @@ class Tellzone(Model):
     user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
     type = CharField(ugettext_lazy('Type'), blank=True, db_index=True, max_length=255)
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
-    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
-    location = CharField(ugettext_lazy('Location'), db_index=True, max_length=255)
-    phone = CharField(ugettext_lazy('Phone'), db_index=True, max_length=255)
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-    hours = JSONField(ugettext_lazy('Hours'))
+    photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
+    location = CharField(ugettext_lazy('Location'), blank=True, db_index=True, max_length=255, null=True)
+    phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
+    url = CharField(ugettext_lazy('URL'), blank=True, db_index=True, max_length=255, null=True)
+    hours = JSONField(ugettext_lazy('Hours'), blank=True, null=True)
     point = PointField(ugettext_lazy('Point'), db_index=True)
     status = CharField(
         ugettext_lazy('Status'),

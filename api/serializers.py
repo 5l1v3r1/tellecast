@@ -815,7 +815,11 @@ class TellzoneNetwork(ModelSerializer):
 class Tellzone(ModelSerializer):
 
     user = TellzoneUser(required=False)
-    hours = DictField()
+    photo = CharField(required=False)
+    location = CharField(required=False)
+    phone = CharField(required=False)
+    url = CharField(required=False)
+    hours = DictField(required=False)
     point = PointField()
     views = IntegerField()
     started_at = DateTimeField(required=False)
