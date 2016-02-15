@@ -3433,23 +3433,23 @@ class Tellzones(ViewSet):
 
         + photo
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + location
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + phone
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + url
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + hours
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
             Example:
 
@@ -3465,7 +3465,7 @@ class Tellzones(ViewSet):
 
         + point
             - Type: dictionary (of floats)
-            - Status: optional
+            - Status: mandatory
 
             Example:
 
@@ -3557,23 +3557,23 @@ class Tellzones(ViewSet):
 
         + photo
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + location
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + phone
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + url
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + hours
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
             Example:
 
@@ -3589,7 +3589,7 @@ class Tellzones(ViewSet):
 
         + point
             - Type: dictionary (of floats)
-            - Status: optional
+            - Status: mandatory
 
             Example:
 
@@ -3690,23 +3690,23 @@ class Tellzones(ViewSet):
 
         + photo
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + location
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + phone
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + url
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
         + hours
             - Type: string
-            - Status: mandatory
+            - Status: optional
 
             Example:
 
@@ -3722,7 +3722,7 @@ class Tellzones(ViewSet):
 
         + point
             - Type: dictionary (of floats)
-            - Status: optional
+            - Status: mandatory
 
             Example:
 
