@@ -13,7 +13,7 @@ from django.db import connection
 from geopy.distance import vincenty
 from numpy import array_split
 from pika import TornadoConnection, URLParameters
-from rollbar import init, report_exc_info, report_message
+from raven import Client
 from tornado.gen import coroutine, Return
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
@@ -33,12 +33,7 @@ logger = getLogger(__name__)
 logger.setLevel(DEBUG)
 logger.addHandler(stream_handler)
 
-init(
-    settings.ROLLBAR['access_token'],
-    branch=settings.ROLLBAR['branch'],
-    environment=settings.ROLLBAR['environment'],
-    root=settings.ROLLBAR['root'],
-)
+client = Client(settings.RAVEN_CONFIG['dsn'])
 
 
 class RabbitMQ(object):
@@ -53,26 +48,26 @@ class RabbitMQ(object):
                 on_open_error_callback=self.on_connection_open_error,
             )
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     def on_connection_open(self, connection):
         try:
             self.channel = connection.channel(on_open_callback=self.on_channel_open)
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     def on_connection_open_error(self, connection, error_message):
         try:
-            report_message(error_message)
+            client.captureMessage(error_message)
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     def on_connection_close(self, connection, reply_code, reply_text):
         try:
-            report_message(reply_text)
+            client.captureMessage(reply_text)
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     def on_channel_open(self, channel):
         try:
@@ -80,7 +75,7 @@ class RabbitMQ(object):
                 self.on_channel_exchange_declare, durable=True, exchange='api.management.commands.websockets',
             )
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     def on_channel_exchange_declare(self, frame):
         try:
@@ -88,7 +83,7 @@ class RabbitMQ(object):
                 self.on_channel_queue_declare, durable=True, queue='api.management.commands.websockets',
             )
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     def on_channel_queue_declare(self, frame):
         try:
@@ -99,7 +94,7 @@ class RabbitMQ(object):
                 routing_key='api.management.commands.websockets',
             )
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     def on_channel_queue_bind(self, frame):
         try:
@@ -108,7 +103,7 @@ class RabbitMQ(object):
                 self.on_channel_basic_consume, queue='api.management.commands.websockets', no_ack=False,
             )
         except Exception:
-            report_exc_info()
+            client.captureException()
 
     @coroutine
     def on_channel_basic_consume(self, channel, method, properties, body):
@@ -116,7 +111,7 @@ class RabbitMQ(object):
         try:
             message = loads(body)['args'][0]
         except Exception:
-            report_exc_info()
+            client.captureException()
         if not message or 'subject' not in message or 'body' not in message:
             logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [   ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='RabbitMQ', subject='if not message',
@@ -159,7 +154,7 @@ class RabbitMQ(object):
                 subject=message['subject'],
             ))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -176,7 +171,7 @@ class RabbitMQ(object):
                     'body': block['user_source_id'],
                 }))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -246,7 +241,7 @@ class RabbitMQ(object):
                     'body': body,
                 }))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -261,7 +256,7 @@ class RabbitMQ(object):
                     'body': notification,
                 }))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -276,7 +271,7 @@ class RabbitMQ(object):
                     'body': profile['id'],
                 }))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -296,7 +291,7 @@ class RabbitMQ(object):
                     yield self.users_locations_2(users_locations[1])
             yield self.users_locations_3(users_locations)
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -311,7 +306,7 @@ class RabbitMQ(object):
                     'body': body,
                 }))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -354,7 +349,7 @@ class RabbitMQ(object):
                             'body': body,
                         }))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -530,7 +525,7 @@ class RabbitMQ(object):
                     serializer='json',
                 )
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -546,7 +541,7 @@ class RabbitMQ(object):
                         'user_destination_id': record[1],
                     }
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(block)
 
     @coroutine
@@ -761,7 +756,7 @@ class RabbitMQ(object):
                             message['user_status']['attachments'].values(), key=lambda item: item['position'],
                         )
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(message)
 
     @coroutine
@@ -784,7 +779,7 @@ class RabbitMQ(object):
                         'timestamp': record[5].isoformat(' '),
                     }
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(notification)
 
     @coroutine
@@ -800,7 +795,7 @@ class RabbitMQ(object):
                         profile['ids'] = []
                     profile['ids'].append(record[0])
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(profile)
 
     @coroutine
@@ -840,7 +835,7 @@ class RabbitMQ(object):
                     }
                     user_locations.append(user_location)
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(user_locations)
 
     @coroutine
@@ -888,7 +883,7 @@ class RabbitMQ(object):
                 for position, items in enumerate([u.tolist() for u in array_split(users, len(users) or 1)])
             ]
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(users)
 
     @coroutine
@@ -988,7 +983,7 @@ class RabbitMQ(object):
                 del tellzones[index]['latitude']
                 del tellzones[index]['longitude']
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(tellzones)
 
     @coroutine
@@ -1066,7 +1061,7 @@ class RabbitMQ(object):
                         users[record['id']]['tellzone_id'] = record['tellzone_id']
             users = sorted(users.values(), key=lambda item: item['id'])
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(users)
 
 
@@ -1088,7 +1083,7 @@ class WebSocket(WebSocketHandler):
             logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject'],
             ))
-            report_exc_info()
+            client.captureException()
         super(WebSocket, self).write_message(message, binary=binary)
 
     def on_close(self):
@@ -1102,7 +1097,7 @@ class WebSocket(WebSocketHandler):
             logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='message = loads(message)',
             ))
-            report_exc_info()
+            client.captureException()
         if not message:
             logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='if not message',
@@ -1130,7 +1125,7 @@ class WebSocket(WebSocketHandler):
                 subject=message['subject'],
             ))
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -1207,7 +1202,7 @@ class WebSocket(WebSocketHandler):
                 )
                 blocks = cursor.fetchone()[0]
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(blocks)
 
     @coroutine
@@ -1220,7 +1215,7 @@ class WebSocket(WebSocketHandler):
                 if record:
                     id_ = record[0]
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(id_)
 
     @coroutine
@@ -1251,7 +1246,7 @@ class WebSocket(WebSocketHandler):
                         'type': record[2],
                     }
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(message)
 
     @coroutine
@@ -1278,7 +1273,7 @@ class WebSocket(WebSocketHandler):
                 )
                 messages = cursor.fetchone()[0]
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(messages)
 
     @coroutine
@@ -1470,7 +1465,7 @@ class WebSocket(WebSocketHandler):
                     serializer='json',
                 )
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine
@@ -1600,7 +1595,7 @@ class WebSocket(WebSocketHandler):
                     serializer='json',
                 )
         except Exception:
-            report_exc_info()
+            client.captureException()
         raise Return(None)
 
     @coroutine

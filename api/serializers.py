@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from collections import OrderedDict
-from traceback import print_exc
 
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -9,6 +8,7 @@ from django.utils.six import string_types
 from django.utils.translation import ugettext_lazy
 from drf_extra_fields.geo_fields import PointField
 from geopy.distance import vincenty
+from raven.contrib.django.raven_compat.models import client
 from rest_framework.fields import SkipField
 from rest_framework.serializers import (
     BooleanField,
@@ -25,7 +25,6 @@ from rest_framework.serializers import (
     Serializer,
     ValidationError,
 )
-from rollbar import report_exc_info
 from social.apps.django_app.default.models import DjangoStorage, UserSocialAuth
 from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
@@ -2063,8 +2062,7 @@ class RegisterRequest(User):
                         social_profile['access_token']
                     )
                 except Exception:
-                    print_exc()
-                    report_exc_info()
+                    client.captureException()
                 uid = response['id'] if response and 'id' in response else ''
                 if not uid:
                     return False
@@ -2081,8 +2079,7 @@ class RegisterRequest(User):
                         social_profile['access_token']
                     )
                 except Exception:
-                    print_exc()
-                    report_exc_info()
+                    client.captureException()
                 uid = response['id'] if response and 'id' in response else ''
                 if not uid:
                     return False

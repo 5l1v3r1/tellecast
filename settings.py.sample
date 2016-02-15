@@ -3,6 +3,7 @@
 from os.path import dirname, join, realpath
 
 from django.conf.locale.en import formats as en_formats
+from raven import fetch_git_sha
 
 SITE_ROOT = dirname(realpath(__file__))
 
@@ -51,6 +52,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.staticfiles',
+    'raven.contrib.django.raven_compat',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_swagger',
@@ -109,12 +111,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'api.middleware.Exception',
     'api.middleware.Session',
-    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
 PUSH_NOTIFICATIONS_SETTINGS = {
     'APNS_CERTIFICATE': '...',
     'APNS_HOST': '...',
     'GCM_API_KEY': '...',
+}
+RAVEN_CONFIG = {
+    'dsn': '...',
+    'release': fetch_git_sha(dirname(__file__)),
 }
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -132,12 +137,6 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ),
     'PAGE_SIZE': 100,
-}
-ROLLBAR = {
-    'access_token': '...',
-    'branch': 'master',
-    'environment': 'development' if DEBUG else 'production',
-    'root': '...',
 }
 ROOT_URLCONF = 'urls'
 SECRET_KEY = '...'

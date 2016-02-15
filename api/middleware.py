@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from traceback import print_exc
-
 from django.contrib.gis.geos import fromstr
 from django.http import JsonResponse
 from mixer.backend.django import mixer
-from rollbar import report_exc_info
+from raven.contrib.django.raven_compat.models import client
 
 mixer.register(
     'api.Tellzone',
@@ -25,8 +23,7 @@ mixer.register(
 class Exception(object):
 
     def process_exception(self, request, exception):
-        print_exc()
-        report_exc_info()
+        client.captureException()
         return JsonResponse(
             data={
                 'error': unicode(exception),

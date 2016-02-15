@@ -15,7 +15,7 @@ from django.conf import settings
 from kombu import Exchange, Queue
 from PIL import Image
 from pilkit.processors import ProcessorPipeline, ResizeToFit, Transpose
-from rollbar import init, report_exc_info
+from raven import Client
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
@@ -66,19 +66,14 @@ celery.conf.update(
     CELERYD_TASK_TIME_LIMIT=7200,
 )
 
-init(
-    settings.ROLLBAR['access_token'],
-    branch=settings.ROLLBAR['branch'],
-    environment=settings.ROLLBAR['environment'],
-    root=settings.ROLLBAR['root'],
-)
+client = Client(settings.RAVEN_CONFIG['dsn'])
 
 logger = get_task_logger(__name__)
 
 
 @task_failure.connect
 def handle_task_failure(**kwargs):
-    report_exc_info(extra_data=kwargs)
+    client.captureException(extra=kwargs)
 
 
 @celery.task
@@ -304,7 +299,7 @@ def thumbnails_2(name, type, prefix, width):
     try:
         destination = get_destination(source, name, type, width)
     except Exception:
-        report_exc_info()
+        client.captureException()
     if not destination:
         logger.critical('{name:s}: Failure'.format(name=n))
         return
