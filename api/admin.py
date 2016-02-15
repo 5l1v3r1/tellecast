@@ -1158,21 +1158,24 @@ class UserTellzone(ModelAdmin):
     fields = (
         'user',
         'tellzone',
-        'viewed_at',
         'favorited_at',
+        'pinned_at',
+        'viewed_at',
     )
     list_display = (
         'id',
         'user',
         'tellzone',
-        'viewed_at',
         'favorited_at',
+        'pinned_at',
+        'viewed_at',
     )
     list_filter = (
         'user',
         'tellzone',
-        'viewed_at',
         'favorited_at',
+        'pinned_at',
+        'viewed_at',
     )
     list_per_page = 10
     search_fields = ()

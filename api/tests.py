@@ -2777,30 +2777,22 @@ class Tellzones(TransactionTestCase):
         assert response.data['tellzone_id'] == self.tellzone.id
         assert response.status_code == 201
 
-        response = self.client.get('/api/users/{id:d}/tellzones/'.format(id=self.user.id), format='json')
-        assert response.status_code == 200
-        assert response.data[0]['favorites'] == 1
-
         response = self.client.post(
             '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
             {
                 'tellzone_id': self.tellzone.id,
-                'action': 'View',
+                'action': 'Pin',
             },
             format='json',
         )
         assert response.data['tellzone_id'] == self.tellzone.id
         assert response.status_code == 201
 
-        response = self.client.get('/api/users/{id:d}/tellzones/'.format(id=self.user.id), format='json')
-        assert response.status_code == 200
-        assert response.data[0]['views'] == 1
-
         response = self.client.post(
             '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
             {
                 'tellzone_id': self.tellzone.id,
-                'action': 'Favorite',
+                'action': 'View',
             },
             format='json',
         )
@@ -2810,22 +2802,12 @@ class Tellzones(TransactionTestCase):
         response = self.client.get('/api/users/{id:d}/tellzones/'.format(id=self.user.id), format='json')
         assert response.status_code == 200
         assert response.data[0]['tellecasters'] == 5
-
-        response = self.client.post(
-            '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
-            {
-                'tellzone_id': self.tellzone.id,
-                'action': 'View',
-            },
-            format='json',
-        )
-        assert response.data['tellzone_id'] == self.tellzone.id
-        assert response.status_code == 201
-
-        response = self.client.get('/api/users/{id:d}/tellzones/'.format(id=self.user.id), format='json')
-        assert response.status_code == 200
-        assert response.data[0]['is_viewed']
+        assert response.data[0]['favorites'] == 1
+        assert response.data[0]['pins'] == 1
+        assert response.data[0]['views'] == 1
         assert response.data[0]['is_favorited']
+        assert response.data[0]['is_pinned']
+        assert response.data[0]['is_viewed']
 
 
 class Users(TransactionTestCase):
@@ -2931,6 +2913,28 @@ class Users(TransactionTestCase):
             {
                 'tellzone_id': self.tellzone.id,
                 'action': 'Favorite',
+            },
+            format='json',
+        )
+        assert response.data['tellzone_id'] == self.tellzone.id
+        assert response.status_code == 201
+
+        response = self.client.post(
+            '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'Pin',
+            },
+            format='json',
+        )
+        assert response.data['tellzone_id'] == self.tellzone.id
+        assert response.status_code == 201
+
+        response = self.client.post(
+            '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'View',
             },
             format='json',
         )

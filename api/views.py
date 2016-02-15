@@ -4341,7 +4341,7 @@ class UsersTellzones(ViewSet):
 
     def post(self, request, id):
         '''
-        INSERT/UPDATE (View, Favorite) Users :: Tellzones
+        INSERT/UPDATE (Favorite, Pin, View) Users :: Tellzones
 
         <pre>
         Input
@@ -4355,8 +4355,9 @@ class UsersTellzones(ViewSet):
             - Type: string
             - Status: mandatory
             - Choices:
-                - View
                 - Favorite
+                - Pin
+                - View
 
         Output
         ======
@@ -4394,7 +4395,7 @@ class UsersTellzones(ViewSet):
 
     def delete(self, request, id):
         '''
-        DELETE (View, Favorite) Users :: Tellzones
+        DELETE (Favorite, Pin, View) Users :: Tellzones
 
         <pre>
         Input
@@ -4408,8 +4409,9 @@ class UsersTellzones(ViewSet):
             - Type: string
             - Status: mandatory
             - Choices:
-                - View
                 - Favorite
+                - Pin
+                - View
 
         Output
         ======

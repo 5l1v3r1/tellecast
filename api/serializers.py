@@ -288,8 +288,9 @@ class UserTellzone(ModelSerializer):
     tellzone_id = IntegerField()
     action = ChoiceField(
         choices=(
-            ('View', 'View',),
             ('Favorite', 'Favorite',),
+            ('Pin', 'Pin',),
+            ('View', 'View',),
         ),
     )
 
@@ -299,8 +300,9 @@ class UserTellzone(ModelSerializer):
             'id',
             'user_id',
             'tellzone_id',
-            'viewed_at',
             'favorited_at',
+            'pinned_at',
+            'viewed_at',
             'action',
         )
         model = models.UserTellzone
@@ -821,15 +823,17 @@ class Tellzone(ModelSerializer):
     url = CharField(required=False)
     hours = DictField(required=False)
     point = PointField()
-    views = IntegerField()
     started_at = DateTimeField(required=False)
     ended_at = DateTimeField(required=False)
     favorites = IntegerField()
+    pins = IntegerField()
+    views = IntegerField()
     distance = FloatField()
     connections = UsersProfile(many=True, required=False)
     tellecasters = IntegerField()
-    is_viewed = BooleanField()
     is_favorited = BooleanField()
+    is_pinned = BooleanField()
+    is_viewed = BooleanField()
     social_profiles = TellzoneSocialProfile(
         help_text='List of Tellzones :: Social Profiles', many=True, required=False,
     )
@@ -857,13 +861,15 @@ class Tellzone(ModelSerializer):
             'social_profiles',
             'networks',
             'posts',
-            'views',
             'favorites',
+            'pins',
+            'views',
             'tellecasters',
             'distance',
             'connections',
-            'is_viewed',
             'is_favorited',
+            'is_pinned',
+            'is_viewed',
         )
         model = models.Tellzone
 
@@ -895,11 +901,14 @@ class Tellzone(ModelSerializer):
             if field.field_name == 'connections':
                 dictionary[field.field_name] = field.to_representation(instance.get_connections(id))
                 continue
-            if field.field_name == 'is_viewed':
-                dictionary[field.field_name] = instance.is_viewed(id)
-                continue
             if field.field_name == 'is_favorited':
                 dictionary[field.field_name] = instance.is_favorited(id)
+                continue
+            if field.field_name == 'is_pinned':
+                dictionary[field.field_name] = instance.is_pinned(id)
+                continue
+            if field.field_name == 'is_viewed':
+                dictionary[field.field_name] = instance.is_viewed(id)
                 continue
             attribute = None
             try:
@@ -1042,13 +1051,15 @@ class PostTellzone(Tellzone):
             'updated_at',
             'social_profiles',
             'networks',
-            'views',
             'favorites',
+            'pins',
+            'views',
             'tellecasters',
             'distance',
             'connections',
-            'is_viewed',
             'is_favorited',
+            'is_pinned',
+            'is_viewed',
         )
         model = models.Tellzone
 
@@ -2389,13 +2400,15 @@ class UsersTellzonesGet(Tellzone):
             'updated_at',
             'social_profiles',
             'networks',
-            'views',
             'favorites',
+            'pins',
+            'views',
             'tellecasters',
             'distance',
             'connections',
-            'is_viewed',
             'is_favorited',
+            'is_pinned',
+            'is_viewed',
         )
         model = models.Tellzone
 
@@ -2419,8 +2432,9 @@ class UsersTellzonesResponse(UserTellzone):
             'id',
             'user_id',
             'tellzone_id',
-            'viewed_at',
             'favorited_at',
+            'pinned_at',
+            'viewed_at',
         )
         model = models.UserTellzone
 

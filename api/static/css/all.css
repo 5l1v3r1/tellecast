@@ -61,12 +61,13 @@
     width: 1px !important;
 }
 
-#result_list .action-checkbox-column,
 #result_list .action-checkbox,
+#result_list .action-checkbox-column,
 #result_list .column-expired_at,
 #result_list .column-favorited_at,
 #result_list .column-inserted_at,
 #result_list .column-is_suppressed,
+#result_list .column-pinned_at,
 #result_list .column-saved_at,
 #result_list .column-signed_in_at,
 #result_list .column-timestamp,
@@ -84,6 +85,7 @@
 #result_list .field-is_superuser,
 #result_list .field-is_suppressed,
 #result_list .field-is_visible,
+#result_list .field-pinned_at,
 #result_list .field-saved_at,
 #result_list .field-signed_in_at,
 #result_list .field-timestamp,

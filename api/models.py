@@ -776,6 +776,10 @@ class Tellzone(Model):
         return self.users.get_queryset().filter(favorited_at__isnull=False).count()
 
     @cached_property
+    def pins(self):
+        return self.users.get_queryset().filter(pinned_at__isnull=False).count()
+
+    @cached_property
     def views(self):
         return self.users.get_queryset().filter(viewed_at__isnull=False).count()
 
@@ -954,11 +958,14 @@ class Tellzone(Model):
             for post_tellzone in PostTellzone.objects.get_queryset().filter(tellzone_id=self.id)
         ]
 
-    def is_viewed(self, user_id):
-        return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0
-
     def is_favorited(self, user_id):
         return self.users.get_queryset().filter(user_id=user_id, favorited_at__isnull=False).count() > 0
+
+    def is_pinned(self, user_id):
+        return self.users.get_queryset().filter(user_id=user_id, pinned_at__isnull=False).count() > 0
+
+    def is_viewed(self, user_id):
+        return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0
 
 
 class TellzoneSocialProfile(Model):
@@ -1350,8 +1357,9 @@ class UserTellzone(Model):
 
     user = ForeignKey(User, related_name='tellzones')
     tellzone = ForeignKey(Tellzone, related_name='users')
-    viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
     favorited_at = DateTimeField(ugettext_lazy('Favorited At'), blank=True, db_index=True, null=True)
+    pinned_at = DateTimeField(ugettext_lazy('Pinned At'), blank=True, db_index=True, null=True)
+    viewed_at = DateTimeField(ugettext_lazy('Viewed At'), blank=True, db_index=True, null=True)
 
     class Meta:
 
@@ -1371,10 +1379,12 @@ class UserTellzone(Model):
         if not user_tellzone:
             user_tellzone = UserTellzone.objects.create(user_id=user_id, tellzone_id=data['tellzone_id'])
         now = datetime.now()
-        if data['action'] == 'View':
-            user_tellzone.viewed_at = now
         if data['action'] == 'Favorite':
             user_tellzone.favorited_at = now
+        if data['action'] == 'Pin':
+            user_tellzone.pinned_at = now
+        if data['action'] == 'View':
+            user_tellzone.viewed_at = now
         user_tellzone.save()
         return user_tellzone
 
@@ -1386,10 +1396,12 @@ class UserTellzone(Model):
         ).first()
         if not user_tellzone:
             return {}
-        if data['action'] == 'View':
-            user_tellzone.viewed_at = None
         if data['action'] == 'Favorite':
             user_tellzone.favorited_at = None
+        if data['action'] == 'Pin':
+            user_tellzone.pinned_at = None
+        if data['action'] == 'View':
+            user_tellzone.viewed_at = None
         user_tellzone.save()
         return user_tellzone
 
