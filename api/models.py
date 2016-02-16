@@ -2308,7 +2308,7 @@ def user_location_post_save(instance, **kwargs):
                     {
                         'aps': {
                             'alert': {
-                                'title': 'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name),
+                                'title': u'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name),
                             },
                             'badge': get_badge(user_location_1.user_id),
                         },

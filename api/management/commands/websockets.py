@@ -113,7 +113,7 @@ class RabbitMQ(object):
         except Exception:
             client.captureException()
         if not message or 'subject' not in message or 'body' not in message:
-            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [   ] {subject:s}'.format(
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [   ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='RabbitMQ', subject='if not message',
             ))
             raise Return(None)
@@ -890,7 +890,7 @@ class RabbitMQ(object):
     def get_radar_post(self, user_location):
         tellzones = {}
         try:
-            point = u'POINT({longitude} {latitude})'.format(
+            point = 'POINT({longitude} {latitude})'.format(
                 longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
             )
             with closing(connection.cursor()) as cursor:
@@ -990,7 +990,7 @@ class RabbitMQ(object):
     def get_users(self, user_id, point, radius, status):
         users = {}
         try:
-            point = u'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
+            point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
@@ -1094,17 +1094,17 @@ class WebSocket(WebSocketHandler):
         try:
             message = loads(message)
         except Exception:
-            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='message = loads(message)',
             ))
             client.captureException()
         if not message:
-            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='if not message',
             ))
             raise Return(None)
         if 'subject' not in message or 'body' not in message:
-            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()),
                 source='WebSocket',
                 subject='if \'subject\' not in message or \'body\' not in message',
@@ -1572,7 +1572,7 @@ class WebSocket(WebSocketHandler):
                         data['network_id'] if 'network_id' in data else None,
                         data['tellzone_id'] if 'tellzone_id' in data else None,
                         data['location'] if 'location' in data else None,
-                        u'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
+                        'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
                         data['accuracies_horizontal'] if 'accuracies_horizontal' in data else 0.00,
                         data['accuracies_vertical'] if 'accuracies_vertical' in data else 0.00,
                         data['bearing'] if 'bearing' in data else 0,
