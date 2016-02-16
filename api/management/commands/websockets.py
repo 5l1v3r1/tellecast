@@ -113,7 +113,7 @@ class RabbitMQ(object):
         except Exception:
             client.captureException()
         if not message or 'subject' not in message or 'body' not in message:
-            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [   ] {subject:s}'.format(
+            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [   ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='RabbitMQ', subject='if not message',
             ))
             raise Return(None)
@@ -147,7 +147,7 @@ class RabbitMQ(object):
                 yield self.profile(message['body'])
             elif message['subject'] == 'users_locations':
                 yield self.users_locations(message['body'])
-            logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
+            logger.log(DEBUG, u'[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()),
                 source='RabbitMQ',
                 seconds=(datetime.now() - start).total_seconds(),
@@ -380,7 +380,7 @@ class RabbitMQ(object):
                             {
                                 'aps': {
                                     'alert': {
-                                        'title': 'You are now at {name:s} Zone'.format(
+                                        'title': u'You are now at {name:s} Zone'.format(
                                             name=users_locations[0]['tellzone_name'],
                                         ),
                                     },
@@ -890,7 +890,7 @@ class RabbitMQ(object):
     def get_radar_post(self, user_location):
         tellzones = {}
         try:
-            point = 'POINT({longitude} {latitude})'.format(
+            point = u'POINT({longitude} {latitude})'.format(
                 longitude=user_location['point']['longitude'], latitude=user_location['point']['latitude'],
             )
             with closing(connection.cursor()) as cursor:
@@ -990,7 +990,7 @@ class RabbitMQ(object):
     def get_users(self, user_id, point, radius, status):
         users = {}
         try:
-            point = 'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
+            point = u'POINT({longitude} {latitude})'.format(longitude=point['longitude'], latitude=point['latitude'])
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
                     '''
@@ -1076,11 +1076,11 @@ class WebSocket(WebSocketHandler):
     def write_message(self, message, binary=False):
         try:
             message = loads(message)
-            logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
+            logger.log(DEBUG, u'[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject'],
             ))
         except Exception:
-            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
+            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [OUT] [         ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject=message['subject'],
             ))
             client.captureException()
@@ -1094,17 +1094,17 @@ class WebSocket(WebSocketHandler):
         try:
             message = loads(message)
         except Exception:
-            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='message = loads(message)',
             ))
             client.captureException()
         if not message:
-            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()), source='WebSocket', subject='if not message',
             ))
             raise Return(None)
         if 'subject' not in message or 'body' not in message:
-            logger.log(CRITICAL, '[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
+            logger.log(CRITICAL, u'[{clients:>3d}] [{source:>9s}] [IN ] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()),
                 source='WebSocket',
                 subject='if \'subject\' not in message or \'body\' not in message',
@@ -1118,7 +1118,7 @@ class WebSocket(WebSocketHandler):
                 yield self.users(message['body'])
             elif message['subject'] == 'users_locations_post':
                 yield self.users_locations_post(message['body'])
-            logger.log(DEBUG, '[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
+            logger.log(DEBUG, u'[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
                 clients=len(IOLoop.current().clients.values()),
                 source='WebSocket',
                 seconds=(datetime.now() - start).total_seconds(),
@@ -1425,9 +1425,7 @@ class WebSocket(WebSocketHandler):
                             cursor.execute('SELECT first_name, last_name FROM api_users WHERE id = %s', (user_id,))
                             user_source = cursor.fetchone()
                             body = u'{first_name:s} {last_name:s}: {contents:s}'.format(
-                                first_name=user_source[0],
-                                last_name=user_source[1],
-                                contents=data['contents'],
+                                first_name=user_source[0], last_name=user_source[1], contents=data['contents'],
                             )
                         else:
                             body = data['contents']
@@ -1574,7 +1572,7 @@ class WebSocket(WebSocketHandler):
                         data['network_id'] if 'network_id' in data else None,
                         data['tellzone_id'] if 'tellzone_id' in data else None,
                         data['location'] if 'location' in data else None,
-                        'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
+                        u'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
                         data['accuracies_horizontal'] if 'accuracies_horizontal' in data else 0.00,
                         data['accuracies_vertical'] if 'accuracies_vertical' in data else 0.00,
                         data['bearing'] if 'bearing' in data else 0,
