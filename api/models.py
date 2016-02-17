@@ -3080,9 +3080,9 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
                     ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
                 LEFT OUTER JOIN api_blocks ON
-                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users.id)
+                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_master_tells.owned_by_id)
                     OR
-                    (api_blocks.user_source_id = api_users.id AND api_blocks.user_destination_id = %s)
+                    (api_blocks.user_source_id = api_master_tells.owned_by_id AND api_blocks.user_destination_id = %s)
                 WHERE
                     api_master_tells.owned_by_id != %s
                     AND
@@ -3100,7 +3100,15 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
-                '''
+                ''',
+                (
+                    user_id,
+                    user_id,
+                    user_id,
+                    tellzone_id,
+                    'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=point[0], latitude=point[1]),
+                    radius,
+                )
             )
             columns = [column.name for column in cursor.description]
             for record in cursor.fetchall():
