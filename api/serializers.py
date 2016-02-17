@@ -375,6 +375,7 @@ class MasterTell(ModelSerializer):
     position = IntegerField(required=False)
     is_visible = BooleanField(default=True, required=False)
     slave_tells = SlaveTell(help_text='List of Slave Tells', many=True, required=False)
+    tellzones = ListField(required=False)
 
     class Meta:
 
@@ -390,6 +391,7 @@ class MasterTell(ModelSerializer):
             'inserted_at',
             'updated_at',
             'slave_tells',
+            'tellzones',
         )
         model = models.MasterTell
 
@@ -398,6 +400,26 @@ class MasterTell(ModelSerializer):
 
     def update(self):
         return self.instance.update(self.validated_data)
+
+    def to_representation(self, instance):
+        dictionary = OrderedDict()
+        for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'tellzones':
+                dictionary[field.field_name] = [
+                    MasterTellTellzone(master_tell_tellzone.tellzone, context=self.context).data
+                    for master_tell_tellzone in instance.master_tells_tellzones.get_queryset().filter()
+                ]
+                continue
+            attribute = None
+            try:
+                attribute = field.get_attribute(instance)
+            except SkipField:
+                continue
+            if attribute is None:
+                dictionary[field.field_name] = None
+            else:
+                dictionary[field.field_name] = field.to_representation(attribute)
+        return dictionary
 
 
 class User(ModelSerializer):
@@ -754,6 +776,55 @@ class TellzoneSocialProfile(ModelSerializer):
         model = models.TellzoneSocialProfile
 
 
+class TellzoneMasterTellUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'location',
+        )
+        model = models.User
+
+
+class TellzoneMasterTell(MasterTell):
+
+    created_by = TellzoneMasterTellUser()
+    owned_by = TellzoneMasterTellUser()
+    category = Category()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'category',
+            'contents',
+            'description',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.MasterTell
+
+
+class TellzoneNetwork(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Network
+
+
 class TellzonePostUser(User):
 
     class Meta:
@@ -806,17 +877,6 @@ class TellzoneUser(User):
         model = models.User
 
 
-class TellzoneNetwork(ModelSerializer):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'name',
-        )
-        model = models.Network
-
-
 class Tellzone(ModelSerializer):
 
     user = TellzoneUser(required=False)
@@ -840,6 +900,7 @@ class Tellzone(ModelSerializer):
     social_profiles = TellzoneSocialProfile(
         help_text='List of Tellzones :: Social Profiles', many=True, required=False,
     )
+    master_tells = TellzoneMasterTell(many=True, required=False)
     networks = TellzoneNetwork(help_text='List of Networks', many=True, required=False)
     posts = TellzonePost(many=True, required=False)
 
@@ -862,6 +923,7 @@ class Tellzone(ModelSerializer):
             'started_at',
             'ended_at',
             'social_profiles',
+            'master_tells',
             'networks',
             'posts',
             'favorites',
@@ -880,6 +942,9 @@ class Tellzone(ModelSerializer):
         id = get_user_id(self.context)
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'master_tells':
+                dictionary[field.field_name] = field.to_representation(instance.get_master_tells(id))
+                continue
             if field.field_name == 'networks':
                 dictionary[field.field_name] = field.to_representation([
                     network_tellzone.network for network_tellzone in instance.networks_tellzones.get_queryset()
@@ -923,6 +988,74 @@ class Tellzone(ModelSerializer):
             else:
                 dictionary[field.field_name] = field.to_representation(attribute)
         return dictionary
+
+
+class MasterTellTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'type',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'status',
+            'inserted_at',
+            'updated_at',
+            'social_profiles',
+            'master_tells',
+            'networks',
+            'favorites',
+            'pins',
+            'views',
+            'tellecasters',
+            'distance',
+            'connections',
+            'is_favorited',
+            'is_pinned',
+            'is_viewed',
+        )
+        model = models.Tellzone
+
+
+class PostTellzone(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'user',
+            'type',
+            'name',
+            'photo',
+            'location',
+            'phone',
+            'url',
+            'hours',
+            'point',
+            'status',
+            'inserted_at',
+            'updated_at',
+            'social_profiles',
+            'master_tells',
+            'networks',
+            'favorites',
+            'pins',
+            'views',
+            'tellecasters',
+            'distance',
+            'connections',
+            'is_favorited',
+            'is_pinned',
+            'is_viewed',
+        )
+        model = models.Tellzone
 
 
 class TellcardNetwork(Network):
@@ -1034,39 +1167,6 @@ class PostUser(User):
         model = models.User
 
 
-class PostTellzone(Tellzone):
-
-    class Meta:
-
-        fields = (
-            'id',
-            'user',
-            'type',
-            'name',
-            'photo',
-            'location',
-            'phone',
-            'url',
-            'hours',
-            'point',
-            'status',
-            'inserted_at',
-            'updated_at',
-            'social_profiles',
-            'networks',
-            'favorites',
-            'pins',
-            'views',
-            'tellecasters',
-            'distance',
-            'connections',
-            'is_favorited',
-            'is_pinned',
-            'is_viewed',
-        )
-        model = models.Tellzone
-
-
 class Post(ModelSerializer):
 
     user_id = IntegerField()
@@ -1075,7 +1175,7 @@ class Post(ModelSerializer):
     category = Category()
     title = CharField(required=False)
     attachments = PostAttachment(many=True, required=False)
-    tellzones = PostTellzone(many=True, required=False)
+    tellzones = ListField(required=False)
 
     class Meta:
 
@@ -1098,6 +1198,26 @@ class Post(ModelSerializer):
     def update(self):
         self.instance.update(self.validated_data)
         return models.Post.objects.get_queryset().filter(id=self.instance.id).first()
+
+    def to_representation(self, instance):
+        dictionary = OrderedDict()
+        for field in [field for field in self.fields.values() if not field.write_only]:
+            if field.field_name == 'tellzones':
+                dictionary[field.field_name] = [
+                    PostTellzone(post_tellzone.tellzone, context=self.context).data
+                    for post_tellzone in instance.posts_tellzones.get_queryset().filter()
+                ]
+                continue
+            attribute = None
+            try:
+                attribute = field.get_attribute(instance)
+            except SkipField:
+                continue
+            if attribute is None:
+                dictionary[field.field_name] = None
+            else:
+                dictionary[field.field_name] = field.to_representation(attribute)
+        return dictionary
 
 
 class MessageUser(User):
@@ -1526,6 +1646,8 @@ class HomeTellzonesResponse(Tellzone):
 
 class MasterTellsRequest(MasterTell):
 
+    tellzones = ListField(child=IntegerField(), required=False)
+
     class Meta:
 
         fields = (
@@ -1534,6 +1656,7 @@ class MasterTellsRequest(MasterTell):
             'description',
             'position',
             'is_visible',
+            'tellzones',
         )
         model = models.MasterTell
 
@@ -1553,6 +1676,7 @@ class MasterTellsResponse(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'tellzones',
         )
         model = models.MasterTell
 
@@ -2254,6 +2378,7 @@ class TellzonesSearch(Serializer):
 
 class TellzonesRequest(Tellzone):
 
+    master_tells = ListField(child=IntegerField(), required=False)
     networks = ListField(child=IntegerField(), required=False)
     posts = ListField(child=IntegerField(), required=False)
 
@@ -2272,6 +2397,7 @@ class TellzonesRequest(Tellzone):
             'started_at',
             'ended_at',
             'social_profiles',
+            'master_tells',
             'networks',
             'posts',
         )

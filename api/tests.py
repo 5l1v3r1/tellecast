@@ -688,10 +688,11 @@ class MasterTells(TransactionTestCase):
     def setUp(self):
         self.user = middleware.mixer.blend('api.User')
 
-        self.category = middleware.mixer.blend('api.Category')
-
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+        self.category = middleware.mixer.blend('api.Category')
+        self.tellzone = middleware.mixer.blend('api.Tellzone')
 
     def test_a(self):
 
@@ -704,6 +705,9 @@ class MasterTells(TransactionTestCase):
             'contents': '1',
             'description': '1',
             'position': 1,
+            'tellzones': [
+                self.tellzone.id,
+            ],
         }
 
         response = self.client.post('/api/master-tells/', dictionary, format='json')
@@ -712,9 +716,10 @@ class MasterTells(TransactionTestCase):
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
-        assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 1
         assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 1
+        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 201
 
         del dictionary['position']
@@ -727,6 +732,8 @@ class MasterTells(TransactionTestCase):
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 1
+        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 201
 
         id = response.data['id']
@@ -759,6 +766,8 @@ class MasterTells(TransactionTestCase):
         assert response.data[0]['category_id'] == dictionary['category_id']
         assert response.data[0]['position'] == list_[0]['position']
         assert response.data[0]['is_visible'] is True
+        assert len(response.data[0]['tellzones']) == 1
+        assert response.data[0]['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
         response = self.client.get(
@@ -796,6 +805,7 @@ class MasterTells(TransactionTestCase):
             'contents': '2',
             'description': '2',
             'position': 2,
+            'tellzones': [],
         }
 
         response = self.client.put('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
@@ -806,8 +816,8 @@ class MasterTells(TransactionTestCase):
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
-        assert response.data['position'] == 2
         assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 0
         assert response.status_code == 200
 
         del dictionary['position']
@@ -821,6 +831,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 0
         assert response.status_code == 200
 
         dictionary = {
@@ -828,6 +839,9 @@ class MasterTells(TransactionTestCase):
             'contents': '3',
             'description': '3',
             'position': 3,
+            'tellzones': [
+                self.tellzone.id,
+            ],
         }
 
         response = self.client.patch('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
@@ -838,8 +852,9 @@ class MasterTells(TransactionTestCase):
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
-        assert response.data['position'] == 3
         assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 1
+        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
         del dictionary['position']
@@ -853,6 +868,8 @@ class MasterTells(TransactionTestCase):
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 3
         assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 1
+        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
         response = self.client.get('/api/master-tells/ids/', format='json')
@@ -1617,6 +1634,7 @@ class Posts(TransactionTestCase):
         assert response.data['attachments'][0]['position'] == 1
         assert response.data['attachments'][1]['position'] == 2
         assert response.data['attachments'][2]['position'] == 3
+        assert len(response.data['tellzones']) == 1
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert (
             datetime.strptime(response.data['inserted_at'], '%Y-%m-%dT%H:%M:%S.%f') +
@@ -1644,9 +1662,7 @@ class Posts(TransactionTestCase):
             'category_id': self.category.id,
             'contents': '2',
             'title': '2',
-            'tellzones': [
-                self.tellzone.id,
-            ],
+            'tellzones': [],
             'attachments': [
                 {
                     'type': 'image/*',
@@ -1678,7 +1694,7 @@ class Posts(TransactionTestCase):
         assert response.data['attachments'][0]['position'] == 1
         assert response.data['attachments'][1]['position'] == 2
         assert response.data['attachments'][2]['position'] == 3
-        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
+        assert len(response.data['tellzones']) == 0
         assert response.status_code == 200
 
         dictionary = {
@@ -1719,6 +1735,7 @@ class Posts(TransactionTestCase):
         assert response.data['attachments'][0]['position'] == 1
         assert response.data['attachments'][1]['position'] == 2
         assert response.data['attachments'][2]['position'] == 3
+        assert len(response.data['tellzones']) == 1
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
@@ -2562,6 +2579,9 @@ class Tellzones(TransactionTestCase):
 
         self.network = middleware.mixer.blend('api.Network', user=self.user)
 
+        self.master_tell = middleware.mixer.blend(
+            'api.MasterTell', created_by=self.user, owned_by=self.user, category=self.category,
+        )
         self.post = middleware.mixer.blend('api.Post')
 
         self.tellzone = middleware.mixer.blend('api.Tellzone')
@@ -2662,6 +2682,9 @@ class Tellzones(TransactionTestCase):
                     'url': '1',
                 },
             ],
+            'master_tells': [
+                self.master_tell.id,
+            ],
             'networks': [
                 self.network.id,
             ],
@@ -2686,9 +2709,11 @@ class Tellzones(TransactionTestCase):
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
         assert response.data['social_profiles'][0]['netloc'] == dictionary['social_profiles'][0]['netloc']
         assert response.data['social_profiles'][0]['url'] == dictionary['social_profiles'][0]['url']
+        assert len(response.data['master_tells']) == len(dictionary['master_tells'])
+        assert response.data['master_tells'][0]['id'] == dictionary['master_tells'][0]
         assert len(response.data['networks']) == len(dictionary['networks'])
         assert response.data['networks'][0]['id'] == dictionary['networks'][0]
-        assert len(response.data['posts']) == len(dictionary['social_profiles'])
+        assert len(response.data['posts']) == len(dictionary['posts'])
         assert response.data['posts'][0]['id'] == dictionary['posts'][0]
         assert response.status_code == 201
 
@@ -2718,6 +2743,7 @@ class Tellzones(TransactionTestCase):
             'started_at': '1111-11-11T11:11:11.111111',
             'ended_at': '1111-11-11T11:11:11.111111',
             'social_profiles': [],
+            'master_tells': [],
             'networks': [],
             'posts': [],
         }
@@ -2736,8 +2762,9 @@ class Tellzones(TransactionTestCase):
         assert response.data['started_at'] == dictionary['started_at']
         assert response.data['ended_at'] == dictionary['ended_at']
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
+        assert len(response.data['master_tells']) == len(dictionary['master_tells'])
         assert len(response.data['networks']) == len(dictionary['networks'])
-        assert len(response.data['posts']) == len(dictionary['social_profiles'])
+        assert len(response.data['posts']) == len(dictionary['posts'])
         assert response.status_code == 200
 
         dictionary = {
@@ -2769,6 +2796,9 @@ class Tellzones(TransactionTestCase):
                     'url': '3',
                 },
             ],
+            'master_tells': [
+                self.master_tell.id,
+            ],
             'networks': [
                 self.network.id,
             ],
@@ -2793,9 +2823,11 @@ class Tellzones(TransactionTestCase):
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
         assert response.data['social_profiles'][0]['netloc'] == dictionary['social_profiles'][0]['netloc']
         assert response.data['social_profiles'][0]['url'] == dictionary['social_profiles'][0]['url']
+        assert len(response.data['master_tells']) == len(dictionary['master_tells'])
+        assert response.data['master_tells'][0]['id'] == dictionary['master_tells'][0]
         assert len(response.data['networks']) == len(dictionary['networks'])
         assert response.data['networks'][0]['id'] == dictionary['networks'][0]
-        assert len(response.data['posts']) == len(dictionary['social_profiles'])
+        assert len(response.data['posts']) == len(dictionary['posts'])
         assert response.data['posts'][0]['id'] == dictionary['posts'][0]
         assert response.status_code == 200
 

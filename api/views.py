@@ -522,6 +522,10 @@ class MasterTells(ViewSet):
             - Type: boolean (default = True)
             - Status: optional
 
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
+            - Status: optional
+
         Output
         ======
 
@@ -586,6 +590,10 @@ class MasterTells(ViewSet):
 
         + is_visible
             - Type: boolean (default = True)
+            - Status: optional
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
             - Status: optional
 
         Output
@@ -661,6 +669,10 @@ class MasterTells(ViewSet):
 
         + is_visible
             - Type: boolean (default = True)
+            - Status: optional
+
+        + tellzones
+            - Type: list (a list of Tellzone IDs)
             - Status: optional
 
         Output
@@ -3517,6 +3529,10 @@ class Tellzones(ViewSet):
             - Type: list (a list of Social Profile objects; see below)
             - Status: optional
 
+        + master_tells
+            - Type: list (a list of Master Tell IDs)
+            - Status: optional
+
         + networks
             - Type: list (a list of Tellzone IDs)
             - Status: optional
@@ -3639,6 +3655,10 @@ class Tellzones(ViewSet):
 
         + social_profiles
             - Type: list (a list of Social Profile objects; see below)
+            - Status: optional
+
+        + master_tells
+            - Type: list (a list of Master Tell IDs)
             - Status: optional
 
         + networks
@@ -3772,6 +3792,10 @@ class Tellzones(ViewSet):
 
         + social_profiles
             - Type: list (a list of Social Profile objects; see below)
+            - Status: optional
+
+        + master_tells
+            - Type: list (a list of Master Tell IDs)
             - Status: optional
 
         + networks

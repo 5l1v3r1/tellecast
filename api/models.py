@@ -712,6 +712,8 @@ class User(Model):
             return instance.user_id == self.id
         if isinstance(instance, MasterTell):
             return instance.owned_by_id == self.id
+        if isinstance(instance, MasterTellTellzone):
+            return self.has_permission(self, instance=instance.master_tell)
         if isinstance(instance, Message):
             return instance.user_source_id == self.id
         if isinstance(instance, MessageAttachment):
@@ -861,6 +863,12 @@ class Tellzone(Model):
                 if not network.user.id == tellzone.user_id:
                     continue
                 NetworkTellzone.objects.create(network_id=network.id, tellzone_id=tellzone.id)
+        if 'master_tells' in data:
+            for master_tell in data['master_tells']:
+                master_tell = MasterTell.objects.get_queryset().filter(id=master_tell).first()
+                if not master_tell:
+                    continue
+                MasterTellTellzone.objects.create(master_tell_id=master_tell.id, tellzone_id=tellzone.id)
         if 'posts' in data:
             for post in data['posts']:
                 post = Post.objects.get_queryset().filter(id=post).first()
@@ -934,6 +942,19 @@ class Tellzone(Model):
             NetworkTellzone.objects.get_queryset().filter(
                 ~Q(network_id__in=data['networks']), tellzone_id=self.id,
             ).delete()
+        if 'master_tells' in data:
+            for master_tell in data['master_tells']:
+                master_tell = MasterTell.objects.get_queryset().filter(id=master_tell).first()
+                if not master_tell:
+                    continue
+                if MasterTellTellzone.objects.get_queryset().filter(
+                    master_tell_id=master_tell.id, tellzone_id=self.id,
+                ).count():
+                    continue
+                MasterTellTellzone.objects.create(master_tell_id=master_tell.id, tellzone_id=self.id)
+            MasterTellTellzone.objects.get_queryset().filter(
+                ~Q(master_tell_id__in=data['master_tells']), tellzone_id=self.id,
+            ).delete()
         if 'posts' in data:
             for post in data['posts']:
                 post = Post.objects.get_queryset().filter(id=post).first()
@@ -970,6 +991,12 @@ class Tellzone(Model):
             if tellcard.user_destination_id == user_id:
                 connections.append(tellcard.user_source)
         return connections
+
+    def get_master_tells(self, user_id):
+        return [
+            master_tell_tellzone.master_tell
+            for master_tell_tellzone in MasterTellTellzone.objects.get_queryset().filter(tellzone_id=self.id)
+        ]
 
     def get_posts(self, user_id):
         return [
@@ -1650,6 +1677,9 @@ class MasterTell(Model):
             for slave_tell in data['slave_tells']:
                 slave_tell['master_tell_id'] = master_tell.id
                 SlaveTell.insert(user_id, slave_tell)
+        if 'tellzones' in data:
+            for tellzone in data['tellzones']:
+                MasterTellTellzone.insert_or_update(master_tell.id, tellzone)
         return master_tell
 
     def __str__(self):
@@ -1670,7 +1700,53 @@ class MasterTell(Model):
         if 'is_visible' in data:
             self.is_visible = data['is_visible']
         self.save()
+        if 'tellzones' in data:
+            MasterTellTellzone.objects.get_queryset().filter(
+                master_tell_id=self.id,
+            ).exclude(
+                tellzone_id__in=data['tellzones'],
+            ).delete()
+            for tellzone in data['tellzones']:
+                MasterTellTellzone.insert_or_update(self.id, tellzone)
         return self
+
+
+class MasterTellTellzone(Model):
+
+    master_tell = ForeignKey(MasterTell, related_name='master_tells_tellzones')
+    tellzone = ForeignKey(Tellzone, related_name='master_tells_tellzones')
+
+    class Meta:
+
+        db_table = 'api_master_tells_tellzones'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Master Tells :: Tellzone'
+        verbose_name_plural = 'Master Tells :: Tellzones'
+
+    @classmethod
+    def insert_or_update(cls, master_tell_id, tellzone_id):
+        master_tell_tellzone = MasterTellTellzone.objects.get_queryset().filter(
+            master_tell_id=master_tell_id, tellzone_id=tellzone_id,
+        ).first()
+        if not master_tell_tellzone:
+            master_tell_tellzone = MasterTellTellzone.objects.create(
+                master_tell_id=master_tell_id, tellzone_id=tellzone_id,
+            )
+        return master_tell_tellzone
+
+    @classmethod
+    def remove(cls, master_tell_id, tellzone_id):
+        return MasterTellTellzone.objects.get_queryset().filter(
+            master_tell_id=master_tell_id, tellzone_id=tellzone_id,
+        ).delete()
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
 
 
 class Notification(Model):

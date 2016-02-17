@@ -420,6 +420,28 @@ class MasterTell(ModelAdmin):
 MasterTell.delete_view = delete_view
 
 
+class MasterTellTellzone(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'master_tell',
+        'tellzone',
+    )
+    list_display = (
+        'id',
+        'master_tell',
+        'tellzone',
+    )
+    list_filter = (
+        'master_tell',
+        'tellzone',
+    )
+    list_per_page = 10
+    search_fields = ()
+
+MasterTellTellzone.delete_view = delete_view
+
+
 class Message(ModelAdmin):
 
     actions = [delete_selected]
