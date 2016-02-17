@@ -602,6 +602,7 @@ class RabbitMQ(object):
                         api_master_tells.id AS master_tell_id,
                         api_master_tells.created_by_id AS master_tell_created_by_id,
                         api_master_tells.owned_by_id AS master_tell_owned_by_id,
+                        api_master_tells.category_id AS master_tell_category_id,
                         api_master_tells.contents AS master_tell_contents,
                         api_master_tells.position AS master_tell_position,
                         api_master_tells.is_visible AS master_tell_is_visible,
@@ -715,6 +716,8 @@ class RabbitMQ(object):
                             message['master_tell']['created_by_id'] = record['master_tell_created_by_id']
                         if 'owned_by_id' not in message['master_tell']:
                             message['master_tell']['owned_by_id'] = record['master_tell_owned_by_id']
+                        if 'category_id' not in message['master_tell']:
+                            message['master_tell']['category_id'] = record['master_tell_category_id']
                         if 'contents' not in message['master_tell']:
                             message['master_tell']['contents'] = record['master_tell_contents']
                         if 'position' not in message['master_tell']:

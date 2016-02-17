@@ -520,6 +520,8 @@ class Home(TransactionTestCase):
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
     def test_a(self):
+        category = middleware.mixer.blend('api.Category')
+
         network = middleware.mixer.blend('api.Network')
 
         tellzone = middleware.mixer.blend('api.Tellzone', user=None)
@@ -535,7 +537,9 @@ class Home(TransactionTestCase):
                 user.is_signed_in = True
                 user.save()
 
-                for master_tell in middleware.mixer.cycle(5).blend('api.MasterTell', created_by=user, owned_by=user):
+                for master_tell in middleware.mixer.cycle(5).blend(
+                    'api.MasterTell', created_by=user, owned_by=user, category=category,
+                ):
                     master_tell.contents = str(user.id)
                     master_tell.save()
 
@@ -684,15 +688,19 @@ class MasterTells(TransactionTestCase):
     def setUp(self):
         self.user = middleware.mixer.blend('api.User')
 
+        self.category = middleware.mixer.blend('api.Category')
+
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
     def test_a(self):
+
         response = self.client.get('/api/master-tells/', format='json')
         assert len(response.data) == 0
         assert response.status_code == 200
 
         dictionary = {
+            'category_id': self.category.id,
             'contents': '1',
             'position': 1,
         }
@@ -700,6 +708,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.post('/api/master-tells/', dictionary, format='json')
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 1
@@ -711,6 +720,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.post('/api/master-tells/', dictionary, format='json')
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
@@ -743,6 +753,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.post('/api/master-tells/positions/', list_, format='json')
         assert response.data[0]['created_by_id'] == self.user.id
         assert response.data[0]['owned_by_id'] == self.user.id
+        assert response.data[0]['category_id'] == dictionary['category_id']
         assert response.data[0]['position'] == list_[0]['position']
         assert response.data[0]['is_visible'] is True
         assert response.status_code == 200
@@ -778,6 +789,7 @@ class MasterTells(TransactionTestCase):
         assert response.status_code == 200
 
         dictionary = {
+            'category_id': self.category.id,
             'contents': '2',
             'position': 2,
         }
@@ -786,6 +798,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 2
@@ -798,12 +811,14 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
         assert response.status_code == 200
 
         dictionary = {
+            'category_id': self.category.id,
             'contents': '3',
             'position': 3,
         }
@@ -812,6 +827,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 3
@@ -824,6 +840,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == 3
         assert response.data['is_visible'] is True
@@ -854,8 +871,12 @@ class Messages(TransactionTestCase):
         self.client_2 = APIClient()
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
+        self.category = middleware.mixer.blend('api.Category')
+
         self.user_status = middleware.mixer.blend('api.UserStatus', user=self.user_1)
-        self.master_tell = middleware.mixer.blend('api.MasterTell', user=self.user_1)
+        self.master_tell = middleware.mixer.blend(
+            'api.MasterTell', created_by=self.user_1, owned_by=self.user_1, category=self.category,
+        )
         self.post = middleware.mixer.blend('api.Post', user=self.user_1)
 
     def test_a(self):
@@ -1319,6 +1340,8 @@ class Networks(TransactionTestCase):
         assert response.status_code == 200
 
     def test_b(self):
+        category = middleware.mixer.blend('api.Category')
+
         network = middleware.mixer.blend('api.Network', user=None)
 
         with middleware.mixer.ctx(commit=False):
@@ -1327,7 +1350,9 @@ class Networks(TransactionTestCase):
                 user.is_signed_in = True
                 user.save()
 
-                for master_tell in middleware.mixer.cycle(5).blend('api.MasterTell', created_by=user, owned_by=user):
+                for master_tell in middleware.mixer.cycle(5).blend(
+                    'api.MasterTell', created_by=user, owned_by=user, category=category,
+                ):
                     master_tell.contents = str(user.id)
                     master_tell.save()
 
@@ -1503,9 +1528,6 @@ class Notifications(TransactionTestCase):
 class Posts(TransactionTestCase):
 
     def setUp(self):
-        self.category = middleware.mixer.blend('api.Category')
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
-
         self.user_1 = middleware.mixer.blend('api.User')
         self.client_1 = APIClient()
         self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
@@ -1513,6 +1535,9 @@ class Posts(TransactionTestCase):
         self.user_2 = middleware.mixer.blend('api.User')
         self.client_2 = APIClient()
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
+
+        self.category = middleware.mixer.blend('api.Category')
+        self.tellzone = middleware.mixer.blend('api.Tellzone')
 
     def test_a(self):
         response = self.client_1.get('/api/posts/', format='json')
@@ -1986,6 +2011,8 @@ class Signals(TransactionTestCase):
         self.client_2 = APIClient()
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
+        self.category = middleware.mixer.blend('api.Category')
+
         self.tellzone = middleware.mixer.blend('api.Tellzone')
 
         self.reset_celery_tasks()
@@ -2007,6 +2034,7 @@ class Signals(TransactionTestCase):
 
     def test_b(self):
         dictionary = {
+            'category_id': self.category.id,
             'contents': '1',
             'position': 1,
         }
@@ -2014,6 +2042,7 @@ class Signals(TransactionTestCase):
         response = self.client_1.post('/api/master-tells/', dictionary, format='json')
         assert response.data['created_by_id'] == self.user_1.id
         assert response.data['owned_by_id'] == self.user_1.id
+        assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 1
@@ -2091,6 +2120,7 @@ class Signals(TransactionTestCase):
         response = self.client_1.post(
             '/api/master-tells/',
             {
+                'category_id': self.category.id,
                 'contents': '1',
             },
             format='json',
@@ -2216,6 +2246,8 @@ class SlaveTells(TransactionTestCase):
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
     def test_a(self):
+        category = middleware.mixer.blend('api.Category')
+
         response = self.client.get('/api/slave-tells/', format='json')
         assert len(response.data) == 0
         assert response.status_code == 200
@@ -2223,6 +2255,7 @@ class SlaveTells(TransactionTestCase):
         response = self.client.post(
             '/api/master-tells/',
             {
+                'category_id': category.id,
                 'contents': '1',
             },
             format='json',
@@ -2516,6 +2549,8 @@ class Tellzones(TransactionTestCase):
     def setUp(self):
         self.user = middleware.mixer.blend('api.User')
 
+        self.category = middleware.mixer.blend('api.Category')
+
         self.network = middleware.mixer.blend('api.Network', user=self.user)
 
         self.post = middleware.mixer.blend('api.Post')
@@ -2542,7 +2577,9 @@ class Tellzones(TransactionTestCase):
                 user.is_signed_in = True
                 user.save()
 
-                for master_tell in middleware.mixer.cycle(5).blend('api.MasterTell', created_by=user, owned_by=user):
+                for master_tell in middleware.mixer.cycle(5).blend(
+                    'api.MasterTell', created_by=user, owned_by=user, category=self.category,
+                ):
                     master_tell.contents = str(user.id)
                     master_tell.save()
 

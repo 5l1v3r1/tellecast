@@ -387,6 +387,7 @@ class MasterTell(ModelAdmin):
     fields = (
         'created_by',
         'owned_by',
+        'category',
         'contents',
         'position',
         'is_visible',
@@ -395,6 +396,7 @@ class MasterTell(ModelAdmin):
         'id',
         'created_by',
         'owned_by',
+        'category',
         'position',
         'is_visible',
         'inserted_at',
@@ -403,6 +405,7 @@ class MasterTell(ModelAdmin):
     list_filter = (
         'created_by',
         'owned_by',
+        'category',
         'is_visible',
         'inserted_at',
         'updated_at',

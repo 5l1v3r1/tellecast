@@ -502,6 +502,10 @@ class MasterTells(ViewSet):
         Input
         =====
 
+        + category_id
+            - Type: integer
+            - Status: mandatory
+
         + contents
             - Type: string
             - Status: mandatory
@@ -557,6 +561,10 @@ class MasterTells(ViewSet):
         =====
 
         + id
+            - Type: integer
+            - Status: mandatory
+
+        + category_id
             - Type: integer
             - Status: mandatory
 
@@ -624,6 +632,10 @@ class MasterTells(ViewSet):
         =====
 
         + id
+            - Type: integer
+            - Status: mandatory
+
+        + category_id
             - Type: integer
             - Status: mandatory
 
@@ -2115,7 +2127,7 @@ class Posts(ViewSet):
             - Type: integer
             - Status: mandatory
 
-                + category_id
+        + category_id
             - Type: integer
             - Status: mandatory
 

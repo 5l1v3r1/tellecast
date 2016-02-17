@@ -188,6 +188,25 @@ class Ad(Model):
         return unicode(self.id)
 
 
+class Category(Model):
+
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+
+    class Meta:
+        db_table = 'api_categories'
+        ordering = (
+            'name',
+        )
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
+
+    def __str__(self):
+        return str(self.name)
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
 class RecommendedTell(Model):
 
     type = CharField(
@@ -1598,6 +1617,7 @@ class MasterTell(Model):
 
     created_by = ForeignKey(User, related_name='+')
     owned_by = ForeignKey(User, related_name='master_tells')
+    category = ForeignKey(Category, null=True, related_name='master_tells')
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     is_visible = BooleanField(ugettext_lazy('Is Visible?'), db_index=True, default=True)
@@ -1619,6 +1639,7 @@ class MasterTell(Model):
         master_tell = MasterTell.objects.create(
             created_by_id=user_id,
             owned_by_id=user_id,
+            category_id=data['category_id'] if 'category_id' in data else None,
             contents=data['contents'] if 'contents' in data else None,
             position=data['position'] if 'position' in data else None,
             is_visible=data['is_visible'] if 'is_visible' in data else None,
@@ -1636,6 +1657,8 @@ class MasterTell(Model):
         return unicode(self.id)
 
     def update(self, data):
+        if 'category_id' in data:
+            self.category_id = data['category_id']
         if 'contents' in data:
             self.contents = data['contents']
         if 'position' in data:
@@ -1935,25 +1958,6 @@ class Tellcard(Model):
 
     def __unicode__(self):
         return unicode(self.id)
-
-
-class Category(Model):
-
-    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
-
-    class Meta:
-        db_table = 'api_categories'
-        ordering = (
-            'name',
-        )
-        verbose_name = 'Category'
-        verbose_name_plural = 'Categories'
-
-    def __str__(self):
-        return str(self.name)
-
-    def __unicode__(self):
-        return unicode(self.name)
 
 
 class Post(Model):
@@ -2944,6 +2948,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 '''
                 SELECT
                     api_master_tells.id AS id,
+                    api_master_tells.category_id AS category_id,
                     api_master_tells.contents AS contents,
                     api_master_tells.position AS position,
                     api_master_tells.is_visible AS is_visible,
@@ -3044,6 +3049,8 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     master_tells[record['id']] = {}
                 if 'id' not in master_tells[record['id']]:
                     master_tells[record['id']]['id'] = record['id']
+                if 'category_id' not in master_tells[record['id']]:
+                    master_tells[record['id']]['category_id'] = record['category_id']
                 if 'contents' not in master_tells[record['id']]:
                     master_tells[record['id']]['contents'] = record['contents']
                 if 'position' not in master_tells[record['id']]:

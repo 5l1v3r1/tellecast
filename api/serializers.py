@@ -370,6 +370,7 @@ class MasterTell(ModelSerializer):
 
     created_by_id = IntegerField()
     owned_by_id = IntegerField()
+    category_id = IntegerField()
     position = IntegerField(required=False)
     is_visible = BooleanField(default=True, required=False)
     slave_tells = SlaveTell(help_text='List of Slave Tells', many=True, required=False)
@@ -380,6 +381,7 @@ class MasterTell(ModelSerializer):
             'id',
             'created_by_id',
             'owned_by_id',
+            'category_id',
             'contents',
             'position',
             'is_visible',
@@ -1139,6 +1141,7 @@ class MessageMasterTell(MasterTell):
             'id',
             'created_by_id',
             'owned_by_id',
+            'category_id',
             'contents',
             'position',
             'is_visible',
@@ -1405,6 +1408,10 @@ class HomeMasterTellsResponseUser(User):
         model = models.User
 
 
+class HomeMasterTellsResponseCategory(Category):
+    pass
+
+
 class HomeMasterTellsResponseSlaveTell(SlaveTell):
 
     class Meta:
@@ -1432,6 +1439,7 @@ class HomeMasterTellsResponse(MasterTell):
 
     created_by = HomeMasterTellsResponseUser()
     owned_by = HomeMasterTellsResponseUser()
+    category = HomeMasterTellsResponseCategory()
     slave_tell = HomeMasterTellsResponseSlaveTell()
 
     class Meta:
@@ -1440,6 +1448,7 @@ class HomeMasterTellsResponse(MasterTell):
             'id',
             'created_by',
             'owned_by',
+            'category',
             'contents',
             'position',
             'is_visible',
@@ -1516,6 +1525,7 @@ class MasterTellsRequest(MasterTell):
     class Meta:
 
         fields = (
+            'category_id',
             'contents',
             'position',
             'is_visible',
@@ -1531,6 +1541,7 @@ class MasterTellsResponse(MasterTell):
             'id',
             'created_by_id',
             'owned_by_id',
+            'category_id',
             'contents',
             'position',
             'is_visible',
@@ -1730,6 +1741,10 @@ class NetworksMasterTellsResponseUser(User):
         model = models.User
 
 
+class NetworksMasterTellsResponseCategory(Category):
+    pass
+
+
 class NetworksMasterTellsResponseSlaveTell(SlaveTell):
 
     class Meta:
@@ -1757,6 +1772,7 @@ class NetworksMasterTellsResponse(MasterTell):
 
     created_by = NetworksMasterTellsResponseUser()
     owned_by = NetworksMasterTellsResponseUser()
+    category = NetworksMasterTellsResponseCategory()
     slave_tell = NetworksMasterTellsResponseSlaveTell()
 
     class Meta:
@@ -1765,6 +1781,7 @@ class NetworksMasterTellsResponse(MasterTell):
             'id',
             'created_by',
             'owned_by',
+            'category',
             'contents',
             'position',
             'is_visible',
@@ -1961,6 +1978,7 @@ class RegisterRequestMasterTell(MasterTell):
     class Meta:
 
         fields = (
+            'category_id',
             'contents',
             'position',
             'is_visible',
@@ -2277,6 +2295,10 @@ class TellzonesMasterTellsUser(User):
         model = models.User
 
 
+class TellzonesMasterTellsCategory(Category):
+    pass
+
+
 class TellzonesMasterTellsSlaveTell(SlaveTell):
 
     class Meta:
@@ -2304,6 +2326,7 @@ class TellzonesMasterTells(MasterTell):
 
     created_by = TellzonesMasterTellsUser()
     owned_by = TellzonesMasterTellsUser()
+    category = TellzonesMasterTellsCategory()
     slave_tell = TellzonesMasterTellsSlaveTell()
 
     class Meta:
@@ -2312,6 +2335,7 @@ class TellzonesMasterTells(MasterTell):
             'id',
             'created_by',
             'owned_by',
+            'category',
             'contents',
             'position',
             'is_visible',
