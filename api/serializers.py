@@ -371,6 +371,7 @@ class MasterTell(ModelSerializer):
     created_by_id = IntegerField()
     owned_by_id = IntegerField()
     category_id = IntegerField()
+    description = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
     is_visible = BooleanField(default=True, required=False)
     slave_tells = SlaveTell(help_text='List of Slave Tells', many=True, required=False)
@@ -383,6 +384,7 @@ class MasterTell(ModelSerializer):
             'owned_by_id',
             'category_id',
             'contents',
+            'description',
             'position',
             'is_visible',
             'inserted_at',
@@ -1143,6 +1145,7 @@ class MessageMasterTell(MasterTell):
             'owned_by_id',
             'category_id',
             'contents',
+            'description',
             'position',
             'is_visible',
             'inserted_at',
@@ -1450,6 +1453,7 @@ class HomeMasterTellsResponse(MasterTell):
             'owned_by',
             'category',
             'contents',
+            'description',
             'position',
             'is_visible',
             'inserted_at',
@@ -1527,6 +1531,7 @@ class MasterTellsRequest(MasterTell):
         fields = (
             'category_id',
             'contents',
+            'description',
             'position',
             'is_visible',
         )
@@ -1543,6 +1548,7 @@ class MasterTellsResponse(MasterTell):
             'owned_by_id',
             'category_id',
             'contents',
+            'description',
             'position',
             'is_visible',
             'inserted_at',
@@ -1783,6 +1789,7 @@ class NetworksMasterTellsResponse(MasterTell):
             'owned_by',
             'category',
             'contents',
+            'description',
             'position',
             'is_visible',
             'inserted_at',
@@ -1980,6 +1987,7 @@ class RegisterRequestMasterTell(MasterTell):
         fields = (
             'category_id',
             'contents',
+            'description',
             'position',
             'is_visible',
             'slave_tells',
@@ -2337,6 +2345,7 @@ class TellzonesMasterTells(MasterTell):
             'owned_by',
             'category',
             'contents',
+            'description',
             'position',
             'is_visible',
             'inserted_at',

@@ -1619,6 +1619,7 @@ class MasterTell(Model):
     owned_by = ForeignKey(User, related_name='master_tells')
     category = ForeignKey(Category, null=True, related_name='master_tells')
     contents = TextField(ugettext_lazy('Contents'), db_index=True)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
     is_visible = BooleanField(ugettext_lazy('Is Visible?'), db_index=True, default=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
@@ -1641,6 +1642,7 @@ class MasterTell(Model):
             owned_by_id=user_id,
             category_id=data['category_id'] if 'category_id' in data else None,
             contents=data['contents'] if 'contents' in data else None,
+            description=data['description'] if 'description' in data else None,
             position=data['position'] if 'position' in data else None,
             is_visible=data['is_visible'] if 'is_visible' in data else None,
         )
@@ -1661,6 +1663,8 @@ class MasterTell(Model):
             self.category_id = data['category_id']
         if 'contents' in data:
             self.contents = data['contents']
+        if 'description' in data:
+            self.description = data['description']
         if 'position' in data:
             self.position = data['position']
         if 'is_visible' in data:
@@ -2950,6 +2954,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_master_tells.id AS id,
                     api_master_tells.category_id AS category_id,
                     api_master_tells.contents AS contents,
+                    api_master_tells.description AS description,
                     api_master_tells.position AS position,
                     api_master_tells.is_visible AS is_visible,
                     api_master_tells.inserted_at AS inserted_at,
@@ -3053,6 +3058,8 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     master_tells[record['id']]['category_id'] = record['category_id']
                 if 'contents' not in master_tells[record['id']]:
                     master_tells[record['id']]['contents'] = record['contents']
+                if 'description' not in master_tells[record['id']]:
+                    master_tells[record['id']]['description'] = record['description']
                 if 'position' not in master_tells[record['id']]:
                     master_tells[record['id']]['position'] = record['position']
                 if 'is_visible' not in master_tells[record['id']]:

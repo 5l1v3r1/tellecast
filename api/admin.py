@@ -389,6 +389,7 @@ class MasterTell(ModelAdmin):
         'owned_by',
         'category',
         'contents',
+        'description',
         'position',
         'is_visible',
     )
@@ -413,6 +414,7 @@ class MasterTell(ModelAdmin):
     list_per_page = 10
     search_fields = (
         'contents',
+        'description',
     )
 
 MasterTell.delete_view = delete_view

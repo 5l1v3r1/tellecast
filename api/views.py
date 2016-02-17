@@ -510,6 +510,10 @@ class MasterTells(ViewSet):
             - Type: string
             - Status: mandatory
 
+        + description
+            - Type: string
+            - Status: optional
+
         + position
             - Type: integer
             - Status: optional
@@ -571,6 +575,10 @@ class MasterTells(ViewSet):
         + contents
             - Type: string
             - Status: mandatory
+
+        + description
+            - Type: string
+            - Status: optional
 
         + position
             - Type: integer
@@ -642,6 +650,10 @@ class MasterTells(ViewSet):
         + contents
             - Type: string
             - Status: mandatory
+
+        + description
+            - Type: string
+            - Status: optional
 
         + position
             - Type: integer

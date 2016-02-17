@@ -702,6 +702,7 @@ class MasterTells(TransactionTestCase):
         dictionary = {
             'category_id': self.category.id,
             'contents': '1',
+            'description': '1',
             'position': 1,
         }
 
@@ -710,6 +711,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 1
         assert response.data['is_visible'] is True
@@ -722,6 +724,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
         assert response.status_code == 201
@@ -791,6 +794,7 @@ class MasterTells(TransactionTestCase):
         dictionary = {
             'category_id': self.category.id,
             'contents': '2',
+            'description': '2',
             'position': 2,
         }
 
@@ -800,6 +804,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
@@ -813,6 +818,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 2
         assert response.data['is_visible'] is True
         assert response.status_code == 200
@@ -820,6 +826,7 @@ class MasterTells(TransactionTestCase):
         dictionary = {
             'category_id': self.category.id,
             'contents': '3',
+            'description': '3',
             'position': 3,
         }
 
@@ -829,6 +836,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 3
         assert response.data['is_visible'] is True
@@ -842,6 +850,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['owned_by_id'] == self.user.id
         assert response.data['category_id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 3
         assert response.data['is_visible'] is True
         assert response.status_code == 200
