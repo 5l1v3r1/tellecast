@@ -748,7 +748,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.get(
             '/api/master-tells/',
             {
-                'inserted_at': inserted_at - timedelta(seconds=1),
+                'inserted_at': inserted_at - timedelta(seconds=10),
             },
             format='json',
         )
@@ -773,7 +773,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.get(
             '/api/master-tells/',
             {
-                'inserted_at': inserted_at + timedelta(seconds=1),
+                'inserted_at': inserted_at + timedelta(seconds=10),
             },
             format='json',
         )
@@ -783,7 +783,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.get(
             '/api/master-tells/',
             {
-                'updated_at': updated_at - timedelta(seconds=1),
+                'updated_at': updated_at - timedelta(seconds=10),
             },
             format='json',
         )
@@ -793,7 +793,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.get(
             '/api/master-tells/',
             {
-                'updated_at': updated_at + timedelta(seconds=1),
+                'updated_at': updated_at + timedelta(seconds=10),
             },
             format='json',
         )
@@ -2333,7 +2333,7 @@ class SlaveTells(TransactionTestCase):
         response = self.client.get(
             '/api/slave-tells/',
             {
-                'inserted_at': inserted_at - timedelta(seconds=1),
+                'inserted_at': inserted_at - timedelta(seconds=10),
             },
             format='json',
         )
@@ -2355,7 +2355,7 @@ class SlaveTells(TransactionTestCase):
         response = self.client.get(
             '/api/slave-tells/',
             {
-                'inserted_at': inserted_at + timedelta(seconds=1),
+                'inserted_at': inserted_at + timedelta(seconds=10),
             },
             format='json',
         )
@@ -2365,7 +2365,7 @@ class SlaveTells(TransactionTestCase):
         response = self.client.get(
             '/api/slave-tells/',
             {
-                'updated_at': updated_at - timedelta(seconds=1),
+                'updated_at': updated_at - timedelta(seconds=10),
             },
             format='json',
         )
@@ -2375,7 +2375,7 @@ class SlaveTells(TransactionTestCase):
         response = self.client.get(
             '/api/slave-tells/',
             {
-                'updated_at': updated_at + timedelta(seconds=1),
+                'updated_at': updated_at + timedelta(seconds=10),
             },
             format='json',
         )
