@@ -1563,6 +1563,7 @@ class HomeMasterTellsResponse(MasterTell):
     created_by = HomeMasterTellsResponseUser()
     owned_by = HomeMasterTellsResponseUser()
     category = HomeMasterTellsResponseCategory()
+    is_pinned = BooleanField()
     slave_tell = HomeMasterTellsResponseSlaveTell()
 
     class Meta:
@@ -1578,6 +1579,7 @@ class HomeMasterTellsResponse(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'is_pinned',
             'slave_tell',
         )
         model = models.MasterTell
@@ -1903,6 +1905,7 @@ class NetworksMasterTellsResponse(MasterTell):
     created_by = NetworksMasterTellsResponseUser()
     owned_by = NetworksMasterTellsResponseUser()
     category = NetworksMasterTellsResponseCategory()
+    is_pinned = BooleanField()
     slave_tell = NetworksMasterTellsResponseSlaveTell()
 
     class Meta:
@@ -1918,6 +1921,7 @@ class NetworksMasterTellsResponse(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'is_pinned',
             'slave_tell',
         )
         model = models.MasterTell
@@ -2461,6 +2465,7 @@ class TellzonesMasterTells(MasterTell):
     created_by = TellzonesMasterTellsUser()
     owned_by = TellzonesMasterTellsUser()
     category = TellzonesMasterTellsCategory()
+    is_pinned = BooleanField()
     slave_tell = TellzonesMasterTellsSlaveTell()
 
     class Meta:
@@ -2476,6 +2481,7 @@ class TellzonesMasterTells(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'is_pinned',
             'slave_tell',
         )
         model = models.MasterTell

@@ -3022,6 +3022,7 @@ def get_items(items, count):
 
 def get_master_tells(user_id, tellzone_id, points, radius):
     master_tells = {}
+    records = []
     for point in points:
         with closing(connection.cursor()) as cursor:
             cursor.execute(
@@ -3035,6 +3036,88 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_master_tells.is_visible AS is_visible,
                     api_master_tells.inserted_at AS inserted_at,
                     api_master_tells.updated_at AS updated_at,
+                    true AS is_pinned,
+                    api_slave_tells.id AS slave_tell_id,
+                    api_slave_tells.created_by_id AS slave_tell_created_by_id,
+                    api_slave_tells.owned_by_id AS slave_tell_owned_by_id,
+                    api_slave_tells.photo AS slave_tell_photo,
+                    api_slave_tells.first_name AS slave_tell_first_name,
+                    api_slave_tells.last_name AS slave_tell_last_name,
+                    api_slave_tells.type AS slave_tell_type,
+                    api_slave_tells.contents_original AS slave_tell_contents_original,
+                    api_slave_tells.contents_preview AS slave_tell_contents_preview,
+                    api_slave_tells.description AS slave_tell_description,
+                    api_slave_tells.position AS slave_tell_position,
+                    api_slave_tells.is_editable AS slave_tell_is_editable,
+                    api_slave_tells.inserted_at AS slave_tell_inserted_at,
+                    api_slave_tells.updated_at AS slave_tell_updated_at,
+                    api_users_created_by.id AS created_by_id,
+                    api_users_created_by.photo_original AS created_by_photo_original,
+                    api_users_created_by.photo_preview AS created_by_photo_preview,
+                    api_users_created_by.first_name AS created_by_first_name,
+                    api_users_created_by.last_name AS created_by_last_name,
+                    api_users_created_by.description AS created_by_description,
+                    api_users_settings_created_by.key AS created_by_setting_key,
+                    api_users_settings_created_by.value AS created_by_setting_value,
+                    api_users_owned_by.id AS owned_by_id,
+                    api_users_owned_by.photo_original AS owned_by_photo_original,
+                    api_users_owned_by.photo_preview AS owned_by_photo_preview,
+                    api_users_owned_by.first_name AS owned_by_first_name,
+                    api_users_owned_by.last_name AS owned_by_last_name,
+                    api_users_owned_by.description AS owned_by_description,
+                    api_users_settings_owned_by.key AS owned_by_setting_key,
+                    api_users_settings_owned_by.value AS owned_by_setting_value
+                FROM api_master_tells_tellzones
+                INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
+                INNER JOIN api_tellzones ON api_tellzones.id = api_master_tells_tellzones.tellzone_id
+                LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
+                INNER JOIN api_users AS api_users_created_by
+                    ON api_users_created_by.id = api_master_tells.created_by_id
+                LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
+                    ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
+                INNER JOIN api_users AS api_users_owned_by
+                    ON api_users_owned_by.id = api_master_tells.owned_by_id
+                LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
+                    ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
+                LEFT OUTER JOIN api_blocks ON
+                    (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users.id)
+                    OR
+                    (api_blocks.user_source_id = api_users.id AND api_blocks.user_destination_id = %s)
+                WHERE
+                    api_master_tells.owned_by_id != %s
+                    AND
+                    api_master_tells_tellzones.tellzone_id != %s
+                    AND
+                    ST_DWithin(
+                        ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(api_tellzones.point, 2163), %s
+                    )
+                    AND
+                    (
+                        api_slave_tells.id IS NULL
+                        OR
+                        api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
+                    )
+                    AND
+                    api_blocks.id IS NULL
+                ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
+                '''
+            )
+            columns = [column.name for column in cursor.description]
+            for record in cursor.fetchall():
+                records.append(dict(zip(columns, record)))
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                '''
+                SELECT
+                    api_master_tells.id AS id,
+                    api_master_tells.category_id AS category_id,
+                    api_master_tells.contents AS contents,
+                    api_master_tells.description AS description,
+                    api_master_tells.position AS position,
+                    api_master_tells.is_visible AS is_visible,
+                    api_master_tells.inserted_at AS inserted_at,
+                    api_master_tells.updated_at AS updated_at,
+                    false AS is_pinned,
                     api_slave_tells.id AS slave_tell_id,
                     api_slave_tells.created_by_id AS slave_tell_created_by_id,
                     api_slave_tells.owned_by_id AS slave_tell_owned_by_id,
@@ -3125,76 +3208,79 @@ def get_master_tells(user_id, tellzone_id, points, radius):
             )
             columns = [column.name for column in cursor.description]
             for record in cursor.fetchall():
-                record = dict(zip(columns, record))
-                if record['id'] not in master_tells:
-                    master_tells[record['id']] = {}
-                if 'id' not in master_tells[record['id']]:
-                    master_tells[record['id']]['id'] = record['id']
-                if 'category_id' not in master_tells[record['id']]:
-                    master_tells[record['id']]['category_id'] = record['category_id']
-                if 'contents' not in master_tells[record['id']]:
-                    master_tells[record['id']]['contents'] = record['contents']
-                if 'description' not in master_tells[record['id']]:
-                    master_tells[record['id']]['description'] = record['description']
-                if 'position' not in master_tells[record['id']]:
-                    master_tells[record['id']]['position'] = record['position']
-                if 'is_visible' not in master_tells[record['id']]:
-                    master_tells[record['id']]['is_visible'] = record['is_visible']
-                if 'inserted_at' not in master_tells[record['id']]:
-                    master_tells[record['id']]['inserted_at'] = record['inserted_at']
-                if 'updated_at' not in master_tells[record['id']]:
-                    master_tells[record['id']]['updated_at'] = record['updated_at']
-                if 'slave_tell' not in master_tells[record['id']]:
-                    master_tells[record['id']]['slave_tell'] = None
-                    if record['slave_tell_id']:
-                        master_tells[record['id']]['slave_tell'] = {
-                            'id': record['slave_tell_id'],
-                            'created_by_id': record['slave_tell_created_by_id'],
-                            'owned_by_id': record['slave_tell_owned_by_id'],
-                            'photo': record['slave_tell_photo'],
-                            'first_name': record['slave_tell_first_name'],
-                            'last_name': record['slave_tell_last_name'],
-                            'type': record['slave_tell_type'],
-                            'contents_original': record['slave_tell_contents_original'],
-                            'contents_preview': record['slave_tell_contents_preview'],
-                            'description': record['slave_tell_description'],
-                            'position': record['slave_tell_position'],
-                            'is_editable': record['slave_tell_is_editable'],
-                            'inserted_at': record['slave_tell_inserted_at'],
-                            'updated_at': record['slave_tell_updated_at'],
-                        }
-                if 'created_by' not in master_tells[record['id']]:
-                    master_tells[record['id']]['created_by'] = {
-                        'id': record['created_by_id'],
-                        'photo_original': record['created_by_photo_original'],
-                        'photo_preview': record['created_by_photo_preview'],
-                        'first_name': record['created_by_first_name'],
-                        'last_name': record['created_by_last_name'],
-                        'description': record['created_by_description'],
-                    }
-                if 'settings' not in master_tells[record['id']]['created_by']:
-                    master_tells[record['id']]['created_by']['settings'] = {}
-                if record['created_by_setting_key']:
-                    if record['created_by_setting_key'] not in master_tells[record['id']]['created_by']['settings']:
-                        master_tells[record['id']]['created_by']['settings'][
-                            record['created_by_setting_key']
-                        ] = record['created_by_setting_value']
-                if 'owned_by' not in master_tells[record['id']]:
-                    master_tells[record['id']]['owned_by'] = {
-                        'id': record['owned_by_id'],
-                        'photo_original': record['owned_by_photo_original'],
-                        'photo_preview': record['owned_by_photo_preview'],
-                        'first_name': record['owned_by_first_name'],
-                        'last_name': record['owned_by_last_name'],
-                        'description': record['owned_by_description'],
-                    }
-                if 'settings' not in master_tells[record['id']]['owned_by']:
-                    master_tells[record['id']]['owned_by']['settings'] = {}
-                if record['owned_by_setting_key']:
-                    if record['owned_by_setting_key'] not in master_tells[record['id']]['owned_by']['settings']:
-                        master_tells[record['id']]['owned_by']['settings'][
-                            record['owned_by_setting_key']
-                        ] = record['owned_by_setting_value']
+                records.append(dict(zip(columns, record)))
+    for record in records:
+        if record['id'] not in master_tells:
+            master_tells[record['id']] = {}
+        if 'id' not in master_tells[record['id']]:
+            master_tells[record['id']]['id'] = record['id']
+        if 'category_id' not in master_tells[record['id']]:
+            master_tells[record['id']]['category_id'] = record['category_id']
+        if 'contents' not in master_tells[record['id']]:
+            master_tells[record['id']]['contents'] = record['contents']
+        if 'description' not in master_tells[record['id']]:
+            master_tells[record['id']]['description'] = record['description']
+        if 'position' not in master_tells[record['id']]:
+            master_tells[record['id']]['position'] = record['position']
+        if 'is_visible' not in master_tells[record['id']]:
+            master_tells[record['id']]['is_visible'] = record['is_visible']
+        if 'inserted_at' not in master_tells[record['id']]:
+            master_tells[record['id']]['inserted_at'] = record['inserted_at']
+        if 'updated_at' not in master_tells[record['id']]:
+            master_tells[record['id']]['updated_at'] = record['updated_at']
+        if 'is_pinned' not in master_tells[record['id']]:
+            master_tells[record['id']]['is_pinned'] = record['is_pinned']
+        if 'slave_tell' not in master_tells[record['id']]:
+            master_tells[record['id']]['slave_tell'] = None
+            if record['slave_tell_id']:
+                master_tells[record['id']]['slave_tell'] = {
+                    'id': record['slave_tell_id'],
+                    'created_by_id': record['slave_tell_created_by_id'],
+                    'owned_by_id': record['slave_tell_owned_by_id'],
+                    'photo': record['slave_tell_photo'],
+                    'first_name': record['slave_tell_first_name'],
+                    'last_name': record['slave_tell_last_name'],
+                    'type': record['slave_tell_type'],
+                    'contents_original': record['slave_tell_contents_original'],
+                    'contents_preview': record['slave_tell_contents_preview'],
+                    'description': record['slave_tell_description'],
+                    'position': record['slave_tell_position'],
+                    'is_editable': record['slave_tell_is_editable'],
+                    'inserted_at': record['slave_tell_inserted_at'],
+                    'updated_at': record['slave_tell_updated_at'],
+                }
+        if 'created_by' not in master_tells[record['id']]:
+            master_tells[record['id']]['created_by'] = {
+                'id': record['created_by_id'],
+                'photo_original': record['created_by_photo_original'],
+                'photo_preview': record['created_by_photo_preview'],
+                'first_name': record['created_by_first_name'],
+                'last_name': record['created_by_last_name'],
+                'description': record['created_by_description'],
+            }
+        if 'settings' not in master_tells[record['id']]['created_by']:
+            master_tells[record['id']]['created_by']['settings'] = {}
+        if record['created_by_setting_key']:
+            if record['created_by_setting_key'] not in master_tells[record['id']]['created_by']['settings']:
+                master_tells[record['id']]['created_by']['settings'][
+                    record['created_by_setting_key']
+                ] = record['created_by_setting_value']
+        if 'owned_by' not in master_tells[record['id']]:
+            master_tells[record['id']]['owned_by'] = {
+                'id': record['owned_by_id'],
+                'photo_original': record['owned_by_photo_original'],
+                'photo_preview': record['owned_by_photo_preview'],
+                'first_name': record['owned_by_first_name'],
+                'last_name': record['owned_by_last_name'],
+                'description': record['owned_by_description'],
+            }
+        if 'settings' not in master_tells[record['id']]['owned_by']:
+            master_tells[record['id']]['owned_by']['settings'] = {}
+        if record['owned_by_setting_key']:
+            if record['owned_by_setting_key'] not in master_tells[record['id']]['owned_by']['settings']:
+                master_tells[record['id']]['owned_by']['settings'][
+                    record['owned_by_setting_key']
+                ] = record['owned_by_setting_value']
     master_tells = sorted(master_tells.values(), key=lambda item: item['id'])
     for key, value in enumerate(master_tells):
         master_tells[key]['created_by']['photo_original'] = (
