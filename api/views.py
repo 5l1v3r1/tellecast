@@ -6225,6 +6225,78 @@ def users_profile(request, id):
     )
 
 
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def users_tellzones_master_tells(request, id):
+    '''
+    SELECT Users :: Tellzones :: Master Tells
+    <br>
+    <br>
+    This endpoint will return a list of all Tellzones (with Master Tells) to which the user has pinned atleast one
+    Master Tell.
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.UsersProfile
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+        - code: 403
+          message: Invalid Input
+    '''
+    user = models.User.objects.get_queryset().exclude(~Q(id__in=[id])).filter(id=request.user.id).first()
+    if not user:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `id`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    ids = []
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT api_master_tells_tellzones.tellzone_id
+            FROM api_master_tells_tellzones
+            INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
+            WHERE api_master_tells.owned_by_id = %s
+            ORDER BY api_master_tells_tellzones.tellzone_id ASC
+            ''',
+            (id,),
+        )
+        for record in cursor.fetchall():
+            ids.append(record[0])
+    return Response(
+        data=serializers.TellzonesResponse(
+            models.Tellzone.objects.get_queryset().filter(
+                id__in=ids,
+            ).prefetch_related(
+                'social_profiles',
+            ).order_by(
+                'id',
+            ),
+            context={
+                'request': request,
+                'special': True,
+            },
+            many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 def handler400(request):
     return JsonResponse(
         data={

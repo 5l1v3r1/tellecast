@@ -992,10 +992,18 @@ class Tellzone(Model):
                 connections.append(tellcard.user_source)
         return connections
 
-    def get_master_tells(self, user_id):
+    def get_master_tells_1(self, user_id):
         return [
             master_tell_tellzone.master_tell
             for master_tell_tellzone in MasterTellTellzone.objects.get_queryset().filter(tellzone_id=self.id)
+        ]
+
+    def get_master_tells_2(self, user_id):
+        return [
+            master_tell_tellzone.master_tell
+            for master_tell_tellzone in MasterTellTellzone.objects.get_queryset().filter(
+                master_tell__owned_by_id=user_id, tellzone_id=self.id,
+            )
         ]
 
     def get_posts(self, user_id):

@@ -945,7 +945,10 @@ class Tellzone(ModelSerializer):
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
             if field.field_name == 'master_tells':
-                dictionary[field.field_name] = field.to_representation(instance.get_master_tells(id))
+                if not self.context.get('special', False):
+                    dictionary[field.field_name] = field.to_representation(instance.get_master_tells_1(id))
+                else:
+                    dictionary[field.field_name] = field.to_representation(instance.get_master_tells_2(id))
                 continue
             if field.field_name == 'networks':
                 dictionary[field.field_name] = field.to_representation([
