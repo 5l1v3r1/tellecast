@@ -3080,6 +3080,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     ON api_users_owned_by.id = api_master_tells.owned_by_id
                 LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
                     ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
+                INNER JOIN api_categories ON api_categories.id = api_master_tells.category_id
                 LEFT OUTER JOIN api_blocks ON
                     (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_master_tells.owned_by_id)
                     OR
@@ -3170,6 +3171,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     ON api_users_owned_by.id = api_master_tells.owned_by_id
                 LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
                     ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
+                INNER JOIN api_categories ON api_categories.id = api_master_tells.category_id
                 LEFT OUTER JOIN api_blocks ON
                     (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
                     OR
