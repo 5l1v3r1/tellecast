@@ -3029,7 +3029,6 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 '''
                 SELECT
                     api_master_tells.id AS id,
-                    api_master_tells.category_id AS category_id,
                     api_master_tells.contents AS contents,
                     api_master_tells.description AS description,
                     api_master_tells.position AS position,
@@ -3066,7 +3065,9 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_owned_by.last_name AS owned_by_last_name,
                     api_users_owned_by.description AS owned_by_description,
                     api_users_settings_owned_by.key AS owned_by_setting_key,
-                    api_users_settings_owned_by.value AS owned_by_setting_value
+                    api_users_settings_owned_by.value AS owned_by_setting_value,
+                    api_categories.id AS category_id,
+                    api_categories.name AS category_name
                 FROM api_master_tells_tellzones
                 INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
                 INNER JOIN api_tellzones ON api_tellzones.id = api_master_tells_tellzones.tellzone_id
@@ -3118,7 +3119,6 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 '''
                 SELECT
                     api_master_tells.id AS id,
-                    api_master_tells.category_id AS category_id,
                     api_master_tells.contents AS contents,
                     api_master_tells.description AS description,
                     api_master_tells.position AS position,
@@ -3155,7 +3155,9 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_owned_by.last_name AS owned_by_last_name,
                     api_users_owned_by.description AS owned_by_description,
                     api_users_settings_owned_by.key AS owned_by_setting_key,
-                    api_users_settings_owned_by.value AS owned_by_setting_value
+                    api_users_settings_owned_by.value AS owned_by_setting_value,
+                    api_categories.id AS category_id,
+                    api_categories.name AS category_name
                 FROM api_users_locations
                 INNER JOIN api_users ON api_users.id = api_users_locations.user_id
                 INNER JOIN api_master_tells ON api_master_tells.owned_by_id = api_users_locations.user_id
@@ -3222,8 +3224,6 @@ def get_master_tells(user_id, tellzone_id, points, radius):
             master_tells[record['id']] = {}
         if 'id' not in master_tells[record['id']]:
             master_tells[record['id']]['id'] = record['id']
-        if 'category_id' not in master_tells[record['id']]:
-            master_tells[record['id']]['category_id'] = record['category_id']
         if 'contents' not in master_tells[record['id']]:
             master_tells[record['id']]['contents'] = record['contents']
         if 'description' not in master_tells[record['id']]:
@@ -3289,6 +3289,11 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 master_tells[record['id']]['owned_by']['settings'][
                     record['owned_by_setting_key']
                 ] = record['owned_by_setting_value']
+        if 'category' not in master_tells[record['id']]:
+            master_tells[record['id']]['category'] = {
+                'id': record['category_id'],
+                'name': record['category_name'],
+            }
     master_tells = sorted(master_tells.values(), key=lambda item: item['id'])
     for key, value in enumerate(master_tells):
         master_tells[key]['created_by']['photo_original'] = (
