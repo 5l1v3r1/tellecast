@@ -371,6 +371,7 @@ class MasterTell(ModelSerializer):
     created_by_id = IntegerField()
     owned_by_id = IntegerField()
     category_id = IntegerField()
+    category = Category()
     description = CharField(allow_blank=True, required=False)
     position = IntegerField(required=False)
     is_visible = BooleanField(default=True, required=False)
@@ -384,6 +385,7 @@ class MasterTell(ModelSerializer):
             'created_by_id',
             'owned_by_id',
             'category_id',
+            'category',
             'contents',
             'description',
             'position',
@@ -1671,7 +1673,7 @@ class MasterTellsResponse(MasterTell):
             'id',
             'created_by_id',
             'owned_by_id',
-            'category_id',
+            'category',
             'contents',
             'description',
             'position',
