@@ -3204,11 +3204,11 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                         %s
                     )
                     AND
-                    api_users_locations.is_casting IS TRUE
+                    api_users_locations.is_casting = TRUE
                     AND
                     api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                     AND
-                    api_users.is_signed_in IS TRUE
+                    api_users.is_signed_in = TRUE
                     AND
                     (
                         api_slave_tells.id IS NULL
@@ -3372,11 +3372,11 @@ def get_users(user_id, network_id, tellzone_id, point, radius, include_user_id):
                     %s
                 )
                 AND
-                api_users_locations.is_casting IS TRUE
+                api_users_locations.is_casting = TRUE
                 AND
                 api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                 AND
-                api_users.is_signed_in IS TRUE
+                api_users.is_signed_in = TRUE
             ORDER BY distance ASC, api_users_locations.user_id ASC
             ''',
             (point, user_id, include_user_id, point, radius,),
