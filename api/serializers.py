@@ -515,10 +515,9 @@ class User(ModelSerializer):
                 dictionary[field.field_name] = instance.settings_
                 continue
             if field.field_name == 'master_tells':
-                dictionary[field.field_name] = [
-                    MasterTell(master_tell, context=self.context).data
-                    for master_tell in instance.master_tells.get_queryset().filter(is_visible=True)
-                ]
+                dictionary[field.field_name] = field.to_representation([
+                    master_tell for master_tell in instance.master_tells.get_queryset().filter(is_visible=True)
+                ])
                 continue
             if field.field_name == 'messages':
                 dictionary[field.field_name] = instance.get_messages(id)
