@@ -3248,15 +3248,17 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_locations.user_id != %s
                     AND
                     (
-                        api_users_locations.tellzone_id IS NULL
+                        %s = 0
                         OR
                         api_users_locations.tellzone_id != %s
                     )
                     AND
-                    ST_DWithin(
-                        ST_Transform(ST_GeomFromText(%s, 4326), 2163),
-                        ST_Transform(api_users_locations.point, 2163),
-                        %s
+                    (
+                        ST_DWithin(
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163),
+                            ST_Transform(api_users_locations.point, 2163),
+                            %s
+                        )
                     )
                     AND
                     api_users_locations.is_casting = TRUE
