@@ -276,7 +276,7 @@ class RabbitMQ(object):
 
     @coroutine
     def users_locations(self, data):
-        users_locations = yield self.get_user_locations(data)
+        users_locations = yield self.get_users_locations(data)
         if not users_locations:
             raise Return(None)
         try:
@@ -310,8 +310,8 @@ class RabbitMQ(object):
         raise Return(None)
 
     @coroutine
-    def users_locations_2(self, users_location):
-        users = yield self.get_users(users_location['user_id'], users_location['point'], 300.0, True)
+    def users_locations_2(self, user_location):
+        users = yield self.get_users(user_location['user_id'], user_location['point'], 300.0, True)
         if not users:
             raise Return(None)
         try:
@@ -427,7 +427,7 @@ class RabbitMQ(object):
                     WHERE
                         api_users_locations.user_id != %s
                         AND
-                        api_users_locations.is_casting IS TRUE
+                        api_users_locations.is_casting = TRUE
                         AND
                         api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                     ORDER BY api_users_locations.user_id ASC
@@ -805,8 +805,8 @@ class RabbitMQ(object):
         raise Return(profile)
 
     @coroutine
-    def get_user_locations(self, data):
-        user_locations = []
+    def get_users_locations(self, data):
+        users_locations = []
         try:
             with closing(connection.cursor()) as cursor:
                 cursor.execute(
@@ -823,14 +823,12 @@ class RabbitMQ(object):
                     ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
                     LEFT OUTER JOIN api_tellzones ON api_tellzones.id = api_users_locations_1.tellzone_id
                     WHERE
-                        api_users_locations_1.id < %s
-                        AND
-                        api_users_locations_1.is_casting IS TRUE
+                        api_users_locations_1.is_casting = TRUE
                         AND
                         api_users_locations_1.timestamp > NOW() - INTERVAL '1 minute'
                     ORDER BY api_users_locations_1.id DESC LIMIT 2
                     ''',
-                    (data, data,)
+                    (data,)
                 )
                 for record in cursor.fetchall():
                     point = loads(record[3])
@@ -844,10 +842,10 @@ class RabbitMQ(object):
                             'longitude': point['coordinates'][0],
                         },
                     }
-                    user_locations.append(user_location)
+                    users_locations.append(user_location)
         except Exception:
             client.captureException()
-        raise Return(user_locations)
+        raise Return(users_locations)
 
     @coroutine
     def get_radar_get(self, user, users):
@@ -1033,11 +1031,11 @@ class RabbitMQ(object):
                             %s
                         )
                         AND
-                        api_users_locations.is_casting IS TRUE
+                        api_users_locations.is_casting = TRUE
                         AND
                         api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                         AND
-                        api_users.is_signed_in IS TRUE
+                        api_users.is_signed_in = TRUE
                         AND
                         api_users_settings.key = 'show_photo'
                     ORDER BY api_users_locations.user_id ASC
