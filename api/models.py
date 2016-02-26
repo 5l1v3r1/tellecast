@@ -3279,6 +3279,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     user_id,
                     user_id,
                     tellzone_id,
+                    tellzone_id,
                     'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=point[0], latitude=point[1]),
                     radius,
                 )
