@@ -3098,7 +3098,11 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 WHERE
                     api_master_tells.owned_by_id != %s
                     AND
-                    api_master_tells_tellzones.tellzone_id != %s
+                    (
+                        api_master_tells_tellzones.tellzone_id IS NULL
+                        OR
+                        api_master_tells_tellzones.tellzone_id != %s
+                    )
                     AND
                     ST_DWithin(
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(api_tellzones.point, 2163), %s
@@ -3196,7 +3200,11 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     AND
                     api_users_locations.user_id != %s
                     AND
-                    api_users_locations.tellzone_id != %s
+                    (
+                        api_users_locations.tellzone_id IS NULL
+                        OR
+                        api_users_locations.tellzone_id != %s
+                    )
                     AND
                     ST_DWithin(
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163),
