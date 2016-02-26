@@ -2595,7 +2595,7 @@ def master_tell_pre_save(instance, **kwargs):
 
 @receiver(post_delete, sender=MasterTell)
 def master_tell_post_delete(instance, **kwargs):
-    master_tells_websockets(instance)
+    master_tells_websockets_1(instance)
 
 
 @receiver(post_save, sender=MasterTell)
@@ -2612,10 +2612,10 @@ def master_tell_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
-    master_tells_websockets(instance)
+    master_tells_websockets_1(instance)
 
 
-def master_tells_websockets(instance):
+def master_tells_websockets_1(instance):
     user_location = UserLocation.objects.get_queryset().filter(
         user_id=instance.owned_by_id,
         is_casting=True,
@@ -2681,6 +2681,53 @@ def master_tells_websockets(instance):
                     'body': {
                         'type': 'tellzones',
                         'id': user_location.tellzone_id,
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+
+
+@receiver(post_delete, sender=MasterTellTellzone)
+def master_tell_tellzone_post_delete(instance, **kwargs):
+    master_tells_websockets_2(instance)
+
+
+@receiver(post_save, sender=MasterTellTellzone)
+def master_tell_tellzone_post_save(instance, **kwargs):
+    master_tells_websockets_2(instance)
+
+
+def master_tells_websockets_2(instance):
+    user_ids = set()
+    for master_tell_tellzone in MasterTellTellzone.objects.get_queryset().filter(
+        ~Q(master_tell__owned_by_id=instance.master_tell.owned_by_id),
+        tellzone_id=instance.tellzone_id,
+    ):
+        if not is_blocked(instance.master_tell.owned_by_id, master_tell_tellzone.master_tell.owned_by_id):
+            if instance.tellzone_id and instance.tellzone_id == master_tell_tellzone.tellzone_id:
+                user_ids.add(master_tell_tellzone.master_tell.owned_by_id)
+    for ul in UserLocation.objects.get_queryset().filter(
+        ~Q(user_id=instance.master_tell.owned_by_id),
+        tellzone_id=instance.tellzone_id,
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ):
+        if not is_blocked(instance.master_tell.owned_by_id, ul.user_id):
+            if instance.tellzone_id and instance.tellzone_id == ul.tellzone_id:
+                user_ids.add(ul.user_id)
+    if user_ids:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': list(user_ids),
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'tellzones',
+                        'id': instance.tellzone_id,
                     },
                 },
             ),
