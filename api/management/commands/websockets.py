@@ -822,10 +822,15 @@ class RabbitMQ(object):
                         SELECT user_id FROM api_users_locations WHERE id = %s
                     ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
                     LEFT OUTER JOIN api_tellzones ON api_tellzones.id = api_users_locations_1.tellzone_id
-                    WHERE api_users_locations_1.timestamp > NOW() - INTERVAL '1 minute'
+                    WHERE
+                        api_users_locations_1.id < %s
+                        AND
+                        api_users_locations_1.is_casting IS TRUE
+                        AND
+                        api_users_locations_1.timestamp > NOW() - INTERVAL '1 minute'
                     ORDER BY api_users_locations_1.id DESC LIMIT 2
                     ''',
-                    (data,)
+                    (data, data,)
                 )
                 for record in cursor.fetchall():
                     point = loads(record[3])

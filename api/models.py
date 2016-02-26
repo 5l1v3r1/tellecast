@@ -2389,7 +2389,7 @@ def user_location_post_save(instance, **kwargs):
         id__lt=user_location_1.id,
         user_id=user_location_1.user_id,
         is_casting=True,
-        timestamp__gt=datetime.now() - timedelta(minutes=1),
+        timestamp__gt=user_location_1.timestamp - timedelta(minutes=1),
     ).first()
     if user_location_2:
         if user_location_1.tellzone_id and user_location_1.tellzone_id != user_location_2.tellzone_id:
@@ -2417,7 +2417,9 @@ def user_location_post_save(instance, **kwargs):
         'tellzones': {},
     }
     for user_location in UserLocation.objects.get_queryset().filter(
-        ~Q(user_id=user_location_1.user_id), is_casting=True, timestamp__gt=datetime.now() - timedelta(minutes=1),
+        ~Q(user_id=user_location_1.user_id),
+        is_casting=True,
+        timestamp__gt=user_location_1.timestamp - timedelta(minutes=1),
     ):
         if not is_blocked(user_location_1.user_id, user_location.user_id):
             if user_location_2:
