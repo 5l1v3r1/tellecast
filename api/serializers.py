@@ -1048,7 +1048,6 @@ class PostTellzone(Tellzone):
             'inserted_at',
             'updated_at',
             'social_profiles',
-            'master_tells',
             'networks',
             'favorites',
             'pins',
