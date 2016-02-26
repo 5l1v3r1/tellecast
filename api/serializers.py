@@ -564,7 +564,30 @@ class PostAttachment(ModelSerializer):
         model = models.PostAttachment
 
 
+class UsersProfileMasterTell(MasterTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'category_id',
+            'category',
+            'contents',
+            'description',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+            'slave_tells',
+        )
+        model = models.MasterTell
+
+
 class UsersProfile(User):
+
+    master_tells = UsersProfileMasterTell(many=True, required=False)
 
     class Meta:
 
