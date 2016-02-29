@@ -446,6 +446,8 @@ class RabbitMQ(object):
                     if record[0] not in blocks.get(users_locations[0]['user_id'], []):
                         point = loads(record[3])
                         if len(users_locations) == 1:
+                            if not users_locations[0]['is_casting']:
+                                continue
                             if vincenty(
                                 (point['coordinates'][0], point['coordinates'][1]),
                                 (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude'])
@@ -460,10 +462,19 @@ class RabbitMQ(object):
                                     user_ids['tellzones'][record[2]] = []
                                 user_ids['tellzones'][record[2]].append(record[0])
                         if len(users_locations) == 2:
-                            if vincenty(
-                                (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
-                                (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-                            ).ft > 300.00:
+                            is_casting = users_locations[0]['is_casting'] and not users_locations[1]['is_casting']
+                            if is_casting or (
+                                vincenty(
+                                    (
+                                        users_locations[0]['point']['longitude'],
+                                        users_locations[0]['point']['latitude'],
+                                    ),
+                                    (
+                                        users_locations[1]['point']['longitude'],
+                                        users_locations[1]['point']['latitude'],
+                                    )
+                                ).ft > 300.00
+                            ):
                                 if vincenty(
                                     (point['coordinates'][0], point['coordinates'][1]),
                                     (
@@ -472,12 +483,12 @@ class RabbitMQ(object):
                                     ),
                                 ).ft <= 300.00:
                                     user_ids['home'].append(record[0])
-                            if users_locations[0]['network_id'] != users_locations[1]['network_id']:
+                            if is_casting or (users_locations[0]['network_id'] != users_locations[1]['network_id']):
                                 if record[1] and record[1] == users_locations[1]['network_id']:
                                     if record[1] not in user_ids['networks']:
                                         user_ids['networks'][record[1]] = []
                                     user_ids['networks'][record[1]].append(record[0])
-                            if users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']:
+                            if is_casting or (users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']):
                                 if record[2] and record[2] == users_locations[1]['tellzone_id']:
                                     if record[2] not in user_ids['tellzones']:
                                         user_ids['tellzones'][record[2]] = []
