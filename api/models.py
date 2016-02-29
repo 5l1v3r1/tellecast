@@ -2382,17 +2382,21 @@ def user_location_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
-    if not instance.is_casting:
-        return
     user_location_1 = instance
     user_location_2 = UserLocation.objects.get_queryset().filter(
         id__lt=user_location_1.id,
         user_id=user_location_1.user_id,
-        is_casting=True,
         timestamp__gt=user_location_1.timestamp - timedelta(minutes=1),
     ).first()
     if user_location_2:
-        if user_location_1.tellzone_id and user_location_1.tellzone_id != user_location_2.tellzone_id:
+        status = False
+        if user_location_1.is_casting and user_location_2.is_casting:
+            if user_location_1.tellzone_id and user_location_1.tellzone_id != user_location_2.tellzone_id:
+                status = True
+        if user_location_1.is_casting and not user_location_2.is_casting:
+            if user_location_1.tellzone_id:
+                status = True
+        if status:
             current_app.send_task(
                 'api.tasks.push_notifications',
                 (
