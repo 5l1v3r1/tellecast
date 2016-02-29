@@ -280,15 +280,16 @@ class RabbitMQ(object):
         if not users_locations:
             raise Return(None)
         try:
-            yield self.users_locations_1(users_locations)
-            if len(users_locations) >= 1:
-                yield self.users_locations_2(users_locations[0])
-            if len(users_locations) >= 2:
-                if not vincenty(
-                    (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
-                    (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-                ).ft > 300.0:
-                    yield self.users_locations_2(users_locations[1])
+            if not users_locations[0]['is_casting']:
+                yield self.users_locations_1(users_locations)
+                if len(users_locations) >= 1:
+                    yield self.users_locations_2(users_locations[0])
+                if len(users_locations) >= 2:
+                    if not vincenty(
+                        (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
+                        (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
+                    ).ft > 300.0:
+                        yield self.users_locations_2(users_locations[1])
             yield self.users_locations_3(users_locations)
         except Exception:
             client.captureException()
@@ -822,32 +823,31 @@ class RabbitMQ(object):
                         api_users_locations_1.user_id,
                         api_users_locations_1.network_id,
                         api_users_locations_1.tellzone_id,
+                        api_tellzones.name,
                         ST_AsGeoJSON(api_users_locations_1.point),
-                        api_tellzones.name
+                        api_users_locations_1.is_casting,
                     FROM api_users_locations api_users_locations_1
                     INNER JOIN (
                         SELECT user_id FROM api_users_locations WHERE id = %s
                     ) api_users_locations_2 ON api_users_locations_1.user_id = api_users_locations_2.user_id
                     LEFT OUTER JOIN api_tellzones ON api_tellzones.id = api_users_locations_1.tellzone_id
-                    WHERE
-                        api_users_locations_1.is_casting = TRUE
-                        AND
-                        api_users_locations_1.timestamp > NOW() - INTERVAL '1 minute'
+                    WHERE api_users_locations_1.timestamp > NOW() - INTERVAL '1 minute'
                     ORDER BY api_users_locations_1.id DESC LIMIT 2
                     ''',
                     (data,)
                 )
                 for record in cursor.fetchall():
-                    point = loads(record[3])
+                    point = loads(record[4])
                     user_location = {
                         'user_id': record[0],
                         'network_id': record[1],
                         'tellzone_id': record[2],
-                        'tellzone_name': record[4],
+                        'tellzone_name': record[3],
                         'point': {
                             'latitude': point['coordinates'][1],
                             'longitude': point['coordinates'][0],
                         },
+                        'is_casting': record[5],
                     }
                     users_locations.append(user_location)
         except Exception:
