@@ -2428,7 +2428,11 @@ def user_location_post_save(instance, **kwargs):
         if is_blocked(user_location_1.user_id, user_location.user_id):
             continue
         if user_location_2:
-            is_casting = user_location_1.is_casting and not user_location_2.is_casting
+            is_casting = (
+                user_location_1.is_casting and not user_location_2.is_casting
+            ) or (
+                not user_location_1.is_casting and user_location_2.is_casting
+            )
             if is_casting or (
                 vincenty(
                     (user_location_1.point.x, user_location_1.point.y),

@@ -462,7 +462,11 @@ class RabbitMQ(object):
                                     user_ids['tellzones'][record[2]] = []
                                 user_ids['tellzones'][record[2]].append(record[0])
                         if len(users_locations) == 2:
-                            is_casting = users_locations[0]['is_casting'] and not users_locations[1]['is_casting']
+                            is_casting = (
+                                users_locations[0]['is_casting'] and not users_locations[1]['is_casting']
+                            ) or (
+                                not users_locations[0]['is_casting'] and users_locations[1]['is_casting']
+                            )
                             if is_casting or (
                                 vincenty(
                                     (
