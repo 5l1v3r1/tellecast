@@ -2428,26 +2428,31 @@ def user_location_post_save(instance, **kwargs):
         if is_blocked(user_location_1.user_id, user_location.user_id):
             continue
         if user_location_2:
-            if vincenty(
-                (user_location_1.point.x, user_location_1.point.y),
-                (user_location_2.point.x, user_location_2.point.y)
-            ).ft > 300.00:
+            is_casting = user_location_1.is_casting and not user_location_2.is_casting
+            if is_casting or (
+                vincenty(
+                    (user_location_1.point.x, user_location_1.point.y),
+                    (user_location_2.point.x, user_location_2.point.y)
+                ).ft > 300.00
+            ):
                 if vincenty(
                     (user_location.point.x, user_location.point.y),
                     (user_location_1.point.x, user_location_1.point.y)
                 ).ft <= 300.00:
                     user_ids['home'].append(user_location.user_id)
-            if user_location_1.network_id != user_location_2.network_id:
+            if is_casting or (user_location_1.network_id != user_location_2.network_id):
                 if user_location.network_id and user_location.network_id == user_location_2.network_id:
                     if user_location.network_id not in user_ids['networks']:
                         user_ids['networks'][user_location.network_id] = []
                     user_ids['networks'][user_location.network_id].append(user_location.user_id)
-            if user_location_1.tellzone_id != user_location_2.tellzone_id:
+            if is_casting or (user_location_1.tellzone_id != user_location_2.tellzone_id):
                 if user_location.tellzone_id and user_location.tellzone_id == user_location_1.tellzone_id:
                     if user_location.tellzone_id not in user_ids['tellzones']:
                         user_ids['tellzones'][user_location.tellzone_id] = []
                     user_ids['tellzones'][user_location.tellzone_id].append(user_location.user_id)
         else:
+            if not user_location_1.is_casting:
+                continue
             if vincenty(
                 (user_location.point.x, user_location.point.y), (user_location_1.point.x, user_location_1.point.y)
             ).ft <= 300.00:
