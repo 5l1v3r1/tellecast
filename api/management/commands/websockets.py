@@ -356,10 +356,17 @@ class RabbitMQ(object):
     def users_locations_3(self, users_locations):
         try:
             if len(users_locations) == 2:
-                if (
-                    users_locations[0]['tellzone_id'] and
-                    users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
-                ):
+                status = False
+                if users_locations[0]['is_casting'] and users_locations[1]['is_casting']:
+                    if (
+                        users_locations[0]['tellzone_id'] and
+                        users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
+                    ):
+                        status = True
+                if users_locations[0]['is_casting'] and not users_locations[1]['is_casting']:
+                    if users_locations[0]['tellzone_id']:
+                        status = True
+                if status:
                     badge = 0
                     with closing(connection.cursor()) as cursor:
                         cursor.execute(
