@@ -280,7 +280,7 @@ class RabbitMQ(object):
         if not users_locations:
             raise Return(None)
         try:
-            if not users_locations[0]['is_casting']:
+            if users_locations[0]['is_casting']:
                 yield self.users_locations_1(users_locations)
                 if len(users_locations) >= 1:
                     yield self.users_locations_2(users_locations[0])
