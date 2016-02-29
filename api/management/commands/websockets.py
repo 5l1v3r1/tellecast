@@ -836,7 +836,7 @@ class RabbitMQ(object):
                         api_users_locations_1.tellzone_id,
                         api_tellzones.name,
                         ST_AsGeoJSON(api_users_locations_1.point),
-                        api_users_locations_1.is_casting,
+                        api_users_locations_1.is_casting
                     FROM api_users_locations api_users_locations_1
                     INNER JOIN (
                         SELECT user_id FROM api_users_locations WHERE id = %s
