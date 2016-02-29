@@ -1925,6 +1925,17 @@ class NetworksMasterTellsResponseSlaveTell(SlaveTell):
         model = models.SlaveTell
 
 
+class NetworksMasterTellsResponseTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class NetworksMasterTellsResponse(MasterTell):
 
     created_by = NetworksMasterTellsResponseUser()
@@ -1932,6 +1943,7 @@ class NetworksMasterTellsResponse(MasterTell):
     category = NetworksMasterTellsResponseCategory()
     is_pinned = BooleanField()
     slave_tell = NetworksMasterTellsResponseSlaveTell()
+    tellzones = NetworksMasterTellsResponseTellzones(many=True, required=False)
 
     class Meta:
 
@@ -1948,6 +1960,7 @@ class NetworksMasterTellsResponse(MasterTell):
             'updated_at',
             'is_pinned',
             'slave_tell',
+            'tellzones',
         )
         model = models.MasterTell
 

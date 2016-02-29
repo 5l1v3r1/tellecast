@@ -3077,7 +3077,7 @@ def get_items(items, count):
     return [item.tolist() for item in array_split(items, count)]
 
 
-def get_master_tells(user_id, tellzone_id, points, radius):
+def get_master_tells(user_id, network_id, tellzone_id, points, radius):
     master_tells = {}
     records = []
     for point in points:
@@ -3124,7 +3124,9 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_settings_owned_by.key AS owned_by_setting_key,
                     api_users_settings_owned_by.value AS owned_by_setting_value,
                     api_categories.id AS category_id,
-                    api_categories.name AS category_name
+                    api_categories.name AS category_name,
+                    api_tellzones.id AS tellzone_id,
+                    api_tellzones.name AS tellzone_name
                 FROM api_master_tells_tellzones
                 INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
                 INNER JOIN api_tellzones ON api_tellzones.id = api_master_tells_tellzones.tellzone_id
@@ -3362,6 +3364,13 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                 'id': record['category_id'],
                 'name': record['category_name'],
             }
+        if 'tellzones' not in master_tells[record['id']]:
+            master_tells[record['id']]['tellzones'] = {}
+        if 'tellzone_id' in record and record['tellzone_id'] and 'tellzone_name' in record and record['tellzone_name']:
+            master_tells[record['id']]['tellzones'][record['tellzone_id']] = {
+                'id': record['tellzone_id'],
+                'name': record['tellzone_name'],
+            }
     master_tells = sorted(master_tells.values(), key=lambda item: item['id'])
     for key, value in enumerate(master_tells):
         master_tells[key]['created_by']['photo_original'] = (
@@ -3390,6 +3399,9 @@ def get_master_tells(user_id, tellzone_id, points, radius):
         )
         del master_tells[key]['created_by']['settings']
         del master_tells[key]['owned_by']['settings']
+        master_tells[key]['tellzones'] = sorted(master_tells[key]['tellzones'].values(), key=lambda item: item['id'])
+        if not network_id or not master_tells[key]['is_pinned']:
+            del master_tells[key]['tellzones']
     return master_tells
 
 
