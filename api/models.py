@@ -2426,7 +2426,7 @@ def user_location_post_save(instance, **kwargs):
         timestamp__gt=user_location_1.timestamp - timedelta(minutes=1),
     ):
         if is_blocked(user_location_1.user_id, user_location.user_id):
-            continue;
+            continue
         if user_location_2:
             if vincenty(
                 (user_location_1.point.x, user_location_1.point.y),
