@@ -1708,14 +1708,94 @@ class MasterTellsResponse(MasterTell):
         model = models.MasterTell
 
 
-class MasterTellsGetRequest(Serializer):
+class MasterTellsGet1Request(Serializer):
 
     inserted_at = DateTimeField(required=False)
     updated_at = DateTimeField(required=False)
 
 
-class MasterTellsGetResponse(MasterTellsResponse):
+class MasterTellsGet1Response(MasterTellsResponse):
     pass
+
+
+class MasterTellsGet2ResponseUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'description',
+        )
+        model = models.User
+
+
+class MasterTellsGet2ResponseSlaveTellUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'description',
+        )
+        model = models.User
+
+
+class MasterTellsGet2ResponseSlaveTell(SlaveTell):
+
+    created_by = MasterTellsGet2ResponseSlaveTellUser()
+    owned_by = MasterTellsGet2ResponseSlaveTellUser()
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents_original',
+            'contents_preview',
+            'description',
+            'position',
+            'is_editable',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
+
+
+class MasterTellsGet2Response(MasterTell):
+
+    created_by = MasterTellsGet2ResponseUser()
+    owned_by = MasterTellsGet2ResponseUser()
+    slave_tells = MasterTellsGet2ResponseSlaveTell(many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'category',
+            'contents',
+            'description',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+            'slave_tells',
+        )
+        model = models.MasterTell
 
 
 class MessagesGetRequest(Serializer):

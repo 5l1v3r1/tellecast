@@ -431,7 +431,7 @@ class MasterTells(ViewSet):
 
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def get_1(self, request):
         '''
         SELECT Master Tells
 
@@ -464,12 +464,12 @@ class MasterTells(ViewSet):
               paramType: query
               required: false
               type: datetime
-        response_serializer: api.serializers.MasterTellsGetResponse
+        response_serializer: api.serializers.MasterTellsGet1Response
         responseMessages:
             - code: 400
               message: Invalid Input
         '''
-        serializer = serializers.MasterTellsGetRequest(
+        serializer = serializers.MasterTellsGet1Request(
             context={
                 'request': request,
             },
@@ -477,7 +477,7 @@ class MasterTells(ViewSet):
         )
         serializer.is_valid(request.query_params)
         return Response(
-            data=serializers.MasterTellsGetResponse(
+            data=serializers.MasterTellsGet1Response(
                 self.get_queryset(
                     inserted_at=serializer.validated_data[
                         'inserted_at'
@@ -490,6 +490,47 @@ class MasterTells(ViewSet):
                     'request': request,
                 },
                 many=True,
+            ).data,
+            status=HTTP_200_OK,
+        )
+
+    def get_2(self, request, id):
+        '''
+        SELECT Master Tell
+
+        <pre>
+        Input
+        =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
+
+        Output
+        ======
+
+        (see below; "Response Class" -> "Model Schema")
+        </pre>
+        ---
+        response_serializer: api.serializers.MasterTellsGet2Response
+        responseMessages:
+            - code: 400
+              message: Invalid Input
+        '''
+        instance = models.MasterTell.objects.get_queryset().filter(id=id).first()
+        if not instance:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `id`'),
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=serializers.MasterTellsGet2Response(
+                instance,
+                context={
+                    'request': request,
+                },
             ).data,
             status=HTTP_200_OK,
         )
@@ -1322,7 +1363,9 @@ class Networks(ViewSet):
         Input
         =====
 
-        + N/A
+        + id
+            - Type: integer
+            - Status: mandatory
 
         Output
         ======
@@ -1473,6 +1516,10 @@ class Networks(ViewSet):
         <pre>
         Input
         =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
 
         + name
             - Type: string
@@ -1901,7 +1948,9 @@ class Posts(ViewSet):
         Input
         =====
 
-        + N/A
+        + id
+            - Type: integer
+            - Status: mandatory
 
         Output
         ======
@@ -4345,7 +4394,9 @@ class UsersTellzones(ViewSet):
         Input
         =====
 
-        + N/A
+        + id
+            - Type: integer
+            - Status: mandatory
 
         Output
         ======
@@ -4394,6 +4445,10 @@ class UsersTellzones(ViewSet):
         <pre>
         Input
         =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
 
         + tellzone_id
             - Type: integer
@@ -4448,6 +4503,10 @@ class UsersTellzones(ViewSet):
         <pre>
         Input
         =====
+
+        + id
+            - Type: integer
+            - Status: mandatory
 
         + tellzone_id
             - Type: integer

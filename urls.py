@@ -84,6 +84,7 @@ urlpatterns = patterns(
     url(
         r'^api/master-tells/(?P<id>[0-9]+)/$',
         views.MasterTells.as_view({
+            'get': 'get_2',
             'put': 'put',
             'patch': 'patch',
             'delete': 'delete',
@@ -92,7 +93,7 @@ urlpatterns = patterns(
     url(
         r'^api/master-tells/$',
         views.MasterTells.as_view({
-            'get': 'get',
+            'get': 'get_1',
             'post': 'post',
         }),
     ),
