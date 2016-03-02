@@ -580,6 +580,7 @@ class UsersProfileMasterTell(MasterTell):
             'inserted_at',
             'updated_at',
             'slave_tells',
+            'tellzones',
         )
         model = models.MasterTell
 
