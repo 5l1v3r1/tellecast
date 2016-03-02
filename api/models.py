@@ -3091,7 +3091,7 @@ def get_items(items, count):
     return [item.tolist() for item in array_split(items, count)]
 
 
-def get_master_tells(user_id, network_id, tellzone_id, points, radius):
+def get_master_tells(user_id, tellzone_id, points, radius):
     master_tells = {}
     records = []
     for point in points:
@@ -3414,8 +3414,6 @@ def get_master_tells(user_id, network_id, tellzone_id, points, radius):
         del master_tells[key]['created_by']['settings']
         del master_tells[key]['owned_by']['settings']
         master_tells[key]['tellzones'] = sorted(master_tells[key]['tellzones'].values(), key=lambda item: item['id'])
-        if not network_id or not master_tells[key]['is_pinned']:
-            del master_tells[key]['tellzones']
     return master_tells
 
 

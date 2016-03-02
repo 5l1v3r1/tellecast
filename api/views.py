@@ -4959,7 +4959,6 @@ def home_master_tells(request):
     return Response(
         data=models.get_master_tells(
             request.user.id,
-            0,
             serializer.validated_data['tellzone_id'],
             [(serializer.validated_data['longitude'], serializer.validated_data['latitude'],)],
             (models.Tellzone.radius() * 0.3048) if not serializer.validated_data['dummy'] == 'Yes' else 999999999,
@@ -5686,7 +5685,6 @@ def networks_master_tells(request, id):
     return Response(
         data=models.get_master_tells(
             request.user.id,
-            network.id,
             serializer.validated_data['tellzone_id'],
             [
                 (network_tellzone.tellzone.point.x, network_tellzone.tellzone.point.y,)
@@ -6093,7 +6091,7 @@ def tellzones_master_tells(request, id):
         )
     return Response(
         data=models.get_master_tells(
-            request.user.id, 0, 0, [(tellzone.point.x, tellzone.point.y,)], models.Tellzone.radius() * 0.3048,
+            request.user.id, 0, [(tellzone.point.x, tellzone.point.y,)], models.Tellzone.radius() * 0.3048,
         ),
         status=HTTP_200_OK,
     )
