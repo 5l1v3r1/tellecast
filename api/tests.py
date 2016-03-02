@@ -713,7 +713,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.post('/api/master-tells/', dictionary, format='json')
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 1
@@ -727,7 +727,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.post('/api/master-tells/', dictionary, format='json')
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 2
@@ -763,7 +763,7 @@ class MasterTells(TransactionTestCase):
         response = self.client.post('/api/master-tells/positions/', list_, format='json')
         assert response.data[0]['created_by_id'] == self.user.id
         assert response.data[0]['owned_by_id'] == self.user.id
-        assert response.data[0]['category_id'] == dictionary['category_id']
+        assert response.data[0]['category']['id'] == dictionary['category_id']
         assert response.data[0]['position'] == list_[0]['position']
         assert response.data[0]['is_visible'] is True
         assert len(response.data[0]['tellzones']) == 1
@@ -812,7 +812,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
@@ -826,7 +826,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 2
@@ -848,7 +848,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == dictionary['position']
@@ -863,7 +863,7 @@ class MasterTells(TransactionTestCase):
         assert response.data['id'] == id
         assert response.data['created_by_id'] == self.user.id
         assert response.data['owned_by_id'] == self.user.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
         assert response.data['position'] == 3
@@ -2068,7 +2068,7 @@ class Signals(TransactionTestCase):
         response = self.client_1.post('/api/master-tells/', dictionary, format='json')
         assert response.data['created_by_id'] == self.user_1.id
         assert response.data['owned_by_id'] == self.user_1.id
-        assert response.data['category_id'] == dictionary['category_id']
+        assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['position'] == dictionary['position']
         assert response.data['position'] == 1
