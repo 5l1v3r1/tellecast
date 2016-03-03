@@ -1808,6 +1808,94 @@ class MasterTellsGet2Response(MasterTell):
         model = models.MasterTell
 
 
+class MasterTellsAllRequest(Serializer):
+
+    user_id = IntegerField()
+    tellzone_id = IntegerField(default=0, required=False)
+
+
+class MasterTellsAllResponseUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'description',
+        )
+        model = models.User
+
+
+class MasterTellsAllResponseCategory(Category):
+    pass
+
+
+class MasterTellsAllResponseSlaveTell(SlaveTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents_original',
+            'contents_preview',
+            'description',
+            'position',
+            'is_editable',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
+
+
+class MasterTellsAllResponseTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
+class MasterTellsAllResponse(MasterTell):
+
+    created_by = MasterTellsAllResponseUser()
+    owned_by = MasterTellsAllResponseUser()
+    category = MasterTellsAllResponseCategory()
+    is_pinned = BooleanField()
+    slave_tell = MasterTellsAllResponseSlaveTell()
+    tellzones = MasterTellsAllResponseTellzones(many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'category',
+            'contents',
+            'description',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+            'is_pinned',
+            'slave_tell',
+            'tellzones',
+        )
+        model = models.MasterTell
+
+
 class MessagesGetRequest(Serializer):
 
     recent = BooleanField(default=False)

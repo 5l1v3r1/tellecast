@@ -79,6 +79,7 @@ urlpatterns = patterns(
     url(r'^api/home/statistics/frequent/$', views.home_statistics_frequent),
     url(r'^api/home/statistics/infrequent/$', views.home_statistics_infrequent),
     url(r'^api/home/tellzones/$', views.home_tellzones),
+    url(r'^api/master-tells/all/$', views.master_tells_all),
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(
