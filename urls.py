@@ -230,7 +230,6 @@ urlpatterns = patterns(
             'post': 'delete',
         }),
     ),
-    url(r'^api/users/(?P<id>[0-9]+)/tellzones/master-tells/$', views.users_tellzones_master_tells),
     url(
         r'^api/users/(?P<id>[0-9]+)/tellzones/$',
         views.UsersTellzones.as_view({
