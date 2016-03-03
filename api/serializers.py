@@ -1580,6 +1580,17 @@ class HomeMasterTellsResponseSlaveTell(SlaveTell):
         model = models.SlaveTell
 
 
+class HomeMasterTellsResponseTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class HomeMasterTellsResponse(MasterTell):
 
     created_by = HomeMasterTellsResponseUser()
@@ -1587,6 +1598,7 @@ class HomeMasterTellsResponse(MasterTell):
     category = HomeMasterTellsResponseCategory()
     is_pinned = BooleanField()
     slave_tell = HomeMasterTellsResponseSlaveTell()
+    tellzones = HomeMasterTellsResponseTellzones(many=True, required=False)
 
     class Meta:
 
@@ -2576,6 +2588,17 @@ class TellzonesMasterTellsSlaveTell(SlaveTell):
         model = models.SlaveTell
 
 
+class TellzonesMasterTellsTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class TellzonesMasterTells(MasterTell):
 
     created_by = TellzonesMasterTellsUser()
@@ -2583,6 +2606,7 @@ class TellzonesMasterTells(MasterTell):
     category = TellzonesMasterTellsCategory()
     is_pinned = BooleanField()
     slave_tell = TellzonesMasterTellsSlaveTell()
+    tellzones = TellzonesMasterTellsTellzones(many=True, required=False)
 
     class Meta:
 
