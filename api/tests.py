@@ -686,16 +686,146 @@ class Home(TransactionTestCase):
 class MasterTells(TransactionTestCase):
 
     def setUp(self):
-        self.user = middleware.mixer.blend('api.User')
+        self.user_1 = middleware.mixer.blend('api.User')
+        self.client_1 = APIClient()
+        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
 
-        self.client = APIClient()
-        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+        self.user_2 = middleware.mixer.blend('api.User')
+        self.client_2 = APIClient()
+        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
         self.category = middleware.mixer.blend('api.Category')
         self.tellzone = middleware.mixer.blend('api.Tellzone')
 
     def test_a(self):
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': 0,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
 
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': self.tellzone.id,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client_1.post(
+            '/api/users/{id:d}/tellzones/'.format(id=self.user_1.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'Pin',
+            },
+            format='json',
+        )
+        assert response.data['tellzone_id'] == self.tellzone.id
+        assert response.status_code == 201
+
+        dictionary = {
+            'category_id': self.category.id,
+            'contents': '1',
+            'description': '1',
+            'position': 1,
+            'tellzones': [
+                self.tellzone.id,
+            ],
+        }
+        response = self.client_2.post('/api/master-tells/', dictionary, format='json')
+        assert response.data['created_by_id'] == self.user_2.id
+        assert response.data['owned_by_id'] == self.user_2.id
+        assert response.data['category']['id'] == dictionary['category_id']
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
+        assert response.data['position'] == 1
+        assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 1
+        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
+        assert response.status_code == 201
+
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': 0,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': self.tellzone.id,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client_1.delete(
+            '/api/users/{id:d}/tellzones/'.format(id=self.user_1.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'Pin',
+            },
+            format='json',
+        )
+        assert response.status_code == 200
+
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': 0,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': self.tellzone.id,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        dictionary = {
+            'category_id': self.category.id,
+            'contents': '1',
+            'description': '1',
+            'position': 1,
+            'tellzones': [
+                self.tellzone.id,
+            ],
+        }
+        response = self.client_1.post('/api/master-tells/', dictionary, format='json')
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
+        assert response.data['category']['id'] == dictionary['category_id']
+        assert response.data['contents'] == dictionary['contents']
+        assert response.data['description'] == dictionary['description']
+        assert response.data['position'] == 1
+        assert response.data['is_visible'] is True
+        assert len(response.data['tellzones']) == 1
+        assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
+        assert response.status_code == 201
+
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': 0,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+        dictionary = {
+            'user_id': self.user_1.id,
+            'tellzone_id': self.tellzone.id,
+        }
+        response = self.client_1.get('/api/master-tells/all/', dictionary, format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+    def test_b(self):
         response = self.client.get('/api/master-tells/', format='json')
         assert len(response.data) == 0
         assert response.status_code == 200
@@ -1760,7 +1890,6 @@ class Profiles(TransactionTestCase):
         self.client_3.credentials(HTTP_AUTHORIZATION=get_header(self.user_3.token))
 
     def test_a(self):
-
         dictionary = {
             'ids': [
                 self.user_1.id,
