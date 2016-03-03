@@ -1603,6 +1603,7 @@ class HomeMasterTellsResponse(MasterTell):
             'updated_at',
             'is_pinned',
             'slave_tell',
+            'tellzones',
         )
         model = models.MasterTell
 
@@ -2598,6 +2599,7 @@ class TellzonesMasterTells(MasterTell):
             'updated_at',
             'is_pinned',
             'slave_tell',
+            'tellzones',
         )
         model = models.MasterTell
 
