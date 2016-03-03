@@ -1040,7 +1040,6 @@ class MasterTellTellzone(Tellzone):
             'views',
             'tellecasters',
             'distance',
-            'connections',
             'is_favorited',
             'is_pinned',
             'is_viewed',
