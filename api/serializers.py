@@ -968,10 +968,7 @@ class Tellzone(ModelSerializer):
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
             if field.field_name == 'master_tells':
-                if not self.context.get('special', False):
-                    dictionary[field.field_name] = field.to_representation(instance.get_master_tells_1(id))
-                else:
-                    dictionary[field.field_name] = field.to_representation(instance.get_master_tells_2(id))
+                dictionary[field.field_name] = field.to_representation(instance.get_master_tells(id))
                 continue
             if field.field_name == 'networks':
                 dictionary[field.field_name] = field.to_representation([
@@ -1043,7 +1040,6 @@ class MasterTellTellzone(Tellzone):
             'views',
             'tellecasters',
             'distance',
-            'connections',
             'is_favorited',
             'is_pinned',
             'is_viewed',
@@ -1584,6 +1580,17 @@ class HomeMasterTellsResponseSlaveTell(SlaveTell):
         model = models.SlaveTell
 
 
+class HomeMasterTellsResponseTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class HomeMasterTellsResponse(MasterTell):
 
     created_by = HomeMasterTellsResponseUser()
@@ -1591,6 +1598,7 @@ class HomeMasterTellsResponse(MasterTell):
     category = HomeMasterTellsResponseCategory()
     is_pinned = BooleanField()
     slave_tell = HomeMasterTellsResponseSlaveTell()
+    tellzones = HomeMasterTellsResponseTellzones(many=True, required=False)
 
     class Meta:
 
@@ -1607,6 +1615,7 @@ class HomeMasterTellsResponse(MasterTell):
             'updated_at',
             'is_pinned',
             'slave_tell',
+            'tellzones',
         )
         model = models.MasterTell
 
@@ -1795,6 +1804,94 @@ class MasterTellsGet2Response(MasterTell):
             'inserted_at',
             'updated_at',
             'slave_tells',
+        )
+        model = models.MasterTell
+
+
+class MasterTellsAllRequest(Serializer):
+
+    user_id = IntegerField()
+    tellzone_id = IntegerField(default=0, required=False)
+
+
+class MasterTellsAllResponseUser(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'description',
+        )
+        model = models.User
+
+
+class MasterTellsAllResponseCategory(Category):
+    pass
+
+
+class MasterTellsAllResponseSlaveTell(SlaveTell):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by_id',
+            'owned_by_id',
+            'photo',
+            'first_name',
+            'last_name',
+            'type',
+            'contents_original',
+            'contents_preview',
+            'description',
+            'position',
+            'is_editable',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.SlaveTell
+
+
+class MasterTellsAllResponseTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
+class MasterTellsAllResponse(MasterTell):
+
+    created_by = MasterTellsAllResponseUser()
+    owned_by = MasterTellsAllResponseUser()
+    category = MasterTellsAllResponseCategory()
+    is_pinned = BooleanField()
+    slave_tell = MasterTellsAllResponseSlaveTell()
+    tellzones = MasterTellsAllResponseTellzones(many=True, required=False)
+
+    class Meta:
+
+        fields = (
+            'id',
+            'created_by',
+            'owned_by',
+            'category',
+            'contents',
+            'description',
+            'position',
+            'is_visible',
+            'inserted_at',
+            'updated_at',
+            'is_pinned',
+            'slave_tell',
+            'tellzones',
         )
         model = models.MasterTell
 
@@ -2579,6 +2676,17 @@ class TellzonesMasterTellsSlaveTell(SlaveTell):
         model = models.SlaveTell
 
 
+class TellzonesMasterTellsTellzones(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class TellzonesMasterTells(MasterTell):
 
     created_by = TellzonesMasterTellsUser()
@@ -2586,6 +2694,7 @@ class TellzonesMasterTells(MasterTell):
     category = TellzonesMasterTellsCategory()
     is_pinned = BooleanField()
     slave_tell = TellzonesMasterTellsSlaveTell()
+    tellzones = TellzonesMasterTellsTellzones(many=True, required=False)
 
     class Meta:
 
@@ -2602,6 +2711,7 @@ class TellzonesMasterTells(MasterTell):
             'updated_at',
             'is_pinned',
             'slave_tell',
+            'tellzones',
         )
         model = models.MasterTell
 

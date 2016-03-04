@@ -79,6 +79,7 @@ urlpatterns = patterns(
     url(r'^api/home/statistics/frequent/$', views.home_statistics_frequent),
     url(r'^api/home/statistics/infrequent/$', views.home_statistics_infrequent),
     url(r'^api/home/tellzones/$', views.home_tellzones),
+    url(r'^api/master-tells/all/$', views.master_tells_all),
     url(r'^api/master-tells/ids/$', views.master_tells_ids),
     url(r'^api/master-tells/positions/$', views.master_tells_positions),
     url(
@@ -230,7 +231,6 @@ urlpatterns = patterns(
             'post': 'delete',
         }),
     ),
-    url(r'^api/users/(?P<id>[0-9]+)/tellzones/master-tells/$', views.users_tellzones_master_tells),
     url(
         r'^api/users/(?P<id>[0-9]+)/tellzones/$',
         views.UsersTellzones.as_view({
