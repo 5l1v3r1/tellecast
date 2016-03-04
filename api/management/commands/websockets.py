@@ -361,7 +361,7 @@ class RabbitMQ(object):
                 if users_locations[0]['is_casting'] and users_locations[1]['is_casting']:
                     if (
                         users_locations[0]['tellzone_id'] and
-                        users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id']
+                        (users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id'])
                     ):
                         status = True
                 if users_locations[0]['is_casting'] and not users_locations[1]['is_casting']:
@@ -394,6 +394,7 @@ class RabbitMQ(object):
                                     },
                                     'badge': badge,
                                 },
+                                'tellzone_id': users_locations[0]['tellzone_id'],
                                 'type': 'zone_change',
                             },
                         ),
