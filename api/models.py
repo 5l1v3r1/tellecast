@@ -3004,49 +3004,6 @@ def post_pre_save(instance, **kwargs):
     instance.expired_at = datetime.now() + timedelta(days=365)
 
 
-@receiver(post_delete, sender=Post)
-def post_post_delete(instance, **kwargs):
-    posts_websockets(instance)
-
-
-@receiver(post_save, sender=Post)
-def post_post_save(instance, **kwargs):
-    posts_websockets(instance)
-
-
-def posts_websockets(instance):
-    user_location = UserLocation.objects.get_queryset().filter(user_id=instance.user_id).first()
-    if not user_location:
-        return
-    if not user_location.network_id:
-        return
-    if not user_location.is_casting:
-        return
-    user_ids = []
-    for ul in UserLocation.objects.get_queryset().filter(
-        ~Q(user_id=user_location.user_id),
-        network_id=user_location.network_id,
-        is_casting=True,
-        timestamp__gt=datetime.now() - timedelta(minutes=1),
-    ):
-        if not is_blocked(user_location.user_id, ul.user_id):
-            user_ids.append(ul.user_id)
-    if user_ids:
-        current_app.send_task(
-            'api.management.commands.websockets',
-            (
-                {
-                    'user_ids': user_ids,
-                    'subject': 'posts',
-                    'body': user_location.network_id,
-                },
-            ),
-            queue='api.management.commands.websockets',
-            routing_key='api.management.commands.websockets',
-            serializer='json',
-        )
-
-
 @receiver(pre_save, sender=PostAttachment)
 def post_attachment_pre_save(instance, **kwargs):
     if not instance.position:
