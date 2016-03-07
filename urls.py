@@ -225,6 +225,7 @@ urlpatterns = patterns(
     ),
     url(r'^api/users/(?P<id>[0-9]+)/messages/$', views.users_messages),
     url(r'^api/users/(?P<id>[0-9]+)/profile/$', views.users_profile),
+    url(r'^api/users/(?P<id>[0-9]+)/tellzones/all/$', views.users_tellzones_all),
     url(
         r'^api/users/(?P<id>[0-9]+)/tellzones/delete/$',
         views.UsersTellzones.as_view({

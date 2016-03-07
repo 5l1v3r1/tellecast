@@ -6561,6 +6561,84 @@ def users_profile(request, id):
     )
 
 
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def users_tellzones_all(request, id):
+    '''
+    SELECT Users :: Tellzones
+    <br>
+    <br>
+    This endpoint will return a list of all tellzones:
+    <br>
+    1. Which the given user ({id}) has pinned.
+    <br>
+    2. Which the given user ({id}) has favorited.
+    <br>
+    3. Which the given user ({id}) is currently in.
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.UsersTellzonesAll
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+        - code: 403
+          message: Invalid Input
+    '''
+    if int(id) != request.user.id:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `id`'),
+            },
+            status=HTTP_403_FORBIDDEN,
+        )
+    tellzones = {}
+    with closing(connection.cursor()) as cursor:
+        cursor.execute(
+            '''
+            SELECT api_tellzones.id AS id, api_tellzones.name AS name
+            FROM api_tellzones
+            WHERE
+                api_tellzones.id IN (
+                    SELECT tellzone_id
+                    FROM api_users_tellzones
+                    WHERE user_id = %s AND (pinned_at IS NOT NULL OR favorited_at IS NOT NULL)
+                    UNION
+                    SELECT tellzone_id
+                    FROM api_users_locations
+                    WHERE user_id = %s AND timestamp > NOW() - INTERVAL '1 minute'
+                )
+            ORDER BY api_tellzones.id ASC
+            ''',
+            (request.user.id, request.user.id,),
+        )
+        columns = [column.name for column in cursor.description]
+        for record in cursor.fetchall():
+            record = dict(zip(columns, record))
+            if record['id'] not in tellzones:
+                tellzones[record['id']] = {}
+            if 'id' not in tellzones[record['id']]:
+                tellzones[record['id']]['id'] = record['id']
+            if 'name' not in tellzones[record['id']]:
+                tellzones[record['id']]['name'] = record['name']
+    return Response(
+        data=serializers.UsersTellzonesAll(sorted(tellzones.values(), key=lambda item: item['id']), many=True).data,
+        status=HTTP_200_OK,
+    )
+
+
 def handler400(request):
     return JsonResponse(
         data={

@@ -826,7 +826,7 @@ class MasterTells(TransactionTestCase):
         assert response.status_code == 200
 
     def test_b(self):
-        response = self.client.get('/api/master-tells/', format='json')
+        response = self.client_1.get('/api/master-tells/', format='json')
         assert len(response.data) == 0
         assert response.status_code == 200
 
@@ -840,9 +840,9 @@ class MasterTells(TransactionTestCase):
             ],
         }
 
-        response = self.client.post('/api/master-tells/', dictionary, format='json')
-        assert response.data['created_by_id'] == self.user.id
-        assert response.data['owned_by_id'] == self.user.id
+        response = self.client_1.post('/api/master-tells/', dictionary, format='json')
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
@@ -854,9 +854,9 @@ class MasterTells(TransactionTestCase):
 
         del dictionary['position']
 
-        response = self.client.post('/api/master-tells/', dictionary, format='json')
-        assert response.data['created_by_id'] == self.user.id
-        assert response.data['owned_by_id'] == self.user.id
+        response = self.client_1.post('/api/master-tells/', dictionary, format='json')
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
@@ -871,11 +871,11 @@ class MasterTells(TransactionTestCase):
         inserted_at = parser.parse(response.data['inserted_at'])
         updated_at = parser.parse(response.data['updated_at'])
 
-        response = self.client.get('/api/master-tells/', format='json')
+        response = self.client_1.get('/api/master-tells/', format='json')
         assert len(response.data) == 2
         assert response.status_code == 200
 
-        response = self.client.get(
+        response = self.client_1.get(
             '/api/master-tells/',
             {
                 'inserted_at': inserted_at - timedelta(seconds=10),
@@ -890,9 +890,9 @@ class MasterTells(TransactionTestCase):
             'position': 1,
         }]
 
-        response = self.client.post('/api/master-tells/positions/', list_, format='json')
-        assert response.data[0]['created_by_id'] == self.user.id
-        assert response.data[0]['owned_by_id'] == self.user.id
+        response = self.client_1.post('/api/master-tells/positions/', list_, format='json')
+        assert response.data[0]['created_by_id'] == self.user_1.id
+        assert response.data[0]['owned_by_id'] == self.user_1.id
         assert response.data[0]['category']['id'] == dictionary['category_id']
         assert response.data[0]['position'] == list_[0]['position']
         assert response.data[0]['is_visible'] is True
@@ -900,7 +900,7 @@ class MasterTells(TransactionTestCase):
         assert response.data[0]['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
-        response = self.client.get(
+        response = self.client_1.get(
             '/api/master-tells/',
             {
                 'inserted_at': inserted_at + timedelta(seconds=10),
@@ -910,7 +910,7 @@ class MasterTells(TransactionTestCase):
         assert response.data == []
         assert response.status_code == 200
 
-        response = self.client.get(
+        response = self.client_1.get(
             '/api/master-tells/',
             {
                 'updated_at': updated_at - timedelta(seconds=10),
@@ -920,7 +920,7 @@ class MasterTells(TransactionTestCase):
         assert len(response.data) == 2
         assert response.status_code == 200
 
-        response = self.client.get(
+        response = self.client_1.get(
             '/api/master-tells/',
             {
                 'updated_at': updated_at + timedelta(seconds=10),
@@ -938,10 +938,10 @@ class MasterTells(TransactionTestCase):
             'tellzones': [],
         }
 
-        response = self.client.put('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
+        response = self.client_1.put('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
         assert response.data['id'] == id
-        assert response.data['created_by_id'] == self.user.id
-        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
@@ -952,10 +952,10 @@ class MasterTells(TransactionTestCase):
 
         del dictionary['position']
 
-        response = self.client.put('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
+        response = self.client_1.put('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
         assert response.data['id'] == id
-        assert response.data['created_by_id'] == self.user.id
-        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
@@ -974,10 +974,10 @@ class MasterTells(TransactionTestCase):
             ],
         }
 
-        response = self.client.patch('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
+        response = self.client_1.patch('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
         assert response.data['id'] == id
-        assert response.data['created_by_id'] == self.user.id
-        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
@@ -989,10 +989,10 @@ class MasterTells(TransactionTestCase):
 
         del dictionary['position']
 
-        response = self.client.patch('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
+        response = self.client_1.patch('/api/master-tells/{id:d}/'.format(id=id), dictionary, format='json')
         assert response.data['id'] == id
-        assert response.data['created_by_id'] == self.user.id
-        assert response.data['owned_by_id'] == self.user.id
+        assert response.data['created_by_id'] == self.user_1.id
+        assert response.data['owned_by_id'] == self.user_1.id
         assert response.data['category']['id'] == dictionary['category_id']
         assert response.data['contents'] == dictionary['contents']
         assert response.data['description'] == dictionary['description']
@@ -1002,16 +1002,16 @@ class MasterTells(TransactionTestCase):
         assert response.data['tellzones'][0]['id'] == dictionary['tellzones'][0]
         assert response.status_code == 200
 
-        response = self.client.get('/api/master-tells/ids/', format='json')
+        response = self.client_1.get('/api/master-tells/ids/', format='json')
         assert len(response.data) == 2
         assert response.data[1] == id
         assert response.status_code == 200
 
-        response = self.client.delete('/api/master-tells/{id:d}/'.format(id=id), format='json')
+        response = self.client_1.delete('/api/master-tells/{id:d}/'.format(id=id), format='json')
         assert response.data == {}
         assert response.status_code == 200
 
-        response = self.client.get('/api/master-tells/', format='json')
+        response = self.client_1.get('/api/master-tells/', format='json')
         assert len(response.data) == 1
         assert response.status_code == 200
 
@@ -3177,6 +3177,28 @@ class Users(TransactionTestCase):
         assert response.status_code == 200
 
     def test_c(self):
+        response = self.client.get('/api/users/{id:d}/tellzones/all/'.format(id=self.user.id), format='json')
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
+            {
+                'tellzone_id': self.tellzone.id,
+                'action': 'Favorite',
+            },
+            format='json',
+        )
+        assert response.data['tellzone_id'] == self.tellzone.id
+        assert response.status_code == 201
+
+        response = self.client.get('/api/users/{id:d}/tellzones/all/'.format(id=self.user.id), format='json')
+        assert len(response.data) == 1
+        assert response.data[0]['id'] == self.tellzone.id
+        assert response.data[0]['name'] == self.tellzone.name
+        assert response.status_code == 200
+
+    def test_d(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token 0.0')
         response = self.client.get('/api/ads/', format='json')
         assert response.data['detail'] == 'Invalid Token - #2'

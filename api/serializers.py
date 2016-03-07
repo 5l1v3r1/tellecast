@@ -2771,6 +2771,17 @@ class UsersResponse(User):
         model = models.User
 
 
+class UsersTellzonesAll(Tellzone):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+        )
+        model = models.Tellzone
+
+
 class UsersTellzonesGet(Tellzone):
 
     class Meta:
