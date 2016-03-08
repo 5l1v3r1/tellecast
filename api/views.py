@@ -5545,6 +5545,7 @@ def master_tells_all(request, *args, **kwargs):
                 api_users_settings_owned_by.value AS owned_by_setting_value,
                 api_categories.id AS category_id,
                 api_categories.name AS category_name,
+                api_categories.position AS category_position,
                 api_tellzones.id AS tellzone_id,
                 api_tellzones.name AS tellzone_name
             FROM api_master_tells_tellzones
@@ -5681,6 +5682,7 @@ def master_tells_all(request, *args, **kwargs):
                 master_tells[record['id']]['category'] = {
                     'id': record['category_id'],
                     'name': record['category_name'],
+                    'position': record['category_position'],
                 }
             if 'tellzones' not in master_tells[record['id']]:
                 master_tells[record['id']]['tellzones'] = {}

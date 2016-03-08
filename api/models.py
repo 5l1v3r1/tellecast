@@ -191,11 +191,12 @@ class Ad(Model):
 class Category(Model):
 
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
         db_table = 'api_categories'
         ordering = (
-            'name',
+            'position',
         )
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
@@ -2334,6 +2335,13 @@ class MessageAttachment(Model):
         return unicode(self.id)
 
 
+@receiver(pre_save, sender=Category)
+def category_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = Category.objects.get_queryset().aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
 @receiver(post_save, sender=User)
 def user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
@@ -3089,6 +3097,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_settings_owned_by.value AS owned_by_setting_value,
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
+                    api_categories.position AS category_position,
                     api_tellzones.id AS tellzone_id,
                     api_tellzones.name AS tellzone_name
                 FROM api_master_tells_tellzones
@@ -3185,7 +3194,8 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     api_users_settings_owned_by.key AS owned_by_setting_key,
                     api_users_settings_owned_by.value AS owned_by_setting_value,
                     api_categories.id AS category_id,
-                    api_categories.name AS category_name
+                    api_categories.name AS category_name,
+                    api_categories.position AS category_position
                 FROM api_users_locations
                 INNER JOIN api_users ON api_users.id = api_users_locations.user_id
                 INNER JOIN api_master_tells ON api_master_tells.owned_by_id = api_users_locations.user_id
@@ -3327,6 +3337,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
             master_tells[record['id']]['category'] = {
                 'id': record['category_id'],
                 'name': record['category_name'],
+                'position': record['category_position'],
             }
         if 'tellzones' not in master_tells[record['id']]:
             master_tells[record['id']]['tellzones'] = {}

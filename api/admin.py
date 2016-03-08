@@ -309,15 +309,18 @@ class Category(ModelAdmin):
     actions = [delete_selected]
     fields = (
         'name',
+        'position',
     )
     list_display = (
         'id',
         'name',
+        'position',
     )
     list_filter = ()
     list_per_page = 10
     search_fields = (
         'name',
+        'position',
     )
 
 Category.delete_view = delete_view

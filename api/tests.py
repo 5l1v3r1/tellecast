@@ -114,6 +114,24 @@ class Blocks(TransactionTestCase):
         assert response.status_code == 200
 
 
+class Categories(TransactionTestCase):
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        for _ in range(0, 10):
+            middleware.mixer.blend('api.Category', position=None)
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/categories/', format='json')
+        assert len(response.data) == 10
+        assert sum([category['position'] for category in response.data]) == 55
+        assert response.status_code == 200
+
+
 class Deauthenticate(TransactionTestCase):
 
     def setUp(self):
