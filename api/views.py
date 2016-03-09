@@ -6576,11 +6576,13 @@ def users_tellzones_all(request, id):
     <br>
     This endpoint will return a list of all tellzones:
     <br>
-    1. Which the given user ({id}) has pinned.
+    1. Where the given user ({id}) is currently in.
     <br>
-    2. Which the given user ({id}) has favorited.
+    2. Where the given user ({id}) has pinned as master tell.
     <br>
-    3. Which the given user ({id}) is currently in.
+    3. Which the given user ({id}) has favorited.
+    <br>
+    4. Which the given user ({id}) has pinned.
 
     <pre>
     Input
@@ -6599,9 +6601,10 @@ def users_tellzones_all(request, id):
         - Type: integer
         - Status: mandatory
         - Choices:
-            1 = You have pinned this Tellzone
-            2 = You have favorited this Tellzone
-            3 = You are currently in this Tellzone
+            1 = Where the given user ({id}) is currently in.
+            2 = Where the given user ({id}) has pinned as master tell.
+            3 = Which the given user ({id}) has favorited.
+            4 = Which the given user ({id}) has pinned.
     </pre>
     ---
     response_serializer: api.serializers.UsersTellzonesAll
@@ -6626,20 +6629,25 @@ def users_tellzones_all(request, id):
             FROM api_tellzones api_tellzones_1
             INNER JOIN (
                 SELECT tellzone_id, 1 As type
-                FROM api_users_tellzones
-                WHERE user_id = %s AND pinned_at IS NOT NULL
+                FROM api_users_locations
+                WHERE user_id = %s AND timestamp > NOW() - INTERVAL '1 minute'
                 UNION
                 SELECT tellzone_id, 2 As type
+                FROM api_master_tells_tellzones
+                INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
+                WHERE api_master_tells.owned_by_id = %s
+                UNION
+                SELECT tellzone_id, 3 As type
                 FROM api_users_tellzones
                 WHERE user_id = %s AND favorited_at IS NOT NULL
                 UNION
-                SELECT tellzone_id, 3 As type
-                FROM api_users_locations
-                WHERE user_id = %s AND timestamp > NOW() - INTERVAL '1 minute'
+                SELECT tellzone_id, 4 As type
+                FROM api_users_tellzones
+                WHERE user_id = %s AND pinned_at IS NOT NULL
             ) api_tellzones_2 ON api_tellzones_2.tellzone_id = api_tellzones_1.id
-            ORDER BY api_tellzones_2.type DESC, api_tellzones_1.id ASC
+            ORDER BY api_tellzones_2.type ASC, api_tellzones_1.id ASC
             ''',
-            (request.user.id, request.user.id, request.user.id,),
+            (request.user.id, request.user.id, request.user.id, request.user.id,),
         )
         columns = [column.name for column in cursor.description]
         for record in cursor.fetchall():
