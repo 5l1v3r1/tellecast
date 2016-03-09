@@ -2774,11 +2774,14 @@ class UsersResponse(User):
 
 class UsersTellzonesAll(Tellzone):
 
+    type = IntegerField()
+
     class Meta:
 
         fields = (
             'id',
             'name',
+            'type',
         )
         model = models.Tellzone
 

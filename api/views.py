@@ -6594,6 +6594,14 @@ def users_tellzones_all(request, id):
     ======
 
     (see below; "Response Class" -> "Model Schema")
+
+    + type
+        - Type: integer
+        - Status: mandatory
+        - Choices:
+            1 = You have pinned this Tellzone
+            2 = You have favorited this Tellzone
+            3 = You are currently in this Tellzone
     </pre>
     ---
     response_serializer: api.serializers.UsersTellzonesAll
@@ -6614,21 +6622,24 @@ def users_tellzones_all(request, id):
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             '''
-            SELECT api_tellzones.id AS id, api_tellzones.name AS name
-            FROM api_tellzones
-            WHERE
-                api_tellzones.id IN (
-                    SELECT tellzone_id
-                    FROM api_users_tellzones
-                    WHERE user_id = %s AND (pinned_at IS NOT NULL OR favorited_at IS NOT NULL)
-                    UNION
-                    SELECT tellzone_id
-                    FROM api_users_locations
-                    WHERE user_id = %s AND timestamp > NOW() - INTERVAL '1 minute'
-                )
-            ORDER BY api_tellzones.id ASC
+            SELECT api_tellzones_1.id AS id, api_tellzones_1.name AS name, api_tellzones_2.type AS type
+            FROM api_tellzones api_tellzones_1
+            INNER JOIN (
+                SELECT tellzone_id, 1 As type
+                FROM api_users_tellzones
+                WHERE user_id = %s AND pinned_at IS NOT NULL
+                UNION
+                SELECT tellzone_id, 2 As type
+                FROM api_users_tellzones
+                WHERE user_id = %s AND favorited_at IS NOT NULL
+                UNION
+                SELECT tellzone_id, 3 As type
+                FROM api_users_locations
+                WHERE user_id = %s AND timestamp > NOW() - INTERVAL '1 minute'
+            ) api_tellzones_2 ON api_tellzones_2.tellzone_id = api_tellzones_1.id
+            ORDER BY api_tellzones_2.type DESC, api_tellzones_1.id ASC
             ''',
-            (request.user.id, request.user.id,),
+            (request.user.id, request.user.id, request.user.id,),
         )
         columns = [column.name for column in cursor.description]
         for record in cursor.fetchall():
@@ -6639,6 +6650,8 @@ def users_tellzones_all(request, id):
                 tellzones[record['id']]['id'] = record['id']
             if 'name' not in tellzones[record['id']]:
                 tellzones[record['id']]['name'] = record['name']
+            if 'type' not in tellzones[record['id']]:
+                tellzones[record['id']]['type'] = record['type']
     return Response(
         data=serializers.UsersTellzonesAll(sorted(tellzones.values(), key=lambda item: item['id']), many=True).data,
         status=HTTP_200_OK,
