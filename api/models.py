@@ -3131,12 +3131,6 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(api_tellzones.point, 2163), %s
                     )
                     AND
-                    (
-                        api_slave_tells.id IS NULL
-                        OR
-                        api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
-                    )
-                    AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
                 ''',
@@ -3242,12 +3236,6 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     AND
                     api_users.is_signed_in = TRUE
                     AND
-                    (
-                        api_slave_tells.id IS NULL
-                        OR
-                        api_slave_tells.type IN ('image/*', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png')
-                    )
-                    AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
                 ''',
@@ -3283,10 +3271,11 @@ def get_master_tells(user_id, tellzone_id, points, radius):
             master_tells[record['id']]['updated_at'] = record['updated_at']
         if 'is_pinned' not in master_tells[record['id']]:
             master_tells[record['id']]['is_pinned'] = record['is_pinned']
-        if 'slave_tell' not in master_tells[record['id']]:
-            master_tells[record['id']]['slave_tell'] = None
-            if record['slave_tell_id']:
-                master_tells[record['id']]['slave_tell'] = {
+        if 'slave_tells' not in master_tells[record['id']]:
+            master_tells[record['id']]['slave_tells'] = {}
+        if record['slave_tell_id']:
+            if record['slave_tell_id'] not in master_tells[record['id']]['slave_tells']:
+                master_tells[record['id']]['slave_tells'][record['slave_tell_id']] = {
                     'id': record['slave_tell_id'],
                     'created_by_id': record['slave_tell_created_by_id'],
                     'owned_by_id': record['slave_tell_owned_by_id'],
@@ -3375,6 +3364,9 @@ def get_master_tells(user_id, tellzone_id, points, radius):
         )
         del master_tells[key]['created_by']['settings']
         del master_tells[key]['owned_by']['settings']
+        master_tells[key]['slave_tells'] = sorted(
+            master_tells[key]['slave_tells'].values(), key=lambda item: item['position'],
+        )
         master_tells[key]['tellzones'] = sorted(master_tells[key]['tellzones'].values(), key=lambda item: item['id'])
     return master_tells
 

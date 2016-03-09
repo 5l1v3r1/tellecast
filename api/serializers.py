@@ -1598,7 +1598,7 @@ class HomeMasterTellsResponse(MasterTell):
     owned_by = HomeMasterTellsResponseUser()
     category = HomeMasterTellsResponseCategory()
     is_pinned = BooleanField()
-    slave_tell = HomeMasterTellsResponseSlaveTell()
+    slave_tells = HomeMasterTellsResponseSlaveTell(many=True)
     tellzones = HomeMasterTellsResponseTellzones(many=True, required=False)
 
     class Meta:
@@ -1615,7 +1615,7 @@ class HomeMasterTellsResponse(MasterTell):
             'inserted_at',
             'updated_at',
             'is_pinned',
-            'slave_tell',
+            'slave_tells',
             'tellzones',
         )
         model = models.MasterTell
@@ -1874,7 +1874,7 @@ class MasterTellsAllResponse(MasterTell):
     owned_by = MasterTellsAllResponseUser()
     category = MasterTellsAllResponseCategory()
     is_pinned = BooleanField()
-    slave_tell = MasterTellsAllResponseSlaveTell()
+    slave_tells = MasterTellsAllResponseSlaveTell(many=True)
     tellzones = MasterTellsAllResponseTellzones(many=True, required=False)
 
     class Meta:
@@ -1891,7 +1891,7 @@ class MasterTellsAllResponse(MasterTell):
             'inserted_at',
             'updated_at',
             'is_pinned',
-            'slave_tell',
+            'slave_tells',
             'tellzones',
         )
         model = models.MasterTell
@@ -2121,7 +2121,7 @@ class NetworksMasterTellsResponse(MasterTell):
     owned_by = NetworksMasterTellsResponseUser()
     category = NetworksMasterTellsResponseCategory()
     is_pinned = BooleanField()
-    slave_tell = NetworksMasterTellsResponseSlaveTell()
+    slave_tells = NetworksMasterTellsResponseSlaveTell(many=True)
     tellzones = NetworksMasterTellsResponseTellzones(many=True, required=False)
 
     class Meta:
@@ -2138,7 +2138,7 @@ class NetworksMasterTellsResponse(MasterTell):
             'inserted_at',
             'updated_at',
             'is_pinned',
-            'slave_tell',
+            'slave_tells',
             'tellzones',
         )
         model = models.MasterTell
@@ -2694,7 +2694,7 @@ class TellzonesMasterTells(MasterTell):
     owned_by = TellzonesMasterTellsUser()
     category = TellzonesMasterTellsCategory()
     is_pinned = BooleanField()
-    slave_tell = TellzonesMasterTellsSlaveTell()
+    slave_tells = TellzonesMasterTellsSlaveTell(many=True)
     tellzones = TellzonesMasterTellsTellzones(many=True, required=False)
 
     class Meta:
@@ -2711,7 +2711,7 @@ class TellzonesMasterTells(MasterTell):
             'inserted_at',
             'updated_at',
             'is_pinned',
-            'slave_tell',
+            'slave_tells',
             'tellzones',
         )
         model = models.MasterTell
