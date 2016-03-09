@@ -1077,13 +1077,17 @@ class Messages(ViewSet):
         =================
 
         {
-            'alert': {
-                'body': '{{ body }}',
-                'title': 'New message from user',
+            'aps': {
+                'alert': {
+                    'body': '{{ body }}',
+                    'title': 'New message from user',
+                },
+                'badge': {{ total_number_of_unread_messages + total_number_of_unread_notifications }},
             },
-            'badge': {{ total_number_of_unread_messages + total_number_of_unread_notifications }},
             'type': 'message',
             'user_source_id': {{ user_source_id }},
+            'master_tell_id': '{{ master_tell_id }}',
+            'post_id': {{ post_id }},
         }
         </pre>
         ---

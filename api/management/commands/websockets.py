@@ -1475,6 +1475,7 @@ class WebSocket(WebSocketHandler):
                                     },
                                     'type': 'message',
                                     'user_source_id': user_id,
+                                    'master_tell_id': data['master_tell_id'] if 'master_tell_id' in data else None,
                                     'post_id': data['post_id'] if 'post_id' in data else None,
                                 },
                             ),

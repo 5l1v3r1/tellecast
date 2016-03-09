@@ -2808,6 +2808,7 @@ def message_post_save(instance, **kwargs):
                         },
                         'type': 'message',
                         'user_source_id': instance.user_source_id,
+                        'master_tell_id': instance.master_tell_id,
                         'post_id': instance.post_id,
                     },
                 ),
