@@ -3214,6 +3214,7 @@ class Users(TransactionTestCase):
         assert len(response.data) == 1
         assert response.data[0]['id'] == self.tellzone.id
         assert response.data[0]['name'] == self.tellzone.name
+        assert response.data[0]['type'] == 3
         assert response.status_code == 200
 
     def test_d(self):
