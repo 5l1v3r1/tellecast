@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 from copy import deepcopy
 from os import environ, remove
+from os.path import getsize
 from tempfile import mkstemp
 
 from boto.s3.connection import S3Connection
@@ -93,28 +94,28 @@ def thumbnails_1(table, id):
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.photo_original, 'image/*', 'large', 1920,),
+            (instance.photo_original, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.photo_original, 'image/*', 'small', 320,),
+            (instance.photo_original, 'image/*', 'small', 320, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.photo_preview, 'image/*', 'large', 1920,),
+            (instance.photo_preview, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.photo_preview, 'image/*', 'small', 320,),
+            (instance.photo_preview, 'image/*', 'small', 320, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
@@ -127,28 +128,28 @@ def thumbnails_1(table, id):
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_original, 'image/*', 'large', 1920,),
+            (instance.string_original, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_original, 'image/*', 'small', 320,),
+            (instance.string_original, 'image/*', 'small', 320, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_preview, 'image/*', 'large', 1920,),
+            (instance.string_preview, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_preview, 'image/*', 'small', 320,),
+            (instance.string_preview, 'image/*', 'small', 320, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
@@ -161,28 +162,28 @@ def thumbnails_1(table, id):
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_original, 'image/*', 'large', 1920,),
+            (instance.string_original, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_original, 'image/*', 'small', 685,),
+            (instance.string_original, 'image/*', 'small', 685, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_preview, 'image/*', 'large', 1920,),
+            (instance.string_preview, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.string_preview, 'image/*', 'small', 685,),
+            (instance.string_preview, 'image/*', 'small', 685, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
@@ -195,14 +196,14 @@ def thumbnails_1(table, id):
             raise thumbnails_1.retry(countdown=1)
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.photo, 'image/*', 'large', 1920,),
+            (instance.photo, 'image/*', 'large', 1920, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
         )
         current_app.send_task(
             'api.tasks.thumbnails_2',
-            (instance.photo, 'image/*', 'small', 320,),
+            (instance.photo, 'image/*', 'small', 320, None,),
             queue='api.tasks.thumbnails',
             routing_key='api.tasks.thumbnails',
             serializer='json',
@@ -210,28 +211,28 @@ def thumbnails_1(table, id):
         if instance.type.startswith('image'):
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.contents_original, instance.type, 'large', 1920,),
+                (instance.contents_original, instance.type, 'large', 1920, 1048576,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.contents_original, instance.type, 'small', 685,),
+                (instance.contents_original, instance.type, 'small', 685, 524288,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.contents_preview, instance.type, 'large', 1920,),
+                (instance.contents_preview, instance.type, 'large', 1920, 1048576,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.contents_preview, instance.type, 'small', 685,),
+                (instance.contents_preview, instance.type, 'small', 685, 524288,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
@@ -245,28 +246,28 @@ def thumbnails_1(table, id):
         if instance.type.startswith('image'):
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.string_original, instance.type, 'large', 1920,),
+                (instance.string_original, instance.type, 'large', 1920, None,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.string_original, instance.type, 'small', 685,),
+                (instance.string_original, instance.type, 'small', 685, None,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.string_preview, instance.type, 'large', 1920,),
+                (instance.string_preview, instance.type, 'large', 1920, None,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
             )
             current_app.send_task(
                 'api.tasks.thumbnails_2',
-                (instance.string_preview, instance.type, 'small', 685,),
+                (instance.string_preview, instance.type, 'small', 685, None,),
                 queue='api.tasks.thumbnails',
                 routing_key='api.tasks.thumbnails',
                 serializer='json',
@@ -275,7 +276,7 @@ def thumbnails_1(table, id):
 
 
 @celery.task
-def thumbnails_2(name, type, prefix, width):
+def thumbnails_2(name, type, prefix, width, bytes):
     bucket = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY).get_bucket(settings.AWS_BUCKET)
     if not name:
         logger.critical('{name:s}: if not name (#1)'.format(name=name))
@@ -297,7 +298,7 @@ def thumbnails_2(name, type, prefix, width):
     key.get_contents_to_filename(source)
     destination = None
     try:
-        destination = get_destination(source, name, type, width)
+        destination = get_destination(source, name, type, width, bytes)
     except Exception:
         client.captureException()
     if not destination:
@@ -312,24 +313,36 @@ def thumbnails_2(name, type, prefix, width):
     return
 
 
-def get_destination(source, name, type, width):
-    if type.startswith('image'):
-        format = type.split('/')[1]
-        if format == '*':
-            format = ''
-            try:
-                format = name.split('.')[-1].lower()
-            except Exception:
-                pass
-            if not format:
-                format = 'png'
-            if format == 'jpg':
-                format = 'jpeg'
-        _, destination = mkstemp()
+def get_destination(source, name, type, width, bytes):
+    if not type.startswith('image'):
+        return
+    format = type.split('/')[1]
+    if format == '*':
+        format = ''
+        try:
+            format = name.split('.')[-1].lower()
+        except Exception:
+            pass
+        if not format:
+            format = 'png'
+        if format == 'jpg':
+            format = 'jpeg'
+    _, destination = mkstemp()
+    quality = 75
+    while True:
         ProcessorPipeline([
             Transpose(),
             ResizeToFit(width=width, upscale=False),
         ]).process(
-            Image.open(source)
-        ).save(destination, format=format, quality=75)
-        return destination
+            Image.open(source),
+        ).save(
+            destination, format=format, optimize=True, quality=quality,
+        )
+        if not bytes:
+            break
+        if getsize(destination) <= bytes:
+            break
+        if quality <= 5:
+            break
+        quality = quality - 5
+    return destination
