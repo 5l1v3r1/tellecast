@@ -836,6 +836,7 @@ class TellzoneMasterTell(MasterTell):
             'is_visible',
             'inserted_at',
             'updated_at',
+            'slave_tells',
         )
         model = models.MasterTell
 
