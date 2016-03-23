@@ -6399,6 +6399,72 @@ def slave_tells_positions(request):
     )
 
 
+@api_view(('POST',))
+@permission_classes((IsAuthenticated,))
+def tellzones_ids(request):
+    '''
+    SELECT Tellzones
+
+    <pre>
+    Input
+    =====
+
+    + ids
+        - Type: a list of Tellzone IDs
+        - Status: mandatory
+
+        Example:
+
+        {
+            "ids": [...]
+        }
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.TellzonesIDsRequest
+    response_serializer: api.serializers.TellzonesIDsResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.TellzonesIDsRequest(
+        context={
+            'request': request,
+        },
+        data=request.data,
+    )
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        data=serializers.TellzonesIDsResponse(
+            sorted(
+                [
+                    tellzone
+                    for tellzone in models.Tellzone.objects.get_queryset().prefetch_related(
+                        'social_profiles',
+                    ).filter(
+                        id__in=serializer.validated_data['ids'],
+                    )
+                ],
+                key=lambda tellzone: (-tellzone.tellecasters, -tellzone.id),
+            ),
+            context={
+                'request': request,
+            },
+            many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
 def tellzones_master_tells(request, id):

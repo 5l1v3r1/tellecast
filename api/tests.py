@@ -2983,6 +2983,27 @@ class Tellzones(TransactionTestCase):
         assert response.status_code == 200
 
     def test_b(self):
+        response = self.client.post(
+            '/api/tellzones/ids/',
+            {
+                'ids': [],
+            },
+            format='json',
+        )
+        assert len(response.data) == 0
+        assert response.status_code == 200
+
+        response = self.client.post(
+            '/api/tellzones/ids/',
+            {
+                'ids': [self.tellzone.id],
+            },
+            format='json',
+        )
+        assert len(response.data) == 1
+        assert response.status_code == 200
+
+    def test_c(self):
         response = self.client.get(
             '/api/tellzones/{id:d}/master-tells/'.format(id=models.Tellzone.objects.get_queryset().first().id),
             format='json',
@@ -2990,7 +3011,7 @@ class Tellzones(TransactionTestCase):
         assert len(response.data) == 25
         assert response.status_code == 200
 
-    def test_c(self):
+    def test_d(self):
         response = self.client.post(
             '/api/users/{id:d}/tellzones/'.format(id=self.user.id),
             {

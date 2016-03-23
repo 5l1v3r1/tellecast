@@ -207,6 +207,7 @@ urlpatterns = patterns(
         }),
     ),
     url(r'^api/tellzones/(?P<id>[0-9]+)/master-tells/$', views.tellzones_master_tells),
+    url(r'^api/tellzones/ids/$', views.tellzones_ids),
     url(
         r'^api/tellzones/(?P<id>[0-9]+)/$',
         views.Tellzones.as_view({

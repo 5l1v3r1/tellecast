@@ -2636,6 +2636,15 @@ class TellzonesResponse(Tellzone):
     pass
 
 
+class TellzonesIDsRequest(Serializer):
+
+    ids = ListField(child=IntegerField())
+
+
+class TellzonesIDsResponse(Tellzone):
+    pass
+
+
 class TellzonesMasterTellsUser(User):
 
     class Meta:
