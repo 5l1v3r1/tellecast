@@ -3050,10 +3050,10 @@ def get_items(items, count):
     return [item.tolist() for item in array_split(items, count)]
 
 
-def get_master_tells(user_id, tellzone_id, points, radius):
+def get_master_tells(user_id, tellzone_id, tellzones, radius):
     master_tells = {}
     records = []
-    for point in points:
+    for tellzone in tellzones:
         with closing(connection.cursor()) as cursor:
             cursor.execute(
                 '''
@@ -3127,21 +3127,14 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                         api_master_tells_tellzones.tellzone_id != %s
                     )
                     AND
-                    ST_DWithin(
-                        ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(api_tellzones.point, 2163), %s
-                    )
+                    api_master_tells_tellzones.tellzone_id != %s
                     AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
                 ''',
                 (
-                    user_id,
-                    user_id,
-                    user_id,
-                    tellzone_id,
-                    'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=point[0], latitude=point[1]),
-                    radius,
-                )
+                    user_id, user_id, user_id, tellzone_id, tellzone[0],
+                ),
             )
             columns = [column.name for column in cursor.description]
             for record in cursor.fetchall():
@@ -3245,7 +3238,7 @@ def get_master_tells(user_id, tellzone_id, points, radius):
                     user_id,
                     tellzone_id,
                     tellzone_id,
-                    'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=point[0], latitude=point[1]),
+                    'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=tellzone[1], latitude=tellzone[2]),
                     radius,
                 )
             )

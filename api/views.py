@@ -5023,7 +5023,7 @@ def home_master_tells(request):
         data=models.get_master_tells(
             request.user.id,
             serializer.validated_data['tellzone_id'],
-            [(serializer.validated_data['longitude'], serializer.validated_data['latitude'],)],
+            [(0, serializer.validated_data['longitude'], serializer.validated_data['latitude'],)],
             (models.Tellzone.radius() * 0.3048) if not serializer.validated_data['dummy'] == 'Yes' else 999999999,
         ),
         status=HTTP_200_OK,
@@ -6030,7 +6030,7 @@ def networks_master_tells(request, id):
             request.user.id,
             serializer.validated_data['tellzone_id'],
             [
-                (network_tellzone.tellzone.point.x, network_tellzone.tellzone.point.y,)
+                (network_tellzone.tellzone.id, network_tellzone.tellzone.point.x, network_tellzone.tellzone.point.y,)
                 for network_tellzone in network.networks_tellzones.get_queryset()
             ],
             models.Tellzone.radius() * 0.3048,
@@ -6500,7 +6500,10 @@ def tellzones_master_tells(request, id):
         )
     return Response(
         data=models.get_master_tells(
-            request.user.id, 0, [(tellzone.point.x, tellzone.point.y,)], models.Tellzone.radius() * 0.3048,
+            request.user.id,
+            0,
+            [(tellzone.id, tellzone.point.x, tellzone.point.y,)],
+            models.Tellzone.radius() * 0.3048,
         ),
         status=HTTP_200_OK,
     )
