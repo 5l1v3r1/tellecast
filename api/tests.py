@@ -1580,6 +1580,52 @@ class Networks(TransactionTestCase):
         assert len(response.data) == 20
         assert response.status_code == 200
 
+    def test_c(self):
+        category = middleware.mixer.blend('api.Category')
+
+        network = middleware.mixer.blend('api.Network', user=None)
+
+        for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None):
+            models.NetworkTellzone.objects.create(network=network, tellzone=tellzone)
+
+        with middleware.mixer.ctx(commit=False):
+            for index, user in enumerate(middleware.mixer.cycle(5).blend('api.User')):
+                user.save()
+                for master_tell in middleware.mixer.cycle(5).blend(
+                    'api.MasterTell', created_by=user, owned_by=user, category=category,
+                ):
+                    master_tell.contents = str(user.id)
+                    master_tell.save()
+                    for tellzone in models.Tellzone.objects.get_queryset().order_by('id'):
+                        models.MasterTellTellzone.objects.create(master_tell=master_tell, tellzone=tellzone)
+
+        user = middleware.mixer.blend('api.User', type='Root')
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+        response = client.get(
+            '/api/networks/{id:d}/master-tells/'.format(id=network.id),
+            format='json',
+        )
+        assert len(response.data) == 25
+        assert response.status_code == 200
+        for data in response.data:
+            assert len(data['tellzones']) == 5
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+        response = client.get(
+            '/api/networks/{id:d}/master-tells/'.format(id=network.id),
+            {
+                'tellzone_id': models.Tellzone.objects.get_queryset().order_by('?').first().id,
+            },
+            format='json',
+        )
+        assert len(response.data) == 25
+        assert response.status_code == 200
+        for data in response.data:
+            assert len(data['tellzones']) == 4
+
 
 class Notifications(TransactionTestCase):
 
@@ -2758,6 +2804,8 @@ class Tellzones(TransactionTestCase):
                 ):
                     master_tell.contents = str(user.id)
                     master_tell.save()
+                    for tellzone in models.Tellzone.objects.get_queryset().order_by('id'):
+                        models.MasterTellTellzone.objects.create(master_tell=master_tell, tellzone=tellzone)
 
                 client = APIClient()
                 client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
@@ -3010,6 +3058,20 @@ class Tellzones(TransactionTestCase):
         )
         assert len(response.data) == 25
         assert response.status_code == 200
+        for data in response.data:
+            assert len(data['tellzones']) == 1
+
+        response = self.client.get(
+            '/api/tellzones/{id:d}/master-tells/'.format(id=models.Tellzone.objects.get_queryset().first().id),
+            {
+                'tellzone_id': models.Tellzone.objects.get_queryset().first().id,
+            },
+            format='json',
+        )
+        assert len(response.data) == 25
+        assert response.status_code == 200
+        for data in response.data:
+            assert len(data['tellzones']) == 1
 
     def test_d(self):
         response = self.client.post(

@@ -3127,7 +3127,7 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                         api_master_tells_tellzones.tellzone_id != %s
                     )
                     AND
-                    api_master_tells_tellzones.tellzone_id != %s
+                    api_master_tells_tellzones.tellzone_id = %s
                     AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
