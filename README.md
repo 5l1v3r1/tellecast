@@ -43,6 +43,7 @@ $ cd tellecast
 $ workon tellecast
 $ celery worker --app=api.tasks --concurrency=1 --loglevel=DEBUG --pool=prefork --queues=api.tasks.push_notifications
 $ celery worker --app=api.tasks --concurrency=1 --loglevel=DEBUG --pool=prefork --queues=api.tasks.thumbnails
-$ python manage.py websockets
 $ python manage.py runserver
+$ python manage.py users
+$ python manage.py websockets
 ```
