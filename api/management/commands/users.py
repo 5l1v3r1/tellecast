@@ -14,10 +14,10 @@ class Command(BaseCommand):
             if not user.is_signed_in:
                 user.is_signed_in = True
                 user.save()
-            network = user.tellzone.networks_tellzones.get_queryset().order_by('network_id').first()
+            network_tellzone = user.tellzone.networks_tellzones.get_queryset().order_by('network_id').first()
             models.UserLocation.objects.create(
                 user_id=user.id,
-                network_id=network.id if network else None,
+                network_id=network_tellzone.network.id if network_tellzone and network_tellzone.network else None,
                 tellzone_id=user.tellzone.id,
                 location=None,
                 point=user.tellzone.point,
