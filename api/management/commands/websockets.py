@@ -1585,34 +1585,45 @@ class WebSocket(WebSocketHandler):
             raise Return(None)
         try:
             with closing(connection.cursor()) as cursor:
-                cursor.execute(
-                    '''
-                    INSERT INTO api_users_locations (
-                        user_id,
-                        network_id,
-                        tellzone_id,
-                        location,
-                        point,
-                        accuracies_horizontal,
-                        accuracies_vertical,
-                        bearing,
-                        is_casting,
-                        timestamp
-                    ) VALUES (%s, %s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW()) RETURNING id
-                    ''',
-                    (
-                        user_id,
-                        data['network_id'] if 'network_id' in data else None,
-                        data['tellzone_id'] if 'tellzone_id' in data else None,
-                        data['location'] if 'location' in data else None,
-                        'POINT({longitude} {latitude})'.format(longitude=data['point'].x, latitude=data['point'].y),
-                        data['accuracies_horizontal'] if 'accuracies_horizontal' in data else 0.00,
-                        data['accuracies_vertical'] if 'accuracies_vertical' in data else 0.00,
-                        data['bearing'] if 'bearing' in data else 0,
-                        data['is_casting'] if 'is_casting' in data else False,
+                cursor.execute('SELECT tellzone_id FROM api_users WHERE id = %s', (user_id,))
+                tellzone_id = cursor.fetchone()[0]
+                if tellzone_id:
+                    cursor.execute(
+                        'SELECT id FROM api_users_locations WHERE user_id = %s ORDER BY id DESC LIMIT 1 OFFSET 0',
+                        (user_id,),
                     )
-                )
-                id = cursor.fetchone()[0]
+                    id = cursor.fetchone()[0]
+                else:
+                    cursor.execute(
+                        '''
+                        INSERT INTO api_users_locations (
+                            user_id,
+                            network_id,
+                            tellzone_id,
+                            location,
+                            point,
+                            accuracies_horizontal,
+                            accuracies_vertical,
+                            bearing,
+                            is_casting,
+                            timestamp
+                        ) VALUES (%s, %s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s, NOW()) RETURNING id
+                        ''',
+                        (
+                            user_id,
+                            data['network_id'] if 'network_id' in data else None,
+                            data['tellzone_id'] if 'tellzone_id' in data else None,
+                            data['location'] if 'location' in data else None,
+                            'POINT({longitude} {latitude})'.format(
+                                longitude=data['point'].x, latitude=data['point'].y,
+                            ),
+                            data['accuracies_horizontal'] if 'accuracies_horizontal' in data else 0.00,
+                            data['accuracies_vertical'] if 'accuracies_vertical' in data else 0.00,
+                            data['bearing'] if 'bearing' in data else 0,
+                            data['is_casting'] if 'is_casting' in data else False,
+                        )
+                    )
+                    id = cursor.fetchone()[0]
                 current_app.send_task(
                     'api.management.commands.websockets',
                     (
