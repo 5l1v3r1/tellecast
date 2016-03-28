@@ -6225,6 +6225,10 @@ def register(request):
             'longitude': 0.0000000000,
         }
 
+    + access_code
+        - Type: string
+        - Status: optional
+
     + settings
         - Type: dictionary
         - Status: mandatory

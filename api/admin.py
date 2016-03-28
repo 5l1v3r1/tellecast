@@ -970,6 +970,7 @@ class User(ModelAdmin):
         'inserted_at',
         'updated_at',
         'token',
+        'access_code',
     )
     list_filter = (
         'tellzone',
@@ -977,6 +978,7 @@ class User(ModelAdmin):
         'is_signed_in',
         'inserted_at',
         'updated_at',
+        'access_code',
     )
     list_per_page = 10
     search_fields = (
@@ -990,6 +992,7 @@ class User(ModelAdmin):
         'location',
         'description',
         'phone',
+        'access_code',
     )
 
 User.delete_view = delete_view

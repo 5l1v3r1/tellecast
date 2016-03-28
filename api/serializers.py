@@ -2383,6 +2383,7 @@ class RegisterRequest(User):
     description = CharField(allow_blank=True, required=False)
     phone = CharField(allow_blank=True, required=False)
     point = PointField(required=False)
+    access_code = CharField(allow_blank=True, required=False)
     settings = UserSetting(help_text='Users :: Settings')
     photos = RegisterRequestUserPhoto(help_text='List of Users :: Photos', many=True, required=False)
     social_profiles = RegisterRequestUserSocialProfile(
@@ -2408,6 +2409,7 @@ class RegisterRequest(User):
             'description',
             'phone',
             'point',
+            'access_code',
             'settings',
             'photos',
             'social_profiles',

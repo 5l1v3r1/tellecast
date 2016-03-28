@@ -284,6 +284,7 @@ class User(Model):
     is_signed_in = BooleanField(ugettext_lazy('Is Signed In?'), db_index=True, default=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+    access_code = CharField(ugettext_lazy('Access Code'), blank=True, db_index=True, max_length=255, null=True)
 
     tellzone = ForeignKey('Tellzone', blank=True, default=None, null=True, related_name='+')
 
@@ -320,6 +321,7 @@ class User(Model):
             description=data['description'] if 'description' in data else None,
             phone=data['phone'] if 'phone' in data else None,
             point=data['point'] if 'point' in data else None,
+            access_code=data['access_code'] if 'access_code' in data else None,
         )
         if 'settings' in data:
             for key, value in data['settings'].items():
