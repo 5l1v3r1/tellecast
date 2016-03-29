@@ -433,7 +433,10 @@ class MasterTellTellzone(ModelAdmin):
     list_display = (
         'id',
         'master_tell',
+        'master_tell_created_by',
+        'master_tell_contents',
         'tellzone',
+        'tellzone_user',
     )
     list_filter = (
         'master_tell',
@@ -441,6 +444,21 @@ class MasterTellTellzone(ModelAdmin):
     )
     list_per_page = 10
     search_fields = ()
+
+    def master_tell_created_by(self, instance):
+        return instance.master_tell.created_by
+
+    master_tell_created_by.short_description = 'Master tell :: Created by'
+
+    def master_tell_contents(self, instance):
+        return instance.master_tell.contents
+
+    master_tell_contents.short_description = 'Master tell :: Contents'
+
+    def tellzone_user(self, instance):
+        return instance.tellzone.user
+
+    tellzone_user.short_description = 'Tellzone :: User'
 
 MasterTellTellzone.delete_view = delete_view
 
