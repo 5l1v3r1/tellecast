@@ -11,7 +11,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
 from geopy.distance import vincenty
-from numpy import array_split
 from pika import TornadoConnection, URLParameters
 from raven import Client
 from tornado.gen import coroutine, Return
@@ -282,15 +281,7 @@ class RabbitMQ(object):
         try:
             if users_locations[0]['is_casting']:
                 yield self.users_locations_1(users_locations)
-                if len(users_locations) >= 1:
-                    yield self.users_locations_2(users_locations[0])
-                if len(users_locations) >= 2:
-                    if not vincenty(
-                        (users_locations[0]['point']['longitude'], users_locations[0]['point']['latitude']),
-                        (users_locations[1]['point']['longitude'], users_locations[1]['point']['latitude'])
-                    ).ft > 300.0:
-                        yield self.users_locations_2(users_locations[1])
-            yield self.users_locations_3(users_locations)
+            yield self.users_locations_2(users_locations)
         except Exception:
             client.captureException()
         raise Return(None)
@@ -311,50 +302,7 @@ class RabbitMQ(object):
         raise Return(None)
 
     @coroutine
-    def users_locations_2(self, user_location):
-        users = yield self.get_users(user_location['user_id'], user_location['point'], 300.0, True)
-        if not users:
-            raise Return(None)
-        try:
-            blocks = {}
-            users_ids = tuple([user['id'] for user in users])
-            with closing(connection.cursor()) as cursor:
-                cursor.execute(
-                    '''
-                    SELECT user_source_id, user_destination_id
-                    FROM api_blocks
-                    WHERE user_source_id IN %s OR user_destination_id IN %s
-                    ''',
-                    (users_ids, users_ids,)
-                )
-                for record in cursor.fetchall():
-                    if not record[0] in blocks:
-                        blocks[record[0]] = []
-                    blocks[record[0]].append(record[1])
-                    if not record[1] in blocks:
-                        blocks[record[1]] = []
-                    blocks[record[1]].append(record[0])
-            for user in users:
-                for k, v in IOLoop.current().clients.items():
-                    if v == user['id']:
-                        body = yield self.get_radar_get(
-                            user,
-                            [
-                                u
-                                for u in deepcopy(users[:])
-                                if u['id'] != user['id'] and u['id'] not in blocks.get(user['id'], [])
-                            ],
-                        )
-                        k.write_message(dumps({
-                            'subject': 'users_locations_get',
-                            'body': body,
-                        }))
-        except Exception:
-            client.captureException()
-        raise Return(None)
-
-    @coroutine
-    def users_locations_3(self, users_locations):
+    def users_locations_2(self, users_locations):
         try:
             if len(users_locations) == 2:
                 status = False
@@ -869,54 +817,6 @@ class RabbitMQ(object):
         except Exception:
             client.captureException()
         raise Return(users_locations)
-
-    @coroutine
-    def get_radar_get(self, user, users):
-        try:
-            for key, value in enumerate(users):
-                users[key]['photo_original'] = (
-                    users[key]['photo_original'] if users[key]['settings']['show_photo'] == 'True' else None
-                )
-                users[key]['photo_preview'] = (
-                    users[key]['photo_preview'] if users[key]['settings']['show_photo'] == 'True' else None
-                )
-                del users[key]['settings']
-                users[key]['distance'] = vincenty(
-                    (user['point']['longitude'], user['point']['latitude']),
-                    (users[key]['point']['longitude'], users[key]['point']['latitude']),
-                ).ft
-                del users[key]['point']
-                users[key]['group'] = 1
-                if user['tellzone_id']:
-                    if users[key]['tellzone_id']:
-                        if user['tellzone_id'] == users[key]['tellzone_id']:
-                            users[key]['group'] = 1
-                        else:
-                            users[key]['group'] = 2
-                    else:
-                        if users[key]['distance'] <= 300.0:
-                            users[key]['group'] = 1
-                        else:
-                            users[key]['group'] = 2
-                else:
-                    if users[key]['distance'] <= 300.0:
-                        users[key]['group'] = 1
-                    else:
-                        users[key]['group'] = 2
-                del users[key]['network_id']
-                del users[key]['tellzone_id']
-            users = sorted(users, key=lambda item: (item['distance'], item['id'],))
-            users = [
-                {
-                    'hash': '-'.join(map(str, [item['id'] for item in items])),
-                    'items': items,
-                    'position': position + 1,
-                }
-                for position, items in enumerate([u.tolist() for u in array_split(users, len(users) or 1)])
-            ]
-        except Exception:
-            client.captureException()
-        raise Return(users)
 
     @coroutine
     def get_radar_post(self, user_location):
