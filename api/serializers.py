@@ -2256,7 +2256,7 @@ class RegisterRequestUserSocialProfile(Serializer):
     url = CharField(allow_blank=True, required=False)
 
     def validate(self, data):
-        if data['netloc'] in ['facebook.com', 'linkedin.com']:
+        if data['netloc'] in ['facebook.com', 'google.com', 'linkedin.com']:
             if 'access_token' not in data or not data['access_token']:
                 raise ValidationError(ugettext_lazy('Invalid `access_token` - #1'))
         return data
@@ -2441,6 +2441,23 @@ class RegisterRequest(User):
                 if not uid:
                     return False
                 if not UserSocialAuth.objects.get_queryset().filter(provider='facebook', uid=uid).count():
+                    return True
+            if social_profile['netloc'] == 'google.com':
+                response = None
+                try:
+                    response = get_backend(
+                        settings.AUTHENTICATION_BACKENDS, 'google-oauth2',
+                    )(
+                        strategy=DjangoStrategy(storage=DjangoStorage())
+                    ).user_data(
+                        social_profile['access_token']
+                    )
+                except Exception:
+                    client.captureException()
+                uid = response['id'] if response and 'id' in response else ''
+                if not uid:
+                    return False
+                if not UserSocialAuth.objects.get_queryset().filter(provider='google-oauth2', uid=uid).count():
                     return True
             if social_profile['netloc'] == 'linkedin.com':
                 response = None

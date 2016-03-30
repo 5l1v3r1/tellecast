@@ -359,6 +359,26 @@ class User(Model):
                                 uid=response['id'],
                                 extra_data=dumps(response),
                             )
+                    if social_profile['netloc'] == 'google.com':
+                        response = None
+                        try:
+                            response = get_backend(
+                                settings.AUTHENTICATION_BACKENDS, 'google-oauth2',
+                            )(
+                                strategy=DjangoStrategy(storage=DjangoStorage())
+                            ).user_data(
+                                social_profile['access_token']
+                            )
+                        except Exception:
+                            pass
+                        if response and 'id' in response:
+                            response['access_token'] = social_profile['access_token']
+                            UserSocialAuth.objects.create(
+                                user_id=user.id,
+                                provider='google-oauth2',
+                                uid=response['id'],
+                                extra_data=dumps(response),
+                            )
                     if social_profile['netloc'] == 'linkedin.com':
                         response = None
                         try:

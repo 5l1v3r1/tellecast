@@ -6253,7 +6253,7 @@ def register(request):
 
     + social_profiles (see /api/users/ for more details)
         - Type: list (a list of Social Profile objects)
-        - Status: mandatory (either "facebook.com" or "linkedin.com" is mandatory)
+        - Status: mandatory (either "facebook.com" or "google.com" or "linkedin.com" is mandatory)
 
     + status (see /api/users/ for more details)
         - Type: dictionary (one Status object)
