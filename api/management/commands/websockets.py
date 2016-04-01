@@ -1480,7 +1480,7 @@ class WebSocket(WebSocketHandler):
         if 'type' in data:
             if data['type'] in ['Request']:
                 yield self.set_message(
-                    data['user_user_destination_id'],
+                    data['user_destination_id'],
                     {
                         'user_source_is_hidden': False,
                         'user_destination_id': user_id,
@@ -1489,7 +1489,7 @@ class WebSocket(WebSocketHandler):
                         'master_tell_id': data['master_tell_id'] if 'master_tell_id' in data else None,
                         'post_id': data['post_id'] if 'post_id' in data else None,
                         'type': 'Response - Accepted',
-                        'contents': None,
+                        'contents': '',
                         'status': 'Unread',
                         'attachments': []
                     },
