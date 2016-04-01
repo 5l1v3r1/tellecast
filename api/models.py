@@ -2310,14 +2310,14 @@ class Message(Model):
         if message.type in ['Request']:
             Message.objects.create(
                 user_source_id=message.user_destination_id,
-                user_source_is_hidden=None,
+                user_source_is_hidden=False,
                 user_destination_id=message.user_source_id,
-                user_destination_is_hidden=None,
+                user_destination_is_hidden=False,
                 user_status_id=message.user_status_id,
                 master_tell_id=message.master_tell_id,
                 post_id=message.post_id,
                 type='Response - Accepted',
-                contents=None,
+                contents='',
                 status='Unread',
             )
         return message
