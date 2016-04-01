@@ -2601,6 +2601,36 @@ def user_status_attachment_post_save(instance, **kwargs):
     )
 
 
+@receiver(post_save, sender=UserTellzone)
+def user_tellzone_post_save(instance, **kwargs):
+    user_ids = []
+    for user_location in UserLocation.objects.get_queryset().filter(
+        ~Q(user_id=instance.user_id),
+        tellzone_id=instance.tellzone_id,
+        is_casting=True,
+        timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ):
+        if not is_blocked(instance.user_id, user_location.user_id):
+            user_ids.append(user_location.user_id)
+    if user_ids:
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'user_ids': user_ids,
+                    'subject': 'master_tells',
+                    'body': {
+                        'type': 'tellzones',
+                        'id': instance.tellzone_id,
+                    },
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
+
+
 @receiver(pre_save, sender=UserURL)
 def user_url_pre_save(instance, **kwargs):
     if not instance.position:
