@@ -1247,7 +1247,7 @@ class WebSocket(WebSocketHandler):
                     (
                         user_id,
                         data['user_source_is_hidden'] if 'user_source_is_hidden' in data else False,
-                        data['user_destination_id'] if 'user_destination_id' in data else False,
+                        data['user_destination_id'] if 'user_destination_id' in data else None,
                         data['user_destination_is_hidden'] if 'user_destination_is_hidden' in data else False,
                         data['user_status_id'] if 'user_status_id' in data else None,
                         data['master_tell_id'] if 'master_tell_id' in data else None,
@@ -1477,6 +1477,23 @@ class WebSocket(WebSocketHandler):
                         }))
                         raise Return(None)
         yield self.set_message(user_id, data)
+        if 'type' in data:
+            if data['type'] in ['Request']:
+                yield self.set_message(
+                    data['user_user_destination_id'],
+                    {
+                        'user_source_is_hidden': False,
+                        'user_destination_id': user_id,
+                        'user_destination_is_hidden': False,
+                        'user_status_id': data['user_status_id'] if 'user_status_id' in data else None,
+                        'master_tell_id': data['master_tell_id'] if 'master_tell_id' in data else None,
+                        'post_id': data['post_id'] if 'post_id' in data else None,
+                        'type': 'Response - Accepted',
+                        'contents': None,
+                        'status': 'Unread',
+                        'attachments': []
+                    },
+                )
         raise Return(None)
 
     @coroutine
