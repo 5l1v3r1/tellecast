@@ -1103,7 +1103,7 @@ class Messages(TransactionTestCase):
         id = response.data['id']
 
         response = self.client_1.post('/api/messages/', dictionary, format='json')
-        assert response.status_code == 409
+        assert response.status_code == 201
 
         dictionary['status'] = 'Read'
 
@@ -1177,7 +1177,7 @@ class Messages(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 3
+        assert len(response.data) == 6
         assert response.status_code == 200
 
         response = self.client_1.post(
@@ -1326,7 +1326,7 @@ class Messages(TransactionTestCase):
         assert response.status_code == 201
 
         response = self.client_1.get('/api/users/{id:d}/profile/'.format(id=self.user_2.id), format='json')
-        assert response.data['messages'] == 1
+        assert response.data['messages'] == 2
 
         dictionary = {
             'user_destination_id': self.user_1.id,
@@ -1380,7 +1380,7 @@ class Messages(TransactionTestCase):
         assert response.status_code == 201
 
         response = self.client_1.get('/api/users/{id:d}/profile/'.format(id=self.user_2.id), format='json')
-        assert response.data['messages'] == 1
+        assert response.data['messages'] == 2
 
         dictionary = {
             'user_destination_id': self.user_1.id,
@@ -1406,7 +1406,7 @@ class Messages(TransactionTestCase):
         assert response.status_code == 201
 
         response = self.client_1.get('/api/users/{id:d}/profile/'.format(id=self.user_2.id), format='json')
-        assert response.data['messages'] == 1
+        assert response.data['messages'] == 2
 
         dictionary = {
             'user_destination_id': self.user_1.id,
