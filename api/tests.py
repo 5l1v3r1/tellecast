@@ -3125,6 +3125,8 @@ class Users(TransactionTestCase):
 
         self.user = middleware.mixer.blend('api.User')
 
+        middleware.mixer.blend('api.Tellzone', user=self.user)
+
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
@@ -3279,7 +3281,8 @@ class Users(TransactionTestCase):
 
     def test_c(self):
         response = self.client.get('/api/users/{id:d}/tellzones/all/'.format(id=self.user.id), format='json')
-        assert len(response.data) == 0
+        assert len(response.data) == 1
+        assert response.data[0]['source'] == 5
         assert response.status_code == 200
 
         response = self.client.post(
@@ -3294,10 +3297,11 @@ class Users(TransactionTestCase):
         assert response.status_code == 201
 
         response = self.client.get('/api/users/{id:d}/tellzones/all/'.format(id=self.user.id), format='json')
-        assert len(response.data) == 1
+        assert len(response.data) == 2
         assert response.data[0]['id'] == self.tellzone.id
         assert response.data[0]['name'] == self.tellzone.name
         assert response.data[0]['source'] == 3
+        assert response.data[1]['source'] == 5
         assert response.status_code == 200
 
     def test_d(self):

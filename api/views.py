@@ -6650,11 +6650,13 @@ def users_tellzones_all(request, id):
     <br>
     1. Where the given user ({id}) is currently in.
     <br>
-    2. Where the given user ({id}) has pinned as master tell.
+    2. Where the given user ({id}) has pinned a master tell.
     <br>
     3. Which the given user ({id}) has favorited.
     <br>
     4. Which the given user ({id}) has pinned.
+    <br>
+    5. Which the given user ({id}) owns.
 
     <pre>
     Input
@@ -6674,9 +6676,10 @@ def users_tellzones_all(request, id):
         - Status: mandatory
         - Choices:
             1 = Where the given user ({id}) is currently in.
-            2 = Where the given user ({id}) has pinned as master tell.
+            2 = Where the given user ({id}) has pinned a master tell.
             3 = Which the given user ({id}) has favorited.
             4 = Which the given user ({id}) has pinned.
+            5 = Which the given user ({id}) owns.
     </pre>
     ---
     response_serializer: api.serializers.UsersTellzonesAll
@@ -6716,10 +6719,14 @@ def users_tellzones_all(request, id):
                 SELECT tellzone_id, 4 As source
                 FROM api_users_tellzones
                 WHERE user_id = %s AND pinned_at IS NOT NULL
+                UNION
+                SELECT id, 5 As source
+                FROM api_tellzones
+                WHERE user_id = %s
             ) api_tellzones_2 ON api_tellzones_2.tellzone_id = api_tellzones_1.id
             ORDER BY api_tellzones_2.source ASC, api_tellzones_1.id ASC
             ''',
-            (request.user.id, request.user.id, request.user.id, request.user.id,),
+            (request.user.id, request.user.id, request.user.id, request.user.id, request.user.id,),
         )
         columns = [column.name for column in cursor.description]
         for record in cursor.fetchall():
