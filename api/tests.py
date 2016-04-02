@@ -2283,7 +2283,7 @@ class Signals(TransactionTestCase):
         assert response.status_code == 201
 
         response = self.client_1.get('/api/users/{id:d}/profile/'.format(id=self.user_2.id), format='json')
-        assert response.data['messages'] == 1
+        assert response.data['messages'] == 2
 
         dictionary = {
             'user_destination_id': self.user_1.id,
@@ -2311,7 +2311,7 @@ class Signals(TransactionTestCase):
         response = self.client_1.get('/api/users/{id:d}/profile/'.format(id=self.user_2.id), format='json')
         assert response.data['messages'] == 2
 
-        assert self.get_celery_tasks() == 3
+        assert self.get_celery_tasks() == 4
         self.reset_celery_tasks()
 
     def test_d(self):
