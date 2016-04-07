@@ -2605,10 +2605,7 @@ def user_status_attachment_post_save(instance, **kwargs):
 def user_tellzone_post_save(instance, **kwargs):
     user_ids = []
     for user_location in UserLocation.objects.get_queryset().filter(
-        ~Q(user_id=instance.user_id),
-        tellzone_id=instance.tellzone_id,
-        is_casting=True,
-        timestamp__gt=datetime.now() - timedelta(minutes=1),
+        tellzone_id=instance.tellzone_id, is_casting=True, timestamp__gt=datetime.now() - timedelta(minutes=1),
     ):
         if not is_blocked(instance.user_id, user_location.user_id):
             user_ids.append(user_location.user_id)
