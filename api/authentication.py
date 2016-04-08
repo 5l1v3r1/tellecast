@@ -27,4 +27,6 @@ class Authentication(BaseAuthentication):
             raise AuthenticationFailed(ugettext_lazy('Invalid Token - #2'))
         if not user.is_valid(token):
             raise AuthenticationFailed(ugettext_lazy('Invalid Token - #3'))
+        if not user.is_verified:
+            raise AuthenticationFailed(ugettext_lazy('Invalid Token - #4'))
         return (user, None)

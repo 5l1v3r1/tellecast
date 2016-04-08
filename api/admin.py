@@ -975,6 +975,7 @@ class User(ModelAdmin):
         'description',
         'phone',
         'point',
+        'is_verified',
         'is_signed_in',
     )
     list_display = (
@@ -984,6 +985,7 @@ class User(ModelAdmin):
         'email',
         'first_name',
         'last_name',
+        'is_verified',
         'is_signed_in',
         'inserted_at',
         'updated_at',
@@ -993,6 +995,7 @@ class User(ModelAdmin):
     list_filter = (
         'tellzone',
         'type',
+        'is_verified',
         'is_signed_in',
         'inserted_at',
         'updated_at',

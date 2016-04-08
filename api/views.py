@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 from arrow import get
+from bcrypt import hashpw
 from celery import current_app
 from django.conf import settings
 from django.contrib.gis.measure import D
@@ -16,7 +17,7 @@ from geopy.distance import vincenty
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import (
-    HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN, HTTP_409_CONFLICT,
+    HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_409_CONFLICT,
 )
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -4002,6 +4003,10 @@ class Users(ViewSet):
             - Type: string
             - Status: mandatory
 
+        + password
+            - Type: string
+            - Status: optional
+
         + photo_original
             - Type: string
             - Status: optional
@@ -4595,7 +4600,86 @@ def ads(request):
 
 @api_view(('POST',))
 @permission_classes(())
-def authenticate(request, backend):
+def authenticate_1(request):
+    '''
+    Authenticate Users
+
+    <pre>
+    Input
+    =====
+
+    + email
+        - Type: string
+        - Status: mandatory
+
+    + password
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.Authenticate1Request
+    response_serializer: api.serializers.Authenticate1Response
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+        - code: 401
+          message: Invalid Input
+    '''
+    serializer = serializers.Authenticate1Request(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    serializer.is_valid(raise_exception=True)
+    user = models.User.objects.get_queryset().filter(email=serializer.validated_data['email']).first()
+    if not user:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not user.is_verified:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if hashpw(serializer.validated_data['password'], user.password) != user.password:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `password`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    request.user = user
+    request.user.sign_in()
+    return Response(
+        data=serializers.Authenticate1Response(
+            user,
+            context={
+                'request': request,
+            },
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('POST',))
+@permission_classes(())
+def authenticate_2(request, backend):
     '''
     Authenticate Users
 
@@ -4608,6 +4692,7 @@ def authenticate(request, backend):
         - Status: mandatory
         - Choices:
             - facebook
+            - google-oauth2
             - linkedin-oauth2
 
     + access_token
@@ -4625,7 +4710,7 @@ def authenticate(request, backend):
     parameters:
         - description: >
               A valid Python Social Auth supported backend. As of now, only
-              "facebook" and "linkedin-oauth2" are supported. Reference:
+              "facebook", "google-oauth2" and "linkedin-oauth2" are supported. Reference:
               http://psa.matiasaguirre.net/docs/backends/index.html
           name: backend
           paramType: path
@@ -4633,15 +4718,15 @@ def authenticate(request, backend):
           type: string
         - name: body
           paramType: body
-          pytype: api.serializers.AuthenticateRequest
-    response_serializer: api.serializers.AuthenticateResponse
+          pytype: api.serializers.Authenticate2Request
+    response_serializer: api.serializers.Authenticate2Response
     responseMessages:
         - code: 400
           message: Invalid Input
         - code: 401
           message: Invalid Input
     '''
-    if backend not in ['facebook', 'linkedin-oauth2']:
+    if backend not in ['facebook', 'google-oauth2', 'linkedin-oauth2']:
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `backend`'),
@@ -4649,7 +4734,7 @@ def authenticate(request, backend):
             status=HTTP_400_BAD_REQUEST,
         )
     backend = get_backend(settings.AUTHENTICATION_BACKENDS, backend)(strategy=DjangoStrategy(storage=DjangoStorage()))
-    if not backend or backend.name not in ['facebook', 'linkedin-oauth2']:
+    if not backend or backend.name not in ['facebook', 'google-oauth2', 'linkedin-oauth2']:
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `backend`'),
@@ -4673,12 +4758,19 @@ def authenticate(request, backend):
             data={
                 'error': ugettext_lazy('Invalid `user`'),
             },
-            status=HTTP_401_UNAUTHORIZED,
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not user.is_verified:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `user`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
         )
     request.user = user
     request.user.sign_in()
     return Response(
-        data=serializers.AuthenticateResponse(
+        data=serializers.Authenticate2Response(
             user,
             context={
                 'request': request,
@@ -4777,6 +4869,69 @@ def deauthenticate(request):
     serializer.process()
     request.user.sign_out()
     return Response(data=serializers.DeauthenticateResponse().data, status=HTTP_200_OK)
+
+
+@api_view(('POST',))
+@permission_classes(())
+def forgot_password(request):
+    '''
+    Forgot Password
+
+    <pre>
+    Input
+    =====
+
+    + email
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.ForgotPassword
+    response_serializer: api.serializers.Null
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.ForgotPassword(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    serializer.is_valid(raise_exception=True)
+    user = models.User.objects.get_queryset().filter(email=serializer.validated_data['email']).first()
+    if not user:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not user.is_verified:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    current_app.send_task(
+        'api.management.commands.email_notifications',
+        (user.id, 'reset_password',),
+        queue='api.management.commands.email_notifications',
+        routing_key='api.management.commands.email_notifications',
+        serializer='json',
+    )
+    return Response(data=serializers.Null().data, status=HTTP_200_OK)
 
 
 @api_view(('GET',))
@@ -6175,6 +6330,10 @@ def register(request):
         - Type: string
         - Status: mandatory
 
+    + password
+        - Type: string
+        - Status: mandatory (optional, if social_profiles is provided)
+
     + photo_original
         - Type: string
         - Status: optional
@@ -6254,6 +6413,7 @@ def register(request):
     + social_profiles (see /api/users/ for more details)
         - Type: list (a list of Social Profile objects)
         - Status: mandatory (either "facebook.com" or "google.com" or "linkedin.com" is mandatory)
+                            (optional, if password is provided)
 
     + status (see /api/users/ for more details)
         - Type: dictionary (one Status object)
@@ -6291,10 +6451,17 @@ def register(request):
         data=request.DATA,
     )
     serializer.is_valid(raise_exception=True)
-    if not serializer.is_valid_(request.DATA):
+    if not serializer.is_valid_1(request.DATA):
         return Response(
             data={
-                'error': ugettext_lazy('Invalid `access_token` - #2'),
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not serializer.is_valid_2(request.DATA):
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `password`/`access_token`'),
             },
             status=HTTP_400_BAD_REQUEST,
         )
@@ -6307,6 +6474,81 @@ def register(request):
             },
         ).data,
         status=HTTP_201_CREATED,
+    )
+
+
+@api_view(('POST',))
+@permission_classes(())
+def reset_password(request):
+    '''
+    Reset Password
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: mandatory
+
+    + hash
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.ResetPasswordRequest
+    response_serializer: api.serializers.ResetPasswordResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.ResetPasswordRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    serializer.is_valid(raise_exception=True)
+    user = models.User.objects.get_queryset().filter(id=serializer.validated_data['id']).first()
+    if not user:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `id`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not user.is_verified:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not user.is_valid(serializer.validated_data['hash']):
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `hash`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    return Response(
+        data=serializers.ResetPasswordResponse(
+            user,
+            context={
+                'request': request,
+            },
+        ).data,
+        status=HTTP_200_OK,
     )
 
 
@@ -6741,6 +6983,76 @@ def users_tellzones_all(request, id):
                 tellzones[record['id']]['source'] = record['source']
     return Response(
         data=serializers.UsersTellzonesAll(sorted(tellzones.values(), key=lambda item: item['id']), many=True).data,
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('POST',))
+@permission_classes(())
+def verify(request):
+    '''
+    Verify Users
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: mandatory
+
+    + hash
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.VerifyRequest
+    response_serializer: api.serializers.VerifyResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.VerifyRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    serializer.is_valid(raise_exception=True)
+    user = models.User.objects.get_queryset().filter(id=serializer.validated_data['id']).first()
+    if not user:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `id`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    if not user.is_valid(serializer.validated_data['hash']):
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `hash`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    user.is_verified = True
+    user.save()
+    return Response(
+        data=serializers.VerifyResponse(
+            user,
+            context={
+                'request': request,
+            },
+        ).data,
         status=HTTP_200_OK,
     )
 

@@ -9,6 +9,7 @@ from tempfile import mkstemp
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from boto.ses import connect_to_region
 from celery import Celery, current_app
 from celery.signals import task_failure
 from celery.utils.log import get_task_logger
@@ -31,6 +32,11 @@ celery.conf.update(
     CELERY_ACKS_LATE=True,
     CELERY_QUEUES=(
         Queue(
+            'api.tasks.email_notifications',
+            Exchange('api.tasks.email_notifications'),
+            routing_key='api.tasks.email_notifications',
+        ),
+        Queue(
             'api.tasks.push_notifications',
             Exchange('api.tasks.push_notifications'),
             routing_key='api.tasks.push_notifications',
@@ -49,6 +55,9 @@ celery.conf.update(
     CELERY_IGNORE_RESULT=True,
     CELERY_RESULT_SERIALIZER='json',
     CELERY_ROUTES={
+        'api.tasks.email_notifications': {
+            'queue': 'api.tasks.email_notifications',
+        },
         'api.tasks.push_notifications': {
             'queue': 'api.tasks.push_notifications',
         },
@@ -75,6 +84,57 @@ logger = get_task_logger(__name__)
 @task_failure.connect
 def handle_task_failure(**kwargs):
     client.captureException(extra=kwargs)
+
+
+@celery.task
+def email_notifications(id, type):
+    user = models.User.objects.get_queryset().filter(id=id).first()
+    if not user:
+        return
+    if type == 'reset_password':
+        connect_to_region(
+            settings.AWS_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        ).send_email(
+            settings.AWS_EMAIL,
+            'Reset Password',
+            '''
+Hi {first_name:s},
+
+Please use the following link to reset your password.
+
+tellzone://reset-password/{id:d}/{hash:s}/
+
+From,
+Tellzone
+            '''.strip().format(first_name=user.first_name, id=user.id, hash=user.hash),
+            [
+                user.email,
+            ],
+        )
+    if type == 'verify':
+        connect_to_region(
+            settings.AWS_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        ).send_email(
+            settings.AWS_EMAIL,
+            'Verify',
+            '''
+Hi {first_name:s},
+
+Please use the following link to verify.
+
+tellzone://verify/{id:d}/{hash:s}/
+
+From,
+Tellzone
+            '''.strip().format(first_name=user.first_name, id=user.id, hash=user.hash),
+            [
+                user.email,
+            ],
+        )
 
 
 @celery.task

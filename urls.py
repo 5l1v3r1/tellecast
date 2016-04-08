@@ -32,7 +32,8 @@ urlpatterns = patterns(
     ),
     url(r'^admin/', include(site.urls)),
     url(r'^api/ads/$', views.ads),
-    url(r'^api/authenticate/(?P<backend>[^/]+)/$', views.authenticate),
+    url(r'^api/authenticate/email/$', views.authenticate_1),
+    url(r'^api/authenticate/(?P<backend>[^/]+)/$', views.authenticate_2),
     url(
         r'^api/blocks/delete/$',
         views.Blocks.as_view({
@@ -74,6 +75,7 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/forgot-password/$', views.forgot_password),
     url(r'^api/home/connections/$', views.home_connections),
     url(r'^api/home/master-tells/$', views.home_master_tells),
     url(r'^api/home/statistics/frequent/$', views.home_statistics_frequent),
@@ -176,6 +178,7 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
+    url(r'^api/reset-password/$', views.reset_password),
     url(r'^api/slave-tells/ids/$', views.slave_tells_ids),
     url(r'^api/slave-tells/positions/$', views.slave_tells_positions),
     url(
@@ -249,6 +252,7 @@ urlpatterns = patterns(
             'delete': 'delete',
         }),
     ),
+    url(r'^api/verify/$', views.verify),
     url(r'^swagger/', include(urls)),
 )
 

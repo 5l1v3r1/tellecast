@@ -255,6 +255,7 @@ class User(Model):
         max_length=255,
     )
     email = EmailField(ugettext_lazy('Email'), db_index=True, max_length=255, unique=True)
+    password = CharField(ugettext_lazy('Password'), blank=True, db_index=True, max_length=255, null=True)
     photo_original = CharField(
         ugettext_lazy('Photo :: Original'),
         blank=True,
@@ -281,6 +282,7 @@ class User(Model):
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
     point = PointField(ugettext_lazy('Point'), blank=True, db_index=True, null=True)
+    is_verified = BooleanField(ugettext_lazy('Is Verified?'), db_index=True, default=True)
     is_signed_in = BooleanField(ugettext_lazy('Is Signed In?'), db_index=True, default=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
@@ -300,17 +302,24 @@ class User(Model):
         verbose_name_plural = 'Users'
 
     @cached_property
-    def token(self):
+    def hash(self):
         return (
             str(self.id) +
             settings.SEPARATOR +
-            hashpw((str(self.id) + settings.SECRET_KEY).encode('utf-8'), gensalt(rounds=12))
+            hashpw((str(self.id) + settings.SECRET_KEY).encode('utf-8'), gensalt(10))
         )
+
+    @cached_property
+    def token(self):
+        if not self.is_verified:
+            return None
+        return self.hash
 
     @classmethod
     def insert(cls, data):
         user = User.objects.create(
             email=data['email'],
+            password=hashpw(data['password'].encode('utf-8'), gensalt(10)) if 'password' in data else None,
             photo_original=data['photo_original'] if 'photo_original' in data else None,
             photo_preview=data['photo_preview'] if 'photo_preview' in data else None,
             first_name=data['first_name'] if 'first_name' in data else None,
@@ -321,6 +330,7 @@ class User(Model):
             description=data['description'] if 'description' in data else None,
             phone=data['phone'] if 'phone' in data else None,
             point=data['point'] if 'point' in data else None,
+            is_verified=False,
             access_code=data['access_code'] if 'access_code' in data else None,
         )
         if 'settings' in data:
@@ -359,6 +369,8 @@ class User(Model):
                                 uid=response['id'],
                                 extra_data=dumps(response),
                             )
+                            user.is_verified = True
+                            user.save()
                     if social_profile['netloc'] == 'google.com':
                         response = None
                         try:
@@ -379,6 +391,8 @@ class User(Model):
                                 uid=response['id'],
                                 extra_data=dumps(response),
                             )
+                            user.is_verified = True
+                            user.save()
                     if social_profile['netloc'] == 'linkedin.com':
                         response = None
                         try:
@@ -399,6 +413,8 @@ class User(Model):
                                 uid=response['id'],
                                 extra_data=dumps(response),
                             )
+                            user.is_verified = True
+                            user.save()
         if 'status' in data:
             UserStatus.insert(user.id, data['status'])
         if 'urls' in data:
@@ -407,6 +423,14 @@ class User(Model):
         if 'master_tells' in data:
             for master_tell in data['master_tells']:
                 MasterTell.insert(user.id, master_tell)
+        if not user.is_verified:
+            current_app.send_task(
+                'api.management.commands.email_notifications',
+                (user.id, 'verify',),
+                queue='api.management.commands.email_notifications',
+                routing_key='api.management.commands.email_notifications',
+                serializer='json',
+            )
         return user
 
     @property
@@ -517,6 +541,7 @@ class User(Model):
     def update(self, data):
         if 'email' in data:
             self.email = data['email']
+        self.password = hashpw(data['password'].encode('utf-8'), gensalt(10)) if 'password' in data else None
         self.photo_original = data['photo_original'] if 'photo_original' in data else None
         self.photo_preview = data['photo_preview'] if 'photo_preview' in data else None
         self.first_name = data['first_name'] if 'first_name' in data else None

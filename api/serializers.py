@@ -427,6 +427,7 @@ class MasterTell(ModelSerializer):
 
 class User(ModelSerializer):
 
+    password = CharField(allow_blank=True, required=False)
     photo_original = CharField(allow_blank=True, required=False)
     photo_preview = CharField(allow_blank=True, required=False)
     first_name = CharField(allow_blank=True, required=False)
@@ -1361,12 +1362,43 @@ class Ads(Ad):
     pass
 
 
-class AuthenticateRequest(Serializer):
+class Authenticate1Request(Serializer):
+
+    email = EmailField()
+    password = CharField()
+
+
+class Authenticate1Response(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'type',
+            'email',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'token',
+        )
+        model = models.User
+
+
+class Authenticate2Request(Serializer):
 
     access_token = CharField(help_text='OAuth 2 `access_token`')
 
 
-class AuthenticateResponse(User):
+class Authenticate2Response(User):
 
     class Meta:
 
@@ -1443,6 +1475,11 @@ class DeauthenticateRequest(Serializer):
 
 class DeauthenticateResponse(Null):
     pass
+
+
+class ForgotPassword(Serializer):
+
+    email = EmailField()
 
 
 class HomeRequest(Serializer):
@@ -2258,7 +2295,7 @@ class RegisterRequestUserSocialProfile(Serializer):
     def validate(self, data):
         if data['netloc'] in ['facebook.com', 'google.com', 'linkedin.com']:
             if 'access_token' not in data or not data['access_token']:
-                raise ValidationError(ugettext_lazy('Invalid `access_token` - #1'))
+                raise ValidationError(ugettext_lazy('Invalid `access_token`'))
         return data
 
 
@@ -2366,6 +2403,7 @@ class RecommendedTellsResponse(RecommendedTell):
 class RegisterRequest(User):
 
     email = EmailField()
+    password = CharField(allow_blank=True, required=False)
     photo_original = CharField(allow_blank=True, required=False)
     photo_preview = CharField(allow_blank=True, required=False)
     first_name = CharField(allow_blank=True, required=False)
@@ -2399,6 +2437,7 @@ class RegisterRequest(User):
 
         fields = (
             'email',
+            'password',
             'photo_original',
             'photo_preview',
             'first_name',
@@ -2419,7 +2458,14 @@ class RegisterRequest(User):
         )
         model = models.User
 
-    def is_valid_(self, data):
+    def is_valid_1(self, data):
+        if not models.User.objects.get_queryset().filter(email=data['email']).count():
+            return True
+        return False
+
+    def is_valid_2(self, data):
+        if 'password' in data and data['password']:
+            return True
         if 'social_profiles' not in data:
             return False
         if not data['social_profiles']:
@@ -2505,6 +2551,37 @@ class RegisterResponse(User):
             'status',
             'urls',
             'master_tells',
+            'token',
+        )
+        model = models.User
+
+
+class ResetPasswordRequest(Serializer):
+
+    id = IntegerField()
+    hash = CharField()
+
+
+class ResetPasswordResponse(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'type',
+            'email',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'point',
+            'inserted_at',
+            'updated_at',
             'token',
         )
         model = models.User
@@ -2753,6 +2830,7 @@ class UsersRequest(User):
         fields = (
             'id',
             'email',
+            'password',
             'photo_original',
             'photo_preview',
             'first_name',
@@ -2953,3 +3031,34 @@ class ProfilesRequest(Serializer):
 
 class ProfilesResponse(UsersProfile):
     pass
+
+
+class VerifyRequest(Serializer):
+
+    id = IntegerField()
+    hash = CharField()
+
+
+class VerifyResponse(User):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'type',
+            'email',
+            'photo_original',
+            'photo_preview',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'location',
+            'description',
+            'phone',
+            'point',
+            'inserted_at',
+            'updated_at',
+            'token',
+        )
+        model = models.User
