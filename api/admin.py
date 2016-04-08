@@ -2,8 +2,10 @@
 
 from uuid import uuid4
 
+from bcrypt import gensalt, hashpw
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from celery import current_app
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -965,6 +967,7 @@ class User(ModelAdmin):
         'tellzone',
         'type',
         'email',
+        'password',
         'photo_original',
         'photo_preview',
         'first_name',
@@ -1015,6 +1018,19 @@ class User(ModelAdmin):
         'phone',
         'access_code',
     )
+
+    def save_model(self, request, user, form, change):
+        if 'password' in form.changed_data:
+            user.password = hashpw(user.password.encode('utf-8'), gensalt(10))
+        user.save()
+        if not user.is_verified:
+            current_app.send_task(
+                'api.management.commands.email_notifications',
+                (user.id, 'verify',),
+                queue='api.management.commands.email_notifications',
+                routing_key='api.management.commands.email_notifications',
+                serializer='json',
+            )
 
 User.delete_view = delete_view
 
