@@ -4925,10 +4925,10 @@ def forgot_password(request):
             status=HTTP_400_BAD_REQUEST,
         )
     current_app.send_task(
-        'api.management.commands.email_notifications',
+        'api.tasks.email_notifications',
         (user.id, 'reset_password',),
-        queue='api.management.commands.email_notifications',
-        routing_key='api.management.commands.email_notifications',
+        queue='api.tasks.email_notifications',
+        routing_key='api.tasks.email_notifications',
         serializer='json',
     )
     return Response(data=serializers.Null().data, status=HTTP_200_OK)

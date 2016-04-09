@@ -425,10 +425,10 @@ class User(Model):
                 MasterTell.insert(user.id, master_tell)
         if not user.is_verified:
             current_app.send_task(
-                'api.management.commands.email_notifications',
+                'api.tasks.email_notifications',
                 (user.id, 'verify',),
-                queue='api.management.commands.email_notifications',
-                routing_key='api.management.commands.email_notifications',
+                queue='api.tasks.email_notifications',
+                routing_key='api.tasks.email_notifications',
                 serializer='json',
             )
         return user
