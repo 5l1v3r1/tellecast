@@ -17,7 +17,7 @@ from geopy.distance import vincenty
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import (
-    HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_409_CONFLICT,
+    HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN, HTTP_409_CONFLICT,
 )
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -4758,7 +4758,7 @@ def authenticate_2(request, backend):
             data={
                 'error': ugettext_lazy('Invalid `user`'),
             },
-            status=HTTP_400_BAD_REQUEST,
+            status=HTTP_401_UNAUTHORIZED,
         )
     if not user.is_verified:
         return Response(
