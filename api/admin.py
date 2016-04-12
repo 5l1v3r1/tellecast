@@ -45,7 +45,7 @@ def delete_selected(modeladmin, request, queryset):
             queryset.delete()
             modeladmin.message_user(
                 request,
-                _('Successfully deleted {count:d} {items:s}.').format(
+                _(u'Successfully deleted {count:d} {items:s}.').format(
                     count=count, items=model_ngettext(modeladmin.opts, count),
                 ),
                 messages.SUCCESS,
@@ -64,11 +64,13 @@ def delete_selected(modeladmin, request, queryset):
     return TemplateResponse(
         request,
         modeladmin.delete_selected_confirmation_template or [
-            'admin/{app_label:s}/{model_name:s}/delete_selected_confirmation.html'.format(
+            u'admin/{app_label:s}/{model_name:s}/delete_selected_confirmation.html'.format(
                 app_label=modeladmin.model._meta.app_label, model_name=modeladmin.model._meta.model_name,
             ),
-            'admin/{app_label:s}/delete_selected_confirmation.html'.format(app_label=modeladmin.model._meta.app_label),
-            'admin/delete_selected_confirmation.html',
+            u'admin/{app_label:s}/delete_selected_confirmation.html'.format(
+                app_label=modeladmin.model._meta.app_label,
+            ),
+            u'admin/delete_selected_confirmation.html',
         ],
         context,
     )
@@ -79,12 +81,12 @@ delete_selected.short_description = ugettext_lazy('Delete selected %(verbose_nam
 def delete_view(self, request, object_id, extra_context=None):
     to_field = request.POST.get(TO_FIELD_VAR, request.GET.get(TO_FIELD_VAR))
     if to_field and not self.to_field_allowed(request, to_field):
-        raise DisallowedModelAdminToField('The field {to_field:s} cannot be referenced.'.format(to_field=to_field))
+        raise DisallowedModelAdminToField(u'The field {to_field:s} cannot be referenced.'.format(to_field=to_field))
     object = self.get_object(request, unquote(object_id), to_field)
     if not self.has_delete_permission(request, object):
         raise PermissionDenied
     if object is None:
-        raise Http404(_('{name:} object with primary key {key:s} does not exist.').format(
+        raise Http404(_(u'{name:} object with primary key {key:s} does not exist.').format(
             name=force_text(self.model._meta.verbose_name), key=escape(object_id),
         ))
     if request.POST:
@@ -114,7 +116,7 @@ def delete_view(self, request, object_id, extra_context=None):
 @property
 def ewkt(self):
     if self.get_srid():
-        return 'SRID={srid};POINT ({coords_0:.14f}, {coords_1:.14f})'.format(
+        return u'SRID={srid};POINT ({coords_0:.14f}, {coords_1:.14f})'.format(
             srid=self.srid, coords_0=self.coords[0], coords_1=self.coords[1],
         )
     return 'N/A'
@@ -229,7 +231,7 @@ class Form(ModelForm):
                 return self.instance.photo
         if self.files['photo'].content_type not in ['image/gif', 'image/jpeg', 'image/jpg', 'image/png']:
             raise ValidationError('Invalid Photo')
-        uuid = '{prefix:s}.{suffix:s}'.format(
+        uuid = u'{prefix:s}.{suffix:s}'.format(
             prefix=str(uuid4()), suffix=self.files['photo'].content_type.split('/')[-1],
         )
         try:
@@ -243,7 +245,7 @@ class Form(ModelForm):
             photo.content_type = self.files['photo'].content_type
             photo.key = uuid
             photo.set_contents_from_string(self.files['photo'].read())
-            return 'https://d2k6ktnea3auzx.cloudfront.net/{uuid:s}'.format(uuid=uuid)
+            return u'https://d2k6ktnea3auzx.cloudfront.net/{uuid:s}'.format(uuid=uuid)
         except Exception:
             pass
         raise ValidationError('Invalid Photo')
@@ -921,7 +923,7 @@ class Tellzone(ModelAdmin):
     )
 
     def name_(self, instance):
-        return '<a href="{photo:s}" target="_blank">{name:s}</a>'.format(photo=instance.photo, name=instance.name)
+        return u'<a href="{photo:s}" target="_blank">{name:s}</a>'.format(photo=instance.photo, name=instance.name)
 
     name_.allow_tags = True
 
