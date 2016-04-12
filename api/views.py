@@ -3522,6 +3522,10 @@ class Tellzones(ViewSet):
             - Type: string
             - Status: mandatory
 
+        + description
+            - Type: string
+            - Status: optional
+
         + photo
             - Type: string
             - Status: optional
@@ -3649,6 +3653,10 @@ class Tellzones(ViewSet):
         + name
             - Type: string
             - Status: mandatory
+
+        + description
+            - Type: string
+            - Status: optional
 
         + photo
             - Type: string
@@ -3786,6 +3794,10 @@ class Tellzones(ViewSet):
         + name
             - Type: string
             - Status: mandatory
+
+        + description
+            - Type: string
+            - Status: optional
 
         + photo
             - Type: string

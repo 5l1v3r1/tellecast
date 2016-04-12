@@ -908,6 +908,7 @@ class TellzoneUser(User):
 class Tellzone(ModelSerializer):
 
     user = TellzoneUser(required=False)
+    description = CharField(required=False)
     photo = CharField(required=False)
     location = CharField(required=False)
     phone = CharField(required=False)
@@ -939,6 +940,7 @@ class Tellzone(ModelSerializer):
             'user',
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',
@@ -1027,6 +1029,7 @@ class MasterTellTellzone(Tellzone):
             'user',
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',
@@ -1059,6 +1062,7 @@ class PostTellzone(Tellzone):
             'user',
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',
@@ -1096,6 +1100,7 @@ class TellcardTellzone(Tellzone):
             'user',
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',
@@ -1531,6 +1536,7 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
             'user',
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',
@@ -2705,6 +2711,7 @@ class TellzonesRequest(Tellzone):
         fields = (
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',
@@ -2902,6 +2909,7 @@ class UsersTellzonesGet(Tellzone):
             'user',
             'type',
             'name',
+            'description',
             'photo',
             'location',
             'phone',

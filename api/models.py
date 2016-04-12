@@ -808,6 +808,7 @@ class Tellzone(Model):
     user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
     type = CharField(ugettext_lazy('Type'), blank=True, db_index=True, max_length=255)
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
     location = CharField(ugettext_lazy('Location'), blank=True, db_index=True, max_length=255, null=True)
     phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
@@ -886,6 +887,7 @@ class Tellzone(Model):
             user_id=user_id,
             type=data['type'] if 'type' in data else None,
             name=data['name'] if 'name' in data else None,
+            description=data['description'] if 'description' in data else None,
             photo=data['photo'] if 'photo' in data else None,
             location=data['location'] if 'location' in data else None,
             phone=data['phone'] if 'phone' in data else None,
@@ -940,6 +942,8 @@ class Tellzone(Model):
             self.type = data['type']
         if 'name' in data:
             self.name = data['name']
+        if 'description' in data:
+            self.description = data['description']
         if 'photo' in data:
             self.photo = data['photo']
         if 'location' in data:

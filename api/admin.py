@@ -881,6 +881,7 @@ class Tellzone(ModelAdmin):
         'user',
         'type',
         'name',
+        'description',
         'photo',
         'location',
         'phone',
@@ -915,6 +916,7 @@ class Tellzone(ModelAdmin):
     search_fields = (
         'type',
         'name',
+        'description',
         'photo',
         'location',
         'phone',
