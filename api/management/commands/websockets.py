@@ -279,8 +279,7 @@ class RabbitMQ(object):
         if not users_locations:
             raise Return(None)
         try:
-            if users_locations[0]['is_casting']:
-                yield self.users_locations_1(users_locations)
+            yield self.users_locations_1(users_locations)
             yield self.users_locations_2(users_locations)
         except Exception:
             client.captureException()
