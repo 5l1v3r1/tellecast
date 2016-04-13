@@ -28,7 +28,7 @@ from django.db.models import (
     SET_NULL,
     TextField,
 )
-from django.db.models.signals import post_delete, post_save, pre_save
+from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy
@@ -2404,6 +2404,25 @@ def category_pre_save(instance, **kwargs):
     if not instance.position:
         position = Category.objects.get_queryset().aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
+
+
+@receiver(pre_delete, sender=Tellzone)
+def tellzone_pre_delete(instance, **kwargs):
+    for user_location in UserLocation.objects.get_queryset().filter(
+        tellzone_id=instance.id, timestamp__gt=datetime.now() - timedelta(minutes=1),
+    ):
+        current_app.send_task(
+            'api.management.commands.websockets',
+            (
+                {
+                    'subject': 'users_locations',
+                    'body': user_location.id,
+                },
+            ),
+            queue='api.management.commands.websockets',
+            routing_key='api.management.commands.websockets',
+            serializer='json',
+        )
 
 
 @receiver(post_save, sender=User)
