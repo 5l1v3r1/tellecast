@@ -1626,6 +1626,22 @@ class Networks(TransactionTestCase):
         for data in response.data:
             assert len(data['tellzones']) == 4
 
+    def test_d(self):
+        network = middleware.mixer.blend('api.Network', user=None)
+
+        for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None):
+            models.NetworkTellzone.objects.create(network=network, tellzone=tellzone)
+
+        user = middleware.mixer.blend('api.User', type='Root')
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
+        response = client.get(
+            '/api/networks/{id:d}/tellzones/'.format(id=network.id),
+            format='json',
+        )
+        assert len(response.data) == 5
+
 
 class Notifications(TransactionTestCase):
 

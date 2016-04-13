@@ -6207,6 +6207,47 @@ def networks_master_tells(request, id):
     )
 
 
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def networks_tellzones(request, id):
+    '''
+    SELECT (Tellzones) Networks
+
+    <pre>
+    Input
+    =====
+
+    + id
+        - Type: integer
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.TellzonesResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    network = models.Network.objects.get_queryset().filter(id=id).first()
+    if not network:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `id`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    return Response(
+        data=serializers.TellzonesResponse(
+            [network_tellzone.tellzone for network_tellzone in network.networks_tellzones.get_queryset()], many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
 @api_view(('POST',))
 @permission_classes((IsAuthenticated,))
 def profiles(request):

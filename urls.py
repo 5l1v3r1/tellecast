@@ -116,6 +116,8 @@ urlpatterns = patterns(
     ),
     url(r'^api/messages/bulk/is_hidden/$', views.messages_bulk_is_hidden),
     url(r'^api/messages/bulk/status/$', views.messages_bulk_status),
+    url(r'^api/networks/(?P<id>[0-9]+)/master-tells/$', views.networks_master_tells),
+    url(r'^api/networks/(?P<id>[0-9]+)/tellzones/$', views.networks_tellzones),
     url(
         r'^api/networks/(?P<id>[0-9]+)/$',
         views.Networks.as_view({
@@ -132,7 +134,6 @@ urlpatterns = patterns(
             'post': 'post',
         }),
     ),
-    url(r'^api/networks/(?P<id>[0-9]+)/master-tells/$', views.networks_master_tells),
     url(
         r'^api/notifications/$',
         views.Notifications.as_view({
