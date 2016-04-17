@@ -390,14 +390,17 @@ def get_destination(source, name, type, width, bytes):
     _, destination = mkstemp()
     quality = 75
     while True:
-        ProcessorPipeline([
-            Transpose(),
-            ResizeToFit(width=width, upscale=False),
-        ]).process(
-            Image.open(source),
-        ).save(
-            destination, format=format, optimize=True, quality=quality,
-        )
+        try:
+            ProcessorPipeline([
+                Transpose(),
+                ResizeToFit(width=width, upscale=False),
+            ]).process(
+                Image.open(source),
+            ).save(
+                destination, format=format, optimize=True, quality=quality,
+            )
+        except IOError:
+            break
         if not bytes:
             break
         if getsize(destination) <= bytes:
