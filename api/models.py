@@ -2447,7 +2447,7 @@ def tellzone_post_delete(instance, **kwargs):
             {
                 'subject': 'tellzones',
                 'body': instance.id,
-                'action': 'delete',
+                'action': 'deleted',
             },
         ),
         queue='api.management.commands.websockets',
