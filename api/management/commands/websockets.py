@@ -144,6 +144,9 @@ class RabbitMQ(object):
                     user.write_message(dumps(message))
             elif message['subject'] == 'profile':
                 yield self.profile(message['body'])
+            elif message['subject'] == 'tellzones':
+                for key, value in IOLoop.current().clients.items():
+                    key.write_message(dumps(message))
             elif message['subject'] == 'users_locations':
                 yield self.users_locations(message['body'])
             logger.log(DEBUG, u'[{clients:>3d}] [{source:>9s}] [IN ] [{seconds:>9.2f}] {subject:s}'.format(
