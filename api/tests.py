@@ -14,6 +14,23 @@ from api import middleware, models
 from settings import BROKER
 
 
+class Versions(TransactionTestCase):
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.count = 10
+        middleware.mixer.cycle(self.count).blend('api.Version')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/versions/', format='json')
+        assert len(response.data) == self.count
+        assert response.status_code == 200
+
+
 class Ads(TransactionTestCase):
 
     def setUp(self):

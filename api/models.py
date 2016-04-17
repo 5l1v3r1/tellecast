@@ -132,6 +132,37 @@ def create_user(self, *args, **kwargs):
 GeoManager.create_user = create_user
 
 
+class Version(Model):
+
+    platform = CharField(
+        ugettext_lazy('Slot'),
+        choices=(
+            ('Android', 'Android',),
+            ('iOS', 'iOS',),
+        ),
+        db_index=True,
+        default='Android',
+        max_length=255,
+    )
+    number = CharField(ugettext_lazy('Number'), db_index=True, max_length=255)
+    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
+    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
+
+    class Meta:
+        db_table = 'api_versions'
+        ordering = (
+            '-id',
+        )
+        verbose_name = 'Version'
+        verbose_name_plural = 'Version'
+
+    def __str__(self):
+        return str(self.id)
+
+    def __unicode__(self):
+        return unicode(self.id)
+
+
 class Ad(Model):
 
     slot = CharField(

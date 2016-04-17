@@ -254,6 +254,7 @@ urlpatterns = patterns(
         }),
     ),
     url(r'^api/verify/$', views.verify),
+    url(r'^api/versions/$', views.versions),
     url(r'^swagger/', include(urls)),
 )
 

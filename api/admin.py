@@ -1287,6 +1287,32 @@ class UserURL(ModelAdmin):
 UserURL.delete_view = delete_view
 
 
+class Version(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'platform',
+        'number',
+    )
+    list_display = (
+        'id',
+        'platform',
+        'number',
+        'inserted_at',
+        'updated_at',
+    )
+    list_filter = (
+        'platform',
+        'inserted_at',
+        'updated_at',
+    )
+    list_per_page = 10
+    search_fields = (
+        'number',
+    )
+
+Version.delete_view = delete_view
+
 apps.get_app_config('api').verbose_name = ugettext_lazy('API')
 apps.get_app_config('auth').verbose_name = ugettext_lazy('Django')
 apps.get_app_config('default').verbose_name = ugettext_lazy('Social')
@@ -1322,3 +1348,4 @@ site.register(models.UserStatus, UserStatus)
 site.register(models.UserStatusAttachment, UserStatusAttachment)
 site.register(models.UserTellzone, UserTellzone)
 site.register(models.UserURL, UserURL)
+site.register(models.Version, Version)

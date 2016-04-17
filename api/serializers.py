@@ -80,6 +80,20 @@ class Null(Serializer):
     pass
 
 
+class Version(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'platform',
+            'number',
+            'inserted_at',
+            'updated_at',
+        )
+        model = models.Version
+
+
 class Ad(ModelSerializer):
 
     class Meta:
@@ -1362,6 +1376,10 @@ class Message(ModelSerializer):
                 if 'contents' not in data or not data['contents']:
                     raise ValidationError(ugettext_lazy('Invalid `contents`'))
         return data
+
+
+class Versions(Version):
+    pass
 
 
 class Ads(Ad):

@@ -4577,6 +4577,41 @@ class UsersTellzones(ViewSet):
 
 @api_view(('GET',))
 @permission_classes((IsAuthenticated,))
+def versions(request):
+    '''
+    SELECT Versions
+
+    <pre>
+    Input
+    =====
+
+    + N/A
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.Versions
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    return Response(
+        data=serializers.Versions(
+            models.Version.objects.get_queryset(),
+            context={
+                'request': request,
+            },
+            many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
 def ads(request):
     '''
     SELECT Ads
