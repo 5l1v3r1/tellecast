@@ -191,6 +191,7 @@ class Ad(Model):
 class Category(Model):
 
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+    photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:

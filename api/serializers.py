@@ -103,6 +103,7 @@ class Category(ModelSerializer):
         fields = (
             'id',
             'name',
+            'photo',
             'position',
         )
         model = models.Category

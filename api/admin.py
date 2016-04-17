@@ -313,6 +313,7 @@ class Category(ModelAdmin):
     actions = [delete_selected]
     fields = (
         'name',
+        'photo',
         'position',
     )
     list_display = (
@@ -324,6 +325,7 @@ class Category(ModelAdmin):
     list_per_page = 10
     search_fields = (
         'name',
+        'photo',
         'position',
     )
 
