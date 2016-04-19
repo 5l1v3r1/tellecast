@@ -2682,6 +2682,8 @@ def user_status_attachment_post_save(instance, **kwargs):
 
 @receiver(post_save, sender=UserTellzone)
 def user_tellzone_post_save(instance, **kwargs):
+    if not instance.favorited_at:
+        return
     user_ids = []
     user_ids.append(instance.user_id)
     for user_location in UserLocation.objects.get_queryset().filter(
