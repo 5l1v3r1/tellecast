@@ -3245,6 +3245,7 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     api_users_settings_owned_by.value AS owned_by_setting_value,
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
+                    api_categories.photo AS category_photo,
                     api_categories.position AS category_position,
                     api_tellzones.id AS tellzone_id,
                     api_tellzones.name AS tellzone_name
@@ -3330,6 +3331,7 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     api_users_settings_owned_by.value AS owned_by_setting_value,
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
+                    api_categories.photo AS category_photo,
                     api_categories.position AS category_position
                 FROM api_users_locations
                 INNER JOIN api_users ON api_users.id = api_users_locations.user_id
@@ -3467,6 +3469,7 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
             master_tells[record['id']]['category'] = {
                 'id': record['category_id'],
                 'name': record['category_name'],
+                'photo': record['category_photo'],
                 'position': record['category_position'],
             }
         if 'tellzones' not in master_tells[record['id']]:
