@@ -833,7 +833,6 @@ class RabbitMQ(object):
                     SELECT
                         api_tellzones.id AS api_tellzones_id,
                         api_tellzones.name AS api_tellzones_name,
-                        ST_AsGeoJSON(api_tellzones.point) AS point,
                         ST_Distance(
                             ST_Transform(api_tellzones.point, 2163),
                             ST_Transform(ST_GeomFromText(%s, 4326), 2163)
@@ -858,7 +857,6 @@ class RabbitMQ(object):
                         SELECT
                             api_tellzones.id AS api_tellzones_id,
                             api_tellzones.name AS api_tellzones_name,
-                            ST_AsGeoJSON(api_tellzones.point) AS point,
                             ST_Distance(
                                 ST_Transform(api_tellzones.point, 2163),
                                 ST_Transform(ST_GeomFromText(%s, 4326), 2163)
@@ -885,37 +883,97 @@ class RabbitMQ(object):
                                 )
                                 ORDER BY api_networks.id ASC
                             )
-                            AND
-                            api_tellzones.status = %s
                         ''',
-                        (point, point, 'Public',),
+                        (point, point,),
                     )
                     records = cursor.fetchall()
                 for record in records:
                     if record[0] not in tellzones:
-                        point = loads(record[2])
                         tellzones[record[0]] = {
                             'id': record[0],
                             'name': record[1],
-                            'latitude': point['coordinates'][1],
-                            'longitude': point['coordinates'][0],
-                            'distance': record[3],
+                            'distance': record[2],
                             'networks': {},
+                            'source': 1,
                         }
-                    if record[4] and record[5]:
-                        if record[4] not in tellzones[record[0]]['networks']:
-                            tellzones[record[0]]['networks'][record[4]] = {
-                                'id': record[4],
-                                'name': record[5],
+                    if record[3] and record[4]:
+                        if record[3] not in tellzones[record[0]]['networks']:
+                            tellzones[record[0]]['networks'][record[3]] = {
+                                'id': record[3],
+                                'name': record[4],
+                            }
+                cursor.execute(
+                    '''
+                    SELECT
+                        api_tellzones_1.id AS id,
+                        api_tellzones_1.name AS name,
+                        ST_Distance(
+                            ST_Transform(api_tellzones_1.point, 2163),
+                            ST_Transform(ST_GeomFromText(%s, 4326), 2163)
+                        ) * 3.28084 AS distance,
+                        api_networks.id AS api_networks_id,
+                        api_networks.name AS api_networks_name,
+                        api_tellzones_2.source AS source
+                    FROM api_tellzones api_tellzones_1
+                    LEFT OUTER JOIN api_networks_tellzones ON
+                        api_networks_tellzones.tellzone_id = api_tellzones_1.id
+                    LEFT OUTER JOIN api_networks ON
+                        api_networks.id = api_networks_tellzones.network_id
+                    INNER JOIN (
+                        SELECT tellzone_id, 1 As source
+                        FROM api_users_locations
+                        WHERE user_id = %s AND timestamp > NOW() - INTERVAL '1 minute'
+                        UNION
+                        SELECT tellzone_id, 2 As source
+                        FROM api_master_tells_tellzones
+                        INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
+                        WHERE api_master_tells.owned_by_id = %s
+                        UNION
+                        SELECT tellzone_id, 3 As source
+                        FROM api_users_tellzones
+                        WHERE user_id = %s AND favorited_at IS NOT NULL
+                        UNION
+                        SELECT tellzone_id, 4 As source
+                        FROM api_users_tellzones
+                        WHERE user_id = %s AND pinned_at IS NOT NULL
+                        UNION
+                        SELECT id, 5 As source
+                        FROM api_tellzones
+                        WHERE user_id = %s
+                    ) api_tellzones_2 ON api_tellzones_2.tellzone_id = api_tellzones_1.id
+                    ORDER BY api_tellzones_2.source ASC, api_tellzones_1.id ASC
+                    ''',
+                    (
+                        point,
+                        user_location['user_id'],
+                        user_location['user_id'],
+                        user_location['user_id'],
+                        user_location['user_id'],
+                        user_location['user_id'],
+                    ),
+                )
+                for record in cursor.fetchall():
+                    if record[0] not in tellzones:
+                        tellzones[record[0]] = {
+                            'id': record[0],
+                            'name': record[1],
+                            'distance': record[2],
+                            'networks': {},
+                            'source': record[5],
+                        }
+                    if record[3] and record[4]:
+                        if record[3] not in tellzones[record[0]]['networks']:
+                            tellzones[record[0]]['networks'][record[3]] = {
+                                'id': record[3],
+                                'name': record[4],
                             }
             for key, value in tellzones.items():
                 tellzones[key]['networks'] = sorted(
                     tellzones[key]['networks'].values(), key=lambda network: (network['name'], -network['id'],),
                 )
-            tellzones = sorted(tellzones.values(), key=lambda tellzone: (tellzone['distance'], -tellzone['id'],))
-            for index, _ in enumerate(tellzones):
-                del tellzones[index]['latitude']
-                del tellzones[index]['longitude']
+            tellzones = sorted(
+                tellzones.values(), key=lambda tellzone: (tellzone['source'], tellzone['distance'], -tellzone['id'],),
+            )
         except Exception:
             client.captureException()
         raise Return(tellzones)
