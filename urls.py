@@ -253,7 +253,8 @@ urlpatterns = patterns(
             'delete': 'delete',
         }),
     ),
-    url(r'^api/verify/$', views.verify),
+    url(r'^api/verify/(?P<email>[^/]+)/$', views.verify_1),
+    url(r'^api/verify/$', views.verify_2),
     url(r'^api/versions/$', views.versions),
     url(r'^swagger/', include(urls)),
 )

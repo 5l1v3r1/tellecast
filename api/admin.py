@@ -1027,7 +1027,8 @@ class User(ModelAdmin):
 
     def save_model(self, request, user, form, change):
         if 'password' in form.changed_data:
-            user.password = hashpw(user.password.encode('utf-8'), gensalt(10))
+            if user.password:
+                user.password = hashpw(user.password.encode('utf-8'), gensalt(10))
         user.save()
         if not user.is_verified:
             current_app.send_task(

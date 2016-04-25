@@ -4704,6 +4704,13 @@ def authenticate_1(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
+    if not user.password:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `password`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
     if hashpw(serializer.validated_data['password'].encode('utf-8'), user.password.encode('utf-8')) != user.password:
         return Response(
             data={
@@ -7128,9 +7135,52 @@ def users_tellzones_all(request, id):
     )
 
 
+@api_view(('GET',))
+@permission_classes(())
+def verify_1(request, email):
+    '''
+    Resend verification email
+
+    <pre>
+    Input
+    =====
+
+    + email
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.Null
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    user = models.User.objects.get_queryset().filter(email=email).first()
+    if not user:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `email`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    current_app.send_task(
+        'api.tasks.email_notifications',
+        (user.id, 'verify',),
+        queue='api.tasks.email_notifications',
+        routing_key='api.tasks.email_notifications',
+        serializer='json',
+    )
+    return Response(data=serializers.Null().data, status=HTTP_200_OK)
+
+
 @api_view(('POST',))
 @permission_classes(())
-def verify(request):
+def verify_2(request):
     '''
     Verify Users
 

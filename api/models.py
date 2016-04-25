@@ -2440,8 +2440,7 @@ def category_pre_save(instance, **kwargs):
 
 @receiver(post_delete, sender=Tellzone)
 def tellzone_post_delete(instance, **kwargs):
-    print instance.id
-    print current_app.send_task(
+    current_app.send_task(
         'api.management.commands.websockets',
         (
             {

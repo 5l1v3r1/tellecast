@@ -3398,6 +3398,61 @@ class UsersSettings(TransactionTestCase):
         assert response.status_code == 200
 
 
+class Others(TransactionTestCase):
+
+    def setUp(self):
+        self.user = middleware.mixer.blend(
+            'api.User',
+            last_name=middleware.mixer.faker.last_name(),
+            photo_original=middleware.mixer.faker.word(),
+            photo_preview=middleware.mixer.faker.word(),
+            phone=middleware.mixer.faker.phone_number(),
+        )
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get(
+            '/api/verify/{email:s}/'.format(email=middleware.mixer.faker.email()), format='json',
+        )
+        assert response.status_code == 400
+
+        response = self.client.get('/api/verify/{email:s}/'.format(email=self.user.email), format='json')
+        assert response.status_code == 200
+
+    def test_b(self):
+        response = self.client.post(
+            '/api/verify/',
+            data={
+                'id': 0,
+                'hash': '',
+            },
+            format='json',
+        )
+        assert response.status_code == 400
+
+        response = self.client.post(
+            '/api/verify/',
+            data={
+                'id': self.user.id,
+                'hash': '',
+            },
+            format='json',
+        )
+        assert response.status_code == 400
+
+        response = self.client.post(
+            '/api/verify/',
+            data={
+                'id': self.user.id,
+                'hash': self.user.hash,
+            },
+            format='json',
+        )
+        assert response.status_code == 200
+
+
 def get_header(token):
     return 'Token {token:s}'.format(token=token)
 
