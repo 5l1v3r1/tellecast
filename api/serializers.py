@@ -2050,6 +2050,9 @@ class MessagesPatchResponse(Message):
 class MessagesBulkRequest(Serializer):
 
     user_id = IntegerField()
+    master_tell_id = IntegerField(default=None, required=False)
+    user_status_id = IntegerField(default=None, required=False)
+    post_id = IntegerField(default=None, required=False)
 
 
 class MessagesBulkResponse(Message):

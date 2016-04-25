@@ -6043,6 +6043,18 @@ def messages_bulk_is_hidden(request):
         - Type: integer
         - Status: mandatory
 
+    + user_status_id
+        - Type: integer
+        - Status: optional
+
+    + master_tell_id
+        - Type: integer
+        - Status: optional
+
+    + post_id
+        - Type: integer
+        - Status: optional
+
     Output
     ======
 
@@ -6076,10 +6088,23 @@ def messages_bulk_is_hidden(request):
     )
     serializer.is_valid(raise_exception=True)
     messages = []
-    for message in models.Message.objects.get_queryset().filter(
+    queryset = models.Message.objects.get_queryset().filter(
         Q(user_source_id=request.user.id, user_destination_id=serializer.validated_data['user_id']) |
-        Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
-    ).select_related(
+        Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id)
+    )
+    if serializer.validated_data['user_status_id']:
+        queryset = queryset.filter(user_status_id=serializer.validated_data['user_status_id'])
+    else:
+        queryset = queryset.filter(user_status_id__isnull=True)
+    if serializer.validated_data['master_tell_id']:
+        queryset = queryset.filter(master_tell_id=serializer.validated_data['master_tell_id'])
+    else:
+        queryset = queryset.filter(master_tell_id__isnull=True)
+    if serializer.validated_data['post_id']:
+        queryset = queryset.filter(post_id=serializer.validated_data['post_id'])
+    else:
+        queryset = queryset.filter(post_id__isnull=True)
+    for message in queryset.select_related(
         'user_source',
         'user_destination',
         'user_status',
@@ -6133,6 +6158,18 @@ def messages_bulk_status(request):
         - Type: integer
         - Status: mandatory
 
+    + user_status_id
+        - Type: integer
+        - Status: optional
+
+    + master_tell_id
+        - Type: integer
+        - Status: optional
+
+    + post_id
+        - Type: integer
+        - Status: optional
+
     Output
     ======
 
@@ -6158,9 +6195,23 @@ def messages_bulk_status(request):
     )
     serializer.is_valid(raise_exception=True)
     messages = []
-    for message in models.Message.objects.get_queryset().filter(
-        Q(user_source_id=serializer.validated_data['user_id'], user_destination_id=request.user.id),
-    ).select_related(
+    queryset = models.Message.objects.get_queryset().filter(
+        user_source_id=serializer.validated_data['user_id'],
+        user_destination_id=request.user.id,
+    )
+    if serializer.validated_data['user_status_id']:
+        queryset = queryset.filter(user_status_id=serializer.validated_data['user_status_id'])
+    else:
+        queryset = queryset.filter(user_status_id__isnull=True)
+    if serializer.validated_data['master_tell_id']:
+        queryset = queryset.filter(master_tell_id=serializer.validated_data['master_tell_id'])
+    else:
+        queryset = queryset.filter(master_tell_id__isnull=True)
+    if serializer.validated_data['post_id']:
+        queryset = queryset.filter(post_id=serializer.validated_data['post_id'])
+    else:
+        queryset = queryset.filter(post_id__isnull=True)
+    for message in queryset.select_related(
         'user_source',
         'user_destination',
         'user_status',
