@@ -104,7 +104,7 @@ Hi {first_name:s},
 
 Please use the following link to reset your password.
 
-tellzone://reset-password/{id:d}/{hash:s}/
+https://invite.tellzone.com/reset-password/{id:d}/{hash:s}/
 
 From,
 Tellzone
@@ -126,7 +126,7 @@ Hi {first_name:s},
 
 Please use the following link to verify.
 
-tellzone://verify/{id:d}/{hash:s}/
+https://invite.tellzone.com/verify/{id:d}/{hash:s}/
 
 From,
 Tellzone
