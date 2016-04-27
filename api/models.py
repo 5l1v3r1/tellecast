@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from base64 import urlsafe_b64encode
 from contextlib import closing
 from datetime import datetime, timedelta
 
@@ -335,7 +336,7 @@ class User(Model):
 
     @cached_property
     def hash(self):
-        return (
+        return urlsafe_b64encode(
             str(self.id) +
             settings.SEPARATOR +
             hashpw((str(self.id) + settings.SECRET_KEY).encode('utf-8'), gensalt(10))
@@ -345,7 +346,11 @@ class User(Model):
     def token(self):
         if not self.is_verified:
             return None
-        return self.hash
+        return (
+            str(self.id) +
+            settings.SEPARATOR +
+            hashpw((str(self.id) + settings.SECRET_KEY).encode('utf-8'), gensalt(10))
+        )
 
     @classmethod
     def insert(cls, data):

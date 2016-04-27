@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from base64 import urlsafe_b64decode
 from contextlib import closing
 from datetime import date, datetime, timedelta
 from random import randint
@@ -6695,7 +6696,12 @@ def reset_password(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
-    if not user.is_valid(serializer.validated_data['hash']):
+    token = ''
+    try:
+        token = urlsafe_b64decode(serializer.validated_data['hash'].encode('utf-8'))
+    except Exception:
+        pass
+    if not user.is_valid(token):
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `hash`'),
@@ -7241,7 +7247,12 @@ def verify_2(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
-    if not user.is_valid(serializer.validated_data['hash']):
+    token = ''
+    try:
+        token = urlsafe_b64decode(serializer.validated_data['hash'].encode('utf-8'))
+    except Exception:
+        pass
+    if not user.is_valid(token):
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `hash`'),
