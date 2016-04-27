@@ -6591,6 +6591,10 @@ def register(request):
     responseMessages:
         - code: 400
           message: Invalid Input
+        - code: 401
+          message: Invalid Input
+        - code: 403
+          message: Invalid Input
     '''
     serializer = serializers.RegisterRequest(
         context={
@@ -6599,14 +6603,23 @@ def register(request):
         data=request.DATA,
     )
     serializer.is_valid(raise_exception=True)
-    if not serializer.is_valid_1(request.DATA):
-        return Response(
-            data={
-                'error': ugettext_lazy('Invalid `email`'),
-            },
-            status=HTTP_400_BAD_REQUEST,
-        )
-    if not serializer.is_valid_2(request.DATA):
+    user = models.User.objects.get_queryset().filter(email=serializer.validated_data['email']).first()
+    if user:
+        if user.is_verified:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `email`'),
+                },
+                status=HTTP_403_FORBIDDEN,
+            )
+        else:
+            return Response(
+                data={
+                    'error': ugettext_lazy('Invalid `email`'),
+                },
+                status=HTTP_401_UNAUTHORIZED,
+            )
+    if not serializer.is_valid_(request.DATA):
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `password`/`access_token`'),

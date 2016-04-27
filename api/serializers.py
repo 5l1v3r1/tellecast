@@ -2486,12 +2486,7 @@ class RegisterRequest(User):
         )
         model = models.User
 
-    def is_valid_1(self, data):
-        if not models.User.objects.get_queryset().filter(email=data['email']).count():
-            return True
-        return False
-
-    def is_valid_2(self, data):
+    def is_valid_(self, data):
         if 'password' in data and data['password']:
             return True
         if 'social_profiles' not in data:
