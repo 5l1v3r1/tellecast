@@ -7261,6 +7261,7 @@ def verify_2(request):
         )
     user.is_verified = True
     user.save()
+    request.user = user
     return Response(
         data=serializers.VerifyResponse(
             user,

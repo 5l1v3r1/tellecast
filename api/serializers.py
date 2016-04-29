@@ -3085,5 +3085,6 @@ class VerifyResponse(User):
             'inserted_at',
             'updated_at',
             'token',
+            'settings',
         )
         model = models.User
