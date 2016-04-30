@@ -1141,6 +1141,26 @@ class TellzoneSocialProfile(Model):
         return unicode(self.id)
 
 
+class Campaign(Model):
+
+    tellzone = ForeignKey(Tellzone, related_name='campaigns')
+    access_code = CharField(ugettext_lazy('Access Code'), db_index=True, max_length=255, unique=True)
+
+    class Meta:
+        db_table = 'api_campaigns'
+        ordering = (
+            'access_code',
+        )
+        verbose_name = 'Campaign'
+        verbose_name_plural = 'Campaigns'
+
+    def __str__(self):
+        return str(self.access_code)
+
+    def __unicode__(self):
+        return unicode(self.access_code)
+
+
 class Network(Model):
 
     user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
@@ -2458,6 +2478,18 @@ def tellzone_post_delete(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
+
+
+@receiver(pre_save, sender=User)
+def user_pre_save(instance, **kwargs):
+    if instance.tellzone:
+        return
+    if not instance.access_code:
+        return
+    campaign = Campaign.objects.get_queryset().filter(access_code=instance.access_code).first()
+    if not campaign:
+        return
+    instance.tellzone = campaign.tellzone
 
 
 @receiver(post_save, sender=User)

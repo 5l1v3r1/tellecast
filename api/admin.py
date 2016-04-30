@@ -332,6 +332,29 @@ class Category(ModelAdmin):
 Category.delete_view = delete_view
 
 
+class Campaign(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'tellzone',
+        'access_code',
+    )
+    list_display = (
+        'id',
+        'tellzone',
+        'access_code',
+    )
+    list_filter = (
+        'tellzone',
+    )
+    list_per_page = 10
+    search_fields = (
+        'access_code',
+    )
+
+Campaign.delete_view = delete_view
+
+
 class DeviceAPNS(ModelAdmin):
 
     actions = [delete_selected]
@@ -1321,6 +1344,7 @@ apps.get_app_config('default').verbose_name = ugettext_lazy('Social')
 site.register(models.Ad, Ad)
 site.register(models.Block, Block)
 site.register(models.Category, Category)
+site.register(models.Campaign, Campaign)
 site.register(models.DeviceAPNS, DeviceAPNS)
 site.register(models.DeviceGCM, DeviceGCM)
 site.register(models.MasterTell, MasterTell)
