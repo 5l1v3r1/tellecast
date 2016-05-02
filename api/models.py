@@ -370,7 +370,7 @@ class User(Model):
             access_code=data['access_code'] if 'access_code' in data else None,
         )
         if 'password' in data:
-            password = hashpw(data['password'].encode('utf-8'), gensalt(10))
+            self.password = hashpw(data['password'].encode('utf-8'), gensalt(10))
         if 'settings' in data:
             for key, value in data['settings'].items():
                 value = 'True' if value else 'False'
