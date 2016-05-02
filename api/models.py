@@ -356,7 +356,6 @@ class User(Model):
     def insert(cls, data):
         user = User.objects.create(
             email=data['email'],
-            password=hashpw(data['password'].encode('utf-8'), gensalt(10)) if 'password' in data else None,
             photo_original=data['photo_original'] if 'photo_original' in data else None,
             photo_preview=data['photo_preview'] if 'photo_preview' in data else None,
             first_name=data['first_name'] if 'first_name' in data else None,
@@ -370,6 +369,8 @@ class User(Model):
             is_verified=False,
             access_code=data['access_code'] if 'access_code' in data else None,
         )
+        if 'password' in data:
+            password = hashpw(data['password'].encode('utf-8'), gensalt(10))
         if 'settings' in data:
             for key, value in data['settings'].items():
                 value = 'True' if value else 'False'
@@ -578,7 +579,8 @@ class User(Model):
     def update(self, data):
         if 'email' in data:
             self.email = data['email']
-        self.password = hashpw(data['password'].encode('utf-8'), gensalt(10)) if 'password' in data else None
+        if 'password' in data:
+            self.password = hashpw(data['password'].encode('utf-8'), gensalt(10))
         self.photo_original = data['photo_original'] if 'photo_original' in data else None
         self.photo_preview = data['photo_preview'] if 'photo_preview' in data else None
         self.first_name = data['first_name'] if 'first_name' in data else None
