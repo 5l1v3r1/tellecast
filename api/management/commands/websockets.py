@@ -306,52 +306,6 @@ class RabbitMQ(object):
     @coroutine
     def users_locations_2(self, users_locations):
         try:
-            if len(users_locations) == 2:
-                status = False
-                if users_locations[0]['is_casting'] and users_locations[1]['is_casting']:
-                    if (
-                        users_locations[0]['tellzone_id'] and
-                        (users_locations[0]['tellzone_id'] != users_locations[1]['tellzone_id'])
-                    ):
-                        status = True
-                if users_locations[0]['is_casting'] and not users_locations[1]['is_casting']:
-                    if users_locations[0]['tellzone_id']:
-                        status = True
-                if status:
-                    badge = 0
-                    with closing(connection.cursor()) as cursor:
-                        cursor.execute(
-                            'SELECT COUNT(id) FROM api_messages WHERE user_destination_id = %s AND status = %s',
-                            (users_locations[0]['user_id'], 'Unread',)
-                        )
-                        badge += cursor.fetchone()[0]
-                        cursor.execute(
-                            'SELECT COUNT(id) FROM api_notifications WHERE user_id = %s AND status = %s',
-                            (users_locations[0]['user_id'], 'Unread',)
-                        )
-                        badge += cursor.fetchone()[0]
-                        connection.commit()
-                    current_app.send_task(
-                        'api.tasks.push_notifications',
-                        (
-                            users_locations[0]['user_id'],
-                            {
-                                'aps': {
-                                    'alert': {
-                                        'title': u'You are now at {name:s} Zone'.format(
-                                            name=users_locations[0]['tellzone_name'],
-                                        ),
-                                    },
-                                    'badge': badge,
-                                },
-                                'tellzone_id': users_locations[0]['tellzone_id'],
-                                'type': 'zone_change',
-                            },
-                        ),
-                        queue='api.tasks.push_notifications',
-                        routing_key='api.tasks.push_notifications',
-                        serializer='json',
-                    )
             user_ids = {
                 'home': [],
                 'networks': {},

@@ -2541,34 +2541,6 @@ def user_location_post_save(instance, **kwargs):
         user_id=user_location_1.user_id,
         timestamp__gt=user_location_1.timestamp - timedelta(minutes=1),
     ).first()
-    if user_location_2:
-        status = False
-        if user_location_1.is_casting and user_location_2.is_casting:
-            if user_location_1.tellzone_id and (user_location_1.tellzone_id != user_location_2.tellzone_id):
-                status = True
-        if user_location_1.is_casting and not user_location_2.is_casting:
-            if user_location_1.tellzone_id:
-                status = True
-        if status:
-            current_app.send_task(
-                'api.tasks.push_notifications',
-                (
-                    user_location_1.user_id,
-                    {
-                        'aps': {
-                            'alert': {
-                                'title': u'You are now at {name:s} Zone'.format(name=user_location_1.tellzone.name),
-                            },
-                            'badge': get_badge(user_location_1.user_id),
-                        },
-                        'tellzone_id': user_location_1.tellzone.id,
-                        'type': 'zone_change',
-                    },
-                ),
-                queue='api.tasks.push_notifications',
-                routing_key='api.tasks.push_notifications',
-                serializer='json',
-            )
     user_ids = {
         'home': [],
         'networks': {},
