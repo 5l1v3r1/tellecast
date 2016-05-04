@@ -1871,20 +1871,6 @@ class Posts(TransactionTestCase):
 
         id = response.data['id']
 
-        response = self.client_1.get(
-            '/api/tellzones/',
-            {
-                'latitude': 1.00,
-                'longitude': 1.00,
-                'radius': 300,
-            },
-            format='json',
-        )
-        assert len(response.data[0]['posts']) == 1
-        assert response.data[0]['posts'][0]['id'] == id
-        assert response.data[0]['posts'][0]['title'] == dictionary['title']
-        assert response.data[0]['posts'][0]['contents'] == dictionary['contents']
-
         dictionary = {
             'category_id': self.category.id,
             'contents': '2',
@@ -2941,8 +2927,6 @@ class Tellzones(TransactionTestCase):
         assert response.data['master_tells'][0]['id'] == dictionary['master_tells'][0]
         assert len(response.data['networks']) == len(dictionary['networks'])
         assert response.data['networks'][0]['id'] == dictionary['networks'][0]
-        assert len(response.data['posts']) == len(dictionary['posts'])
-        assert response.data['posts'][0]['id'] == dictionary['posts'][0]
         assert response.status_code == 201
 
         id = response.data['id']
@@ -2992,7 +2976,6 @@ class Tellzones(TransactionTestCase):
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
         assert len(response.data['master_tells']) == len(dictionary['master_tells'])
         assert len(response.data['networks']) == len(dictionary['networks'])
-        assert len(response.data['posts']) == len(dictionary['posts'])
         assert response.status_code == 200
 
         dictionary = {
@@ -3055,8 +3038,6 @@ class Tellzones(TransactionTestCase):
         assert response.data['master_tells'][0]['id'] == dictionary['master_tells'][0]
         assert len(response.data['networks']) == len(dictionary['networks'])
         assert response.data['networks'][0]['id'] == dictionary['networks'][0]
-        assert len(response.data['posts']) == len(dictionary['posts'])
-        assert response.data['posts'][0]['id'] == dictionary['posts'][0]
         assert response.status_code == 200
 
         response = self.client.delete('/api/tellzones/{id:d}/'.format(id=id), format='json')

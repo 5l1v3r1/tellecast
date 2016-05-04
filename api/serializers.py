@@ -970,13 +970,11 @@ class Tellzone(ModelSerializer):
             'social_profiles',
             'master_tells',
             'networks',
-            'posts',
             'favorites',
             'pins',
             'views',
             'tellecasters',
             'distance',
-            'connections',
             'is_favorited',
             'is_pinned',
             'is_viewed',
@@ -995,9 +993,6 @@ class Tellzone(ModelSerializer):
                     network_tellzone.network for network_tellzone in instance.networks_tellzones.get_queryset()
                 ])
                 continue
-            if field.field_name == 'posts':
-                dictionary[field.field_name] = field.to_representation(instance.get_posts(id))
-                continue
             if field.field_name == 'distance':
                 try:
                     dictionary[field.field_name] = getattr(instance.distance, 'ft', 0.00)
@@ -1011,9 +1006,6 @@ class Tellzone(ModelSerializer):
                         (instance.point.x, instance.point.y), (point.x, point.y)
                     ).ft
                     continue
-            if field.field_name == 'connections':
-                dictionary[field.field_name] = field.to_representation(instance.get_connections(id))
-                continue
             if field.field_name == 'is_favorited':
                 dictionary[field.field_name] = instance.is_favorited(id)
                 continue
@@ -1094,7 +1086,6 @@ class PostTellzone(Tellzone):
             'views',
             'tellecasters',
             'distance',
-            'connections',
             'is_favorited',
             'is_pinned',
             'is_viewed',
@@ -2741,7 +2732,6 @@ class TellzonesRequest(Tellzone):
             'social_profiles',
             'master_tells',
             'networks',
-            'posts',
         )
         model = models.Tellzone
 
@@ -2943,7 +2933,6 @@ class UsersTellzonesGet(Tellzone):
             'views',
             'tellecasters',
             'distance',
-            'connections',
             'is_favorited',
             'is_pinned',
             'is_viewed',
