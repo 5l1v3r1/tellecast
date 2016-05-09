@@ -118,6 +118,8 @@ class Category(ModelSerializer):
             'id',
             'name',
             'photo',
+            'display_type',
+            'description',
             'position',
         )
         model = models.Category

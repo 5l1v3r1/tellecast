@@ -314,11 +314,14 @@ class Category(ModelAdmin):
     fields = (
         'name',
         'photo',
+        'display_type',
+        'description',
         'position',
     )
     list_display = (
         'id',
         'name',
+        'display_type',
         'position',
     )
     list_filter = ()
@@ -326,6 +329,8 @@ class Category(ModelAdmin):
     search_fields = (
         'name',
         'photo',
+        'display_type',
+        'description',
         'position',
     )
 

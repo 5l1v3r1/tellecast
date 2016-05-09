@@ -224,6 +224,8 @@ class Category(Model):
 
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
     photo = CharField(ugettext_lazy('Photo'), db_index=True, max_length=255)
+    display_type = CharField(ugettext_lazy('Display Type'), blank=True, db_index=True, max_length=255, null=True)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
     class Meta:
@@ -3257,6 +3259,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
                     api_categories.photo AS category_photo,
+                    api_categories.display_type AS category_display_type,
+                    api_categories.description AS category_description,
                     api_categories.position AS category_position,
                     api_tellzones.id AS tellzone_id,
                     api_tellzones.name AS tellzone_name
@@ -3343,6 +3347,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
                     api_categories.photo AS category_photo,
+                    api_categories.display_type AS category_display_type,
+                    api_categories.description AS category_description,
                     api_categories.position AS category_position
                 FROM api_users_locations
                 INNER JOIN api_users ON api_users.id = api_users_locations.user_id
@@ -3481,6 +3487,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                 'id': record['category_id'],
                 'name': record['category_name'],
                 'photo': record['category_photo'],
+                'display_type': record['category_display_type'],
+                'description': record['category_description'],
                 'position': record['category_position'],
             }
         if 'tellzones' not in master_tells[record['id']]:

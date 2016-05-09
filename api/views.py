@@ -5761,6 +5761,8 @@ def master_tells_all(request, *args, **kwargs):
                 api_categories.id AS category_id,
                 api_categories.name AS category_name,
                 api_categories.photo AS category_photo,
+                api_categories.display_type AS category_display_type,
+                api_categories.description AS category_description,
                 api_categories.position AS category_position,
                 api_tellzones.id AS tellzone_id,
                 api_tellzones.name AS tellzone_name
@@ -5894,6 +5896,8 @@ def master_tells_all(request, *args, **kwargs):
                     'id': record['category_id'],
                     'name': record['category_name'],
                     'photo': record['category_photo'],
+                    'display_type': record['category_display_type'],
+                    'description': record['category_description'],
                     'position': record['category_position'],
                 }
             if 'tellzones' not in master_tells[record['id']]:
