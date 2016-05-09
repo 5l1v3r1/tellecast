@@ -3438,33 +3438,398 @@ class Tellzones(ViewSet):
             data=request.QUERY_PARAMS,
         )
         serializer.is_valid(raise_exception=True)
-        point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
-        queryset = models.Tellzone.objects.get_queryset().prefetch_related(
-            'social_profiles',
-        ).filter(
-            point__distance_lte=(point, D(ft=serializer.validated_data['radius'])),
-        )
+        records = {}
         network_ids = request.query_params.get('network_ids', None)
-        if network_ids:
-            with closing(connection.cursor()) as cursor:
-                cursor.execute(
-                    'SELECT tellzone_id FROM api_networks_tellzones WHERE network_id IN %s',
-                    (tuple(map(int, network_ids.split(','))),),
-                )
-                queryset = queryset.filter(id__in=[record[0] for record in cursor.fetchall()])
-        return Response(
-            data=serializers.TellzonesResponse(
-                sorted(
-                    [tellzone for tellzone in queryset.distance(point)],
-                    key=lambda tellzone: (-tellzone.tellecasters, tellzone.distance.ft, -tellzone.id),
-                ),
-                context={
-                    'request': request,
-                },
-                many=True,
-            ).data,
-            status=HTTP_200_OK,
+        point = 'POINT({longitude} {latitude})'.format(
+            latitude=serializer.validated_data['latitude'],
+            longitude=serializer.validated_data['longitude'],
         )
+        query = '''
+        SELECT
+            api_tellzones.id AS id,
+            api_tellzones.description AS description,
+            ST_Distance(
+                ST_Transform(api_tellzones.point, 2163),
+                ST_Transform(ST_GeomFromText(%s, 4326), 2163)
+            ) * 3.28084 AS distance,
+            api_tellzones.hours AS hours,
+            api_tellzones.location AS location,
+            api_tellzones.name AS name,
+            api_tellzones.phone AS phone,
+            api_tellzones.photo AS photo,
+            ST_AsGeoJSON(api_tellzones.point) AS point,
+            api_tellzones.status AS status,
+            api_tellzones.type AS type,
+            api_tellzones.url AS url,
+            api_tellzones.ended_at AS ended_at,
+            api_tellzones.inserted_at AS inserted_at,
+            api_tellzones.started_at AS started_at,
+            api_tellzones.updated_at AS updated_at,
+            api_users.id AS users_id,
+            api_users.first_name AS users_first_name,
+            api_users.last_name AS users_last_name,
+            api_users.location AS users_location,
+            api_users.photo_original AS users_photo_original,
+            api_users.photo_preview AS users_photo_preview,
+            api_users_settings.key AS users_settings_key,
+            api_users_settings.value AS users_settings_value,
+            api_tellzones_social_profiles.id AS tellzones_social_profiles_id,
+            api_tellzones_social_profiles.netloc AS tellzones_social_profiles_netloc,
+            api_tellzones_social_profiles.url AS tellzones_social_profiles_url,
+            api_networks.id AS networks_id,
+            api_networks.name AS networks_name,
+            api_master_tells.id AS master_tells_id,
+            api_master_tells.contents AS master_tells_contents,
+            api_master_tells.description AS master_tells_description,
+            api_master_tells.position AS master_tells_position,
+            api_master_tells.is_visible AS master_tells_is_visible,
+            api_master_tells.inserted_at AS master_tells_inserted_at,
+            api_master_tells.updated_at AS master_tells_updated_at,
+            api_categories.id AS master_tells_category_id,
+            api_categories.name AS master_tells_category_name,
+            api_categories.photo AS master_tells_category_photo,
+            api_categories.display_type AS master_tells_category_display_type,
+            api_categories.description AS master_tells_category_description,
+            api_categories.position AS master_tells_category_position,
+            api_users_created_by.id AS master_tells_created_by_id,
+            api_users_created_by.photo_original AS master_tells_created_by_photo_original,
+            api_users_created_by.photo_preview AS master_tells_created_by_photo_preview,
+            api_users_created_by.first_name AS master_tells_created_by_first_name,
+            api_users_created_by.last_name AS master_tells_created_by_last_name,
+            api_users_created_by.description AS master_tells_created_by_description,
+            api_users_created_by.location AS master_tells_created_by_location,
+            api_users_settings_created_by.key AS master_tells_created_by_settings_key,
+            api_users_settings_created_by.value AS master_tells_created_by_settings_value,
+            api_users_owned_by.id AS master_tells_owned_by_id,
+            api_users_owned_by.photo_original AS master_tells_owned_by_photo_original,
+            api_users_owned_by.photo_preview AS master_tells_owned_by_photo_preview,
+            api_users_owned_by.first_name AS master_tells_owned_by_first_name,
+            api_users_owned_by.last_name AS master_tells_owned_by_last_name,
+            api_users_owned_by.description AS master_tells_owned_by_description,
+            api_users_owned_by.location AS master_tells_owned_by_location,
+            api_users_settings_owned_by.key AS master_tells_owned_by_settings_key,
+            api_users_settings_owned_by.value AS master_tells_owned_by_settings_value,
+            api_slave_tells.id AS slave_tells_id,
+            api_slave_tells.created_by_id AS slave_tells_created_by_id,
+            api_slave_tells.owned_by_id AS slave_tells_owned_by_id,
+            api_slave_tells.photo AS slave_tells_photo,
+            api_slave_tells.first_name AS slave_tells_first_name,
+            api_slave_tells.last_name AS slave_tells_last_name,
+            api_slave_tells.type AS slave_tells_type,
+            api_slave_tells.contents_original AS slave_tells_contents_original,
+            api_slave_tells.contents_preview AS slave_tells_contents_preview,
+            api_slave_tells.description AS slave_tells_description,
+            api_slave_tells.position AS slave_tells_position,
+            api_slave_tells.is_editable AS slave_tells_is_editable,
+            api_slave_tells.inserted_at AS slave_tells_inserted_at,
+            api_slave_tells.updated_at AS slave_tells_updated_at,
+            api_users_tellzones_1.user_id AS users_tellzones_1_user_id,
+            api_users_tellzones_1.tellzone_id AS users_tellzones_1_tellzone_id,
+            api_users_tellzones_1.count AS users_tellzones_1_favorited_at_count,
+            api_users_tellzones_2.user_id AS users_tellzones_2_user_id,
+            api_users_tellzones_2.tellzone_id AS users_tellzones_2_tellzone_id,
+            api_users_tellzones_2.count AS users_tellzones_2_pinned_at_count,
+            api_users_tellzones_3.user_id AS users_tellzones_3_user_id,
+            api_users_tellzones_3.tellzone_id AS users_tellzones_3_tellzone_id,
+            api_users_tellzones_3.count AS users_tellzones_3_viewed_at_count,
+            api_users_locations_1.count AS users_locations_1_count
+        FROM api_tellzones
+        LEFT JOIN api_users ON api_tellzones.user_id = api_users.id
+        LEFT OUTER JOIN api_users_settings AS api_users_settings ON api_users_settings.user_id = api_users.id
+        LEFT OUTER JOIN api_tellzones_social_profiles ON api_tellzones_social_profiles.tellzone_id = api_tellzones.id
+        LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
+        LEFT JOIN api_networks ON api_networks_tellzones.network_id = api_networks.id
+        LEFT OUTER JOIN api_master_tells_tellzones ON api_master_tells_tellzones.tellzone_id = api_tellzones.id
+        LEFT JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
+        LEFT JOIN api_users AS api_users_created_by ON api_users_created_by.id = api_master_tells.created_by_id
+        LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
+            ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
+        LEFT JOIN api_users AS api_users_owned_by ON api_users_owned_by.id = api_master_tells.owned_by_id
+        LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
+            ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
+        LEFT JOIN api_categories ON api_categories.id = api_master_tells.category_id
+        LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
+        LEFT JOIN (
+            SELECT tellzone_id, user_id, COUNT(*) AS count
+            FROM api_users_tellzones
+            WHERE favorited_at IS NOT NULL
+            GROUP by user_id, tellzone_id ORDER BY tellzone_id
+        ) AS api_users_tellzones_1
+        ON (
+            api_tellzones.id = api_users_tellzones_1.tellzone_id
+            AND
+            api_tellzones.user_id = api_users_tellzones_1.user_id
+        )
+        LEFT JOIN (
+            SELECT tellzone_id, user_id, COUNT(*) AS count
+            FROM api_users_tellzones
+            WHERE pinned_at IS NOT NULL
+            GROUP by user_id, tellzone_id
+            ORDER BY tellzone_id
+        ) AS api_users_tellzones_2
+        ON (
+            api_tellzones.id = api_users_tellzones_2.tellzone_id
+            AND
+            api_tellzones.user_id = api_users_tellzones_2.user_id
+        )
+        LEFT JOIN (
+            SELECT tellzone_id, user_id, COUNT(*) AS count
+            FROM api_users_tellzones
+            WHERE viewed_at IS NOT NULL
+            GROUP by user_id, tellzone_id
+            ORDER BY tellzone_id
+        ) AS api_users_tellzones_3
+        ON (
+            api_tellzones.id = api_users_tellzones_3.tellzone_id
+            AND
+            api_tellzones.user_id = api_users_tellzones_3.user_id
+        )
+        LEFT JOIN (
+            SELECT point, COUNT(DISTINCT(user_id)) AS count
+            FROM api_users_locations
+            WHERE (
+                ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), 91.44)
+                AND
+                timestamp > NOW() - INTERVAL '1 minute'
+            )
+            GROUP BY point
+        ) AS api_users_locations_1
+        ON api_tellzones.point = api_users_locations_1.point
+        WHERE ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
+        '''
+        if network_ids:
+            if network_ids.endswith(','):
+                network_ids = network_ids.strip(',')
+            query = '{query:s} AND api_networks_tellzones.network_id IN {network_ids:s}'.format(
+                network_ids=tuple(map(int, network_ids.split(','))),
+                query=query,
+            )
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(query, (point, point, point, serializer.validated_data['radius'] * 0.3048))
+            columns = [column.name for column in cursor.description]
+            for record in cursor.fetchall():
+                record = dict(zip(columns, record))
+                if record['id'] not in records:
+                    records[record['id']] = {
+                        'social_profiles': {},
+                        'networks': {},
+                        'master_tells': {},
+                        'favorites': {},
+                        'pins': {},
+                        'views': {},
+                        'is_favorited': False,
+                        'is_pinned': False,
+                        'is_viewed': False,
+                    }
+                records[record['id']]['id'] = record['id']
+                records[record['id']]['description'] = record['description']
+                records[record['id']]['distance'] = record['distance']
+                records[record['id']]['hours'] = loads(record['hours'])
+                records[record['id']]['location'] = record['location']
+                records[record['id']]['name'] = record['name']
+                records[record['id']]['phone'] = record['phone']
+                records[record['id']]['photo'] = record['photo']
+                point = loads(record['point'])
+                records[record['id']]['point'] = {
+                    'latitude': str(point['coordinates'][1]),
+                    'longitude': str(point['coordinates'][0]),
+                }
+                records[record['id']]['status'] = record['status']
+                records[record['id']]['type'] = record['type']
+                records[record['id']]['url'] = record['url']
+                records[record['id']]['ended_at'] = record['ended_at']
+                records[record['id']]['inserted_at'] = record['inserted_at']
+                records[record['id']]['started_at'] = record['started_at']
+                records[record['id']]['updated_at'] = record['updated_at']
+                if record['users_id']:
+                    if 'user' not in records[record['id']]:
+                        records[record['id']]['user'] = {
+                            'id': record['users_id'],
+                            'first_name': record['users_first_name'],
+                            'last_name': record['users_last_name'],
+                            'location': record['users_location'],
+                            'photo_original': record['users_photo_original'],
+                            'photo_preview': record['users_photo_preview'],
+                        }
+                    if record['users_settings_key']:
+                        if 'settings' not in records[record['id']]['user']:
+                            records[record['id']]['user']['settings'] = {}
+                        if record['users_settings_key'] not in records[record['id']]['user']['settings']:
+                            records[record['id']]['user']['settings'][
+                                record['users_settings_key']
+                            ] = record['users_settings_value']
+                if record['tellzones_social_profiles_id']:
+                    if record['tellzones_social_profiles_id'] not in records[record['id']]['social_profiles']:
+                        records[record['id']]['social_profiles'][record['tellzones_social_profiles_id']] = {
+                            'id': record['tellzones_social_profiles_id'],
+                            'netloc': record['tellzones_social_profiles_netloc'],
+                            'url': record['tellzones_social_profiles_url'],
+                        }
+                if record['networks_id']:
+                    if record['networks_id'] not in records[record['id']]['networks']:
+                        records[record['id']]['networks'][record['networks_id']] = {
+                            'id': record['networks_id'],
+                            'name': record['networks_name'],
+                        }
+                if record['master_tells_id']:
+                    if record['master_tells_id'] not in records[record['id']]['master_tells']:
+                        records[record['id']]['master_tells'][record['master_tells_id']] = {
+                            'id': record['master_tells_id'],
+                            'contents': record['master_tells_contents'],
+                            'description': record['master_tells_description'],
+                            'position': record['master_tells_position'],
+                            'is_visible': record['master_tells_is_visible'],
+                            'inserted_at': record['master_tells_inserted_at'],
+                            'updated_at': record['master_tells_updated_at'],
+                            'slave_tells': {},
+                        }
+                    if record['master_tells_category_id']:
+                        records[record['id']]['master_tells'][record['master_tells_id']]['category'] = {
+                            'id': record['master_tells_category_id'],
+                            'name': record['master_tells_category_name'],
+                            'photo': record['master_tells_category_photo'],
+                            'display_type': record['master_tells_category_display_type'],
+                            'description': record['master_tells_category_description'],
+                            'position': record['master_tells_category_position'],
+                        }
+                    if record['master_tells_created_by_id']:
+                        if 'created_by' not in records[record['id']]['master_tells'][record['master_tells_id']]:
+                            records[record['id']]['master_tells'][record['master_tells_id']]['created_by'] = {
+                                'id': record['master_tells_created_by_id'],
+                                'first_name': record['master_tells_created_by_first_name'],
+                                'last_name': record['master_tells_created_by_last_name'],
+                                'location': record['master_tells_created_by_location'],
+                                'photo_original': record['master_tells_created_by_photo_original'],
+                                'photo_preview': record['master_tells_created_by_photo_preview'],
+                            }
+                    if record['master_tells_created_by_settings_key']:
+                        if (
+                            'settings' not in
+                            records[record['id']]['master_tells'][record['master_tells_id']]['created_by']
+                        ):
+                            records[
+                                record['id']
+                            ]['master_tells'][record['master_tells_id']]['created_by']['settings'] = {}
+                        records[record['id']]['master_tells'][record['master_tells_id']]['created_by']['settings'][
+                            record['master_tells_created_by_settings_key']
+                        ] = record['master_tells_created_by_settings_value']
+                    if record['master_tells_owned_by_id']:
+                        if 'owned_by' not in records[record['id']]['master_tells'][record['master_tells_id']]:
+                            records[record['id']]['master_tells'][record['master_tells_id']]['owned_by'] = {
+                                'id': record['master_tells_owned_by_id'],
+                                'first_name': record['master_tells_owned_by_first_name'],
+                                'last_name': record['master_tells_owned_by_last_name'],
+                                'location': record['master_tells_owned_by_location'],
+                                'photo_original': record['master_tells_owned_by_photo_original'],
+                                'photo_preview': record['master_tells_owned_by_photo_preview'],
+                            }
+                    if record['master_tells_owned_by_settings_key']:
+                        if (
+                            'settings' not in
+                            records[record['id']]['master_tells'][record['master_tells_id']]['owned_by']
+                        ):
+                            records[
+                                record['id']
+                            ]['master_tells'][record['master_tells_id']]['owned_by']['settings'] = {}
+                        records[record['id']]['master_tells'][record['master_tells_id']]['owned_by']['settings'][
+                            record['master_tells_owned_by_settings_key']
+                        ] = record['master_tells_owned_by_settings_value']
+                    if record['slave_tells_id']:
+                        if (
+                            record['slave_tells_id'] not in
+                            records[record['id']]['master_tells'][record['master_tells_id']]['slave_tells']
+                        ):
+                            records[
+                                record['id']
+                            ]['master_tells'][record['master_tells_id']]['slave_tells'][record['slave_tells_id']] = {
+                                'id': record['slave_tells_id'],
+                                'created_by_id': record['slave_tells_created_by_id'],
+                                'owned_by_id': record['slave_tells_owned_by_id'],
+                                'photo': record['slave_tells_photo'],
+                                'first_name': record['slave_tells_first_name'],
+                                'last_name': record['slave_tells_last_name'],
+                                'type': record['slave_tells_type'],
+                                'contents_original': record['slave_tells_contents_original'],
+                                'contents_preview': record['slave_tells_contents_preview'],
+                                'description': record['slave_tells_description'],
+                                'position': record['slave_tells_position'],
+                                'is_editable': record['slave_tells_is_editable'],
+                                'inserted_at': record['slave_tells_inserted_at'],
+                                'updated_at': record['slave_tells_updated_at'],
+                            }
+                if (
+                    record['users_tellzones_1_user_id'] == record['users_id'] and
+                    record['users_tellzones_1_tellzone_id'] == record['id']
+                ):
+                    records[record['id']]['is_favorited'] = (
+                        True if record['users_tellzones_1_favorited_at_count'] else False
+                    )
+                    records[
+                        record['id']
+                    ][
+                        'favorites'
+                    ][record['users_tellzones_1_user_id']] = record['users_tellzones_1_favorited_at_count']
+                if (
+                    record['users_tellzones_2_user_id'] == record['users_id'] and
+                    record['users_tellzones_2_tellzone_id'] == record['id']
+                ):
+                    records[record['id']]['is_pinned'] = (
+                        True if record['users_tellzones_2_pinned_at_count'] else False
+                    )
+                    records[
+                        record['id']
+                    ][
+                        'pins'
+                    ][record['users_tellzones_2_user_id']] = record['users_tellzones_2_pinned_at_count']
+                if (
+                    record['users_tellzones_3_user_id'] == record['users_id'] and
+                    record['users_tellzones_3_tellzone_id'] == record['id']
+                ):
+                    records[record['id']]['is_viewed'] = (
+                        True if record['users_tellzones_3_viewed_at_count'] else False
+                    )
+                    records[
+                        record['id']
+                    ][
+                        'views'
+                    ][record['users_tellzones_3_user_id']] = record['users_tellzones_3_viewed_at_count']
+                records[record['id']]['tellecasters'] = record['users_locations_1_count'] or 0
+        for key, value in records.items():
+            records[key]['social_profiles'] = value['social_profiles'].values()
+            records[key]['networks'] = value['networks'].values()
+            for k, v in records[key]['master_tells'].items():
+                records[key]['master_tells'][k]['created_by']['photo_original'] = (
+                    records[key]['master_tells'][k]['created_by']['photo_original']
+                    if records[key]['master_tells'][k]['created_by']['settings']['show_photo'] == 'True' else None
+                )
+                records[key]['master_tells'][k]['created_by']['photo_preview'] = (
+                    records[key]['master_tells'][k]['created_by']['photo_preview']
+                    if records[key]['master_tells'][k]['created_by']['settings']['show_photo'] == 'True' else None
+                )
+                records[key]['master_tells'][k]['created_by']['last_name'] = (
+                    records[key]['master_tells'][k]['created_by']['last_name']
+                    if records[key]['master_tells'][k]['created_by']['settings']['show_last_name'] == 'True' else None
+                )
+                records[key]['master_tells'][k]['owned_by']['photo_original'] = (
+                    records[key]['master_tells'][k]['owned_by']['photo_original']
+                    if records[key]['master_tells'][k]['owned_by']['settings']['show_photo'] == 'True' else None
+                )
+                records[key]['master_tells'][k]['owned_by']['photo_preview'] = (
+                    records[key]['master_tells'][k]['owned_by']['photo_preview']
+                    if records[key]['master_tells'][k]['owned_by']['settings']['show_photo'] == 'True' else None
+                )
+                records[key]['master_tells'][k]['owned_by']['last_name'] = (
+                    records[key]['master_tells'][k]['owned_by']['last_name']
+                    if records[key]['master_tells'][k]['owned_by']['settings']['show_last_name'] == 'True' else None
+                )
+                del records[key]['master_tells'][k]['created_by']['settings']
+                del records[key]['master_tells'][k]['owned_by']['settings']
+                records[key]['master_tells'][k]['slave_tells'] = v['slave_tells'].values()
+            records[key]['master_tells'] = records[key]['master_tells'].values()
+            records[key]['favorites'] = sum(value['favorites'].values())
+            records[key]['pins'] = sum(value['pins'].values())
+            records[key]['views'] = sum(value['views'].values())
+        return Response(data=records.values(), status=HTTP_200_OK)
 
     def get_2(self, request, id):
         '''
