@@ -3597,15 +3597,18 @@ class Tellzones(ViewSet):
         ON api_tellzones.point = api_users_locations_1.point
         WHERE ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
         '''
+        parameters = [
+            point,
+            point,
+            point,
+            serializer.validated_data['radius'] * 0.3048,
+        ]
+        network_ids = tuple(filter(None, map(int, network_ids.split(',') if network_ids else '')))
         if network_ids:
-            if network_ids.endswith(','):
-                network_ids = network_ids.strip(',')
-            query = '{query:s} AND api_networks_tellzones.network_id IN {network_ids:s}'.format(
-                network_ids=tuple(map(int, network_ids.split(','))),
-                query=query,
-            )
+            query = '{query:s} AND api_networks_tellzones.network_id IN %s'.format(query=query)
+            parameters.append(network_ids)
         with closing(connection.cursor()) as cursor:
-            cursor.execute(query, (point, point, point, serializer.validated_data['radius'] * 0.3048))
+            cursor.execute(query, parameters)
             columns = [column.name for column in cursor.description]
             for record in cursor.fetchall():
                 record = dict(zip(columns, record))
@@ -3624,7 +3627,7 @@ class Tellzones(ViewSet):
                 records[record['id']]['id'] = record['id']
                 records[record['id']]['description'] = record['description']
                 records[record['id']]['distance'] = record['distance']
-                records[record['id']]['hours'] = loads(record['hours'])
+                records[record['id']]['hours'] = loads(record['hours']) if record['hours'] else {}
                 records[record['id']]['location'] = record['location']
                 records[record['id']]['name'] = record['name']
                 records[record['id']]['phone'] = record['phone']
