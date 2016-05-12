@@ -3476,8 +3476,6 @@ class Tellzones(ViewSet):
             api_tellzones_social_profiles.id AS tellzones_social_profiles_id,
             api_tellzones_social_profiles.netloc AS tellzones_social_profiles_netloc,
             api_tellzones_social_profiles.url AS tellzones_social_profiles_url,
-            api_networks.id AS networks_id,
-            api_networks.name AS networks_name,
             api_master_tells.id AS master_tells_id,
             api_master_tells.contents AS master_tells_contents,
             api_master_tells.description AS master_tells_description,
@@ -3522,23 +3520,12 @@ class Tellzones(ViewSet):
             api_slave_tells.position AS slave_tells_position,
             api_slave_tells.is_editable AS slave_tells_is_editable,
             api_slave_tells.inserted_at AS slave_tells_inserted_at,
-            api_slave_tells.updated_at AS slave_tells_updated_at,
-            api_users_tellzones_1.user_id AS users_tellzones_1_user_id,
-            api_users_tellzones_1.tellzone_id AS users_tellzones_1_tellzone_id,
-            api_users_tellzones_1.count AS users_tellzones_1_favorited_at_count,
-            api_users_tellzones_2.user_id AS users_tellzones_2_user_id,
-            api_users_tellzones_2.tellzone_id AS users_tellzones_2_tellzone_id,
-            api_users_tellzones_2.count AS users_tellzones_2_pinned_at_count,
-            api_users_tellzones_3.user_id AS users_tellzones_3_user_id,
-            api_users_tellzones_3.tellzone_id AS users_tellzones_3_tellzone_id,
-            api_users_tellzones_3.count AS users_tellzones_3_viewed_at_count,
-            api_users_locations_1.count AS users_locations_1_count
+            api_slave_tells.updated_at AS slave_tells_updated_at
         FROM api_tellzones
         LEFT JOIN api_users ON api_tellzones.user_id = api_users.id
         LEFT OUTER JOIN api_users_settings AS api_users_settings ON api_users_settings.user_id = api_users.id
         LEFT OUTER JOIN api_tellzones_social_profiles ON api_tellzones_social_profiles.tellzone_id = api_tellzones.id
         LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
-        LEFT JOIN api_networks ON api_networks_tellzones.network_id = api_networks.id
         LEFT OUTER JOIN api_master_tells_tellzones ON api_master_tells_tellzones.tellzone_id = api_tellzones.id
         LEFT JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
         LEFT JOIN api_users AS api_users_created_by ON api_users_created_by.id = api_master_tells.created_by_id
@@ -3549,60 +3536,9 @@ class Tellzones(ViewSet):
             ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
         LEFT JOIN api_categories ON api_categories.id = api_master_tells.category_id
         LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
-        LEFT JOIN (
-            SELECT tellzone_id, user_id, COUNT(*) AS count
-            FROM api_users_tellzones
-            WHERE favorited_at IS NOT NULL
-            GROUP by user_id, tellzone_id ORDER BY tellzone_id
-        ) AS api_users_tellzones_1
-        ON (
-            api_tellzones.id = api_users_tellzones_1.tellzone_id
-            AND
-            api_tellzones.user_id = api_users_tellzones_1.user_id
-        )
-        LEFT JOIN (
-            SELECT tellzone_id, user_id, COUNT(*) AS count
-            FROM api_users_tellzones
-            WHERE pinned_at IS NOT NULL
-            GROUP by user_id, tellzone_id
-            ORDER BY tellzone_id
-        ) AS api_users_tellzones_2
-        ON (
-            api_tellzones.id = api_users_tellzones_2.tellzone_id
-            AND
-            api_tellzones.user_id = api_users_tellzones_2.user_id
-        )
-        LEFT JOIN (
-            SELECT tellzone_id, user_id, COUNT(*) AS count
-            FROM api_users_tellzones
-            WHERE viewed_at IS NOT NULL
-            GROUP by user_id, tellzone_id
-            ORDER BY tellzone_id
-        ) AS api_users_tellzones_3
-        ON (
-            api_tellzones.id = api_users_tellzones_3.tellzone_id
-            AND
-            api_tellzones.user_id = api_users_tellzones_3.user_id
-        )
-        LEFT JOIN (
-            SELECT point, COUNT(DISTINCT(user_id)) AS count
-            FROM api_users_locations
-            WHERE (
-                ST_DWithin(ST_Transform(ST_GeomFromText(%s, 4326), 2163), ST_Transform(point, 2163), 91.44)
-                AND
-                timestamp > NOW() - INTERVAL '1 minute'
-            )
-            GROUP BY point
-        ) AS api_users_locations_1
-        ON api_tellzones.point = api_users_locations_1.point
         WHERE ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
         '''
-        parameters = [
-            point,
-            point,
-            point,
-            serializer.validated_data['radius'] * 0.3048,
-        ]
+        parameters = [point, point, serializer.validated_data['radius'] * 0.3048]
         network_ids = tuple(filter(None, map(int, network_ids.split(',') if network_ids else '')))
         if network_ids:
             query = '{query:s} AND api_networks_tellzones.network_id IN %s'.format(query=query)
@@ -3615,11 +3551,7 @@ class Tellzones(ViewSet):
                 if record['id'] not in records:
                     records[record['id']] = {
                         'social_profiles': {},
-                        'networks': {},
                         'master_tells': {},
-                        'favorites': {},
-                        'pins': {},
-                        'views': {},
                         'is_favorited': False,
                         'is_pinned': False,
                         'is_viewed': False,
@@ -3667,12 +3599,6 @@ class Tellzones(ViewSet):
                             'id': record['tellzones_social_profiles_id'],
                             'netloc': record['tellzones_social_profiles_netloc'],
                             'url': record['tellzones_social_profiles_url'],
-                        }
-                if record['networks_id']:
-                    if record['networks_id'] not in records[record['id']]['networks']:
-                        records[record['id']]['networks'][record['networks_id']] = {
-                            'id': record['networks_id'],
-                            'name': record['networks_name'],
                         }
                 if record['master_tells_id']:
                     if record['master_tells_id'] not in records[record['id']]['master_tells']:
@@ -3760,46 +3686,8 @@ class Tellzones(ViewSet):
                                 'inserted_at': record['slave_tells_inserted_at'],
                                 'updated_at': record['slave_tells_updated_at'],
                             }
-                if (
-                    record['users_tellzones_1_user_id'] == record['users_id'] and
-                    record['users_tellzones_1_tellzone_id'] == record['id']
-                ):
-                    records[record['id']]['is_favorited'] = (
-                        True if record['users_tellzones_1_favorited_at_count'] else False
-                    )
-                    records[
-                        record['id']
-                    ][
-                        'favorites'
-                    ][record['users_tellzones_1_user_id']] = record['users_tellzones_1_favorited_at_count']
-                if (
-                    record['users_tellzones_2_user_id'] == record['users_id'] and
-                    record['users_tellzones_2_tellzone_id'] == record['id']
-                ):
-                    records[record['id']]['is_pinned'] = (
-                        True if record['users_tellzones_2_pinned_at_count'] else False
-                    )
-                    records[
-                        record['id']
-                    ][
-                        'pins'
-                    ][record['users_tellzones_2_user_id']] = record['users_tellzones_2_pinned_at_count']
-                if (
-                    record['users_tellzones_3_user_id'] == record['users_id'] and
-                    record['users_tellzones_3_tellzone_id'] == record['id']
-                ):
-                    records[record['id']]['is_viewed'] = (
-                        True if record['users_tellzones_3_viewed_at_count'] else False
-                    )
-                    records[
-                        record['id']
-                    ][
-                        'views'
-                    ][record['users_tellzones_3_user_id']] = record['users_tellzones_3_viewed_at_count']
-                records[record['id']]['tellecasters'] = record['users_locations_1_count'] or 0
         for key, value in records.items():
             records[key]['social_profiles'] = value['social_profiles'].values()
-            records[key]['networks'] = value['networks'].values()
             for k, v in records[key]['master_tells'].items():
                 records[key]['master_tells'][k]['created_by']['photo_original'] = (
                     records[key]['master_tells'][k]['created_by']['photo_original']
@@ -3829,9 +3717,6 @@ class Tellzones(ViewSet):
                 del records[key]['master_tells'][k]['owned_by']['settings']
                 records[key]['master_tells'][k]['slave_tells'] = v['slave_tells'].values()
             records[key]['master_tells'] = records[key]['master_tells'].values()
-            records[key]['favorites'] = sum(value['favorites'].values())
-            records[key]['pins'] = sum(value['pins'].values())
-            records[key]['views'] = sum(value['views'].values())
         return Response(data=records.values(), status=HTTP_200_OK)
 
     def get_2(self, request, id):
