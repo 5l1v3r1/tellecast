@@ -3123,10 +3123,6 @@ class Tellzones(TransactionTestCase):
 
         response = self.client.get('/api/users/{id:d}/tellzones/'.format(id=self.user.id), format='json')
         assert response.status_code == 200
-        assert response.data[0]['tellecasters'] == 5
-        assert response.data[0]['favorites'] == 1
-        assert response.data[0]['pins'] == 1
-        assert response.data[0]['views'] == 1
         assert response.data[0]['is_favorited']
         assert response.data[0]['is_pinned']
         assert response.data[0]['is_viewed']
