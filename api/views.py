@@ -3498,15 +3498,6 @@ class Tellzones(ViewSet):
             api_users_created_by.location AS master_tells_created_by_location,
             api_users_settings_created_by.key AS master_tells_created_by_settings_key,
             api_users_settings_created_by.value AS master_tells_created_by_settings_value,
-            api_users_owned_by.id AS master_tells_owned_by_id,
-            api_users_owned_by.photo_original AS master_tells_owned_by_photo_original,
-            api_users_owned_by.photo_preview AS master_tells_owned_by_photo_preview,
-            api_users_owned_by.first_name AS master_tells_owned_by_first_name,
-            api_users_owned_by.last_name AS master_tells_owned_by_last_name,
-            api_users_owned_by.description AS master_tells_owned_by_description,
-            api_users_owned_by.location AS master_tells_owned_by_location,
-            api_users_settings_owned_by.key AS master_tells_owned_by_settings_key,
-            api_users_settings_owned_by.value AS master_tells_owned_by_settings_value,
             api_slave_tells.id AS slave_tells_id,
             api_slave_tells.created_by_id AS slave_tells_created_by_id,
             api_slave_tells.owned_by_id AS slave_tells_owned_by_id,
@@ -3531,9 +3522,6 @@ class Tellzones(ViewSet):
         LEFT JOIN api_users AS api_users_created_by ON api_users_created_by.id = api_master_tells.created_by_id
         LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
             ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
-        LEFT JOIN api_users AS api_users_owned_by ON api_users_owned_by.id = api_master_tells.owned_by_id
-        LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
-            ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
         LEFT JOIN api_categories ON api_categories.id = api_master_tells.category_id
         LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
         WHERE ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
@@ -3642,27 +3630,6 @@ class Tellzones(ViewSet):
                         records[record['id']]['master_tells'][record['master_tells_id']]['created_by']['settings'][
                             record['master_tells_created_by_settings_key']
                         ] = record['master_tells_created_by_settings_value']
-                    if record['master_tells_owned_by_id']:
-                        if 'owned_by' not in records[record['id']]['master_tells'][record['master_tells_id']]:
-                            records[record['id']]['master_tells'][record['master_tells_id']]['owned_by'] = {
-                                'id': record['master_tells_owned_by_id'],
-                                'first_name': record['master_tells_owned_by_first_name'],
-                                'last_name': record['master_tells_owned_by_last_name'],
-                                'location': record['master_tells_owned_by_location'],
-                                'photo_original': record['master_tells_owned_by_photo_original'],
-                                'photo_preview': record['master_tells_owned_by_photo_preview'],
-                            }
-                    if record['master_tells_owned_by_settings_key']:
-                        if (
-                            'settings' not in
-                            records[record['id']]['master_tells'][record['master_tells_id']]['owned_by']
-                        ):
-                            records[
-                                record['id']
-                            ]['master_tells'][record['master_tells_id']]['owned_by']['settings'] = {}
-                        records[record['id']]['master_tells'][record['master_tells_id']]['owned_by']['settings'][
-                            record['master_tells_owned_by_settings_key']
-                        ] = record['master_tells_owned_by_settings_value']
                     if record['slave_tells_id']:
                         if (
                             record['slave_tells_id'] not in
@@ -3701,20 +3668,7 @@ class Tellzones(ViewSet):
                     records[key]['master_tells'][k]['created_by']['last_name']
                     if records[key]['master_tells'][k]['created_by']['settings']['show_last_name'] == 'True' else None
                 )
-                records[key]['master_tells'][k]['owned_by']['photo_original'] = (
-                    records[key]['master_tells'][k]['owned_by']['photo_original']
-                    if records[key]['master_tells'][k]['owned_by']['settings']['show_photo'] == 'True' else None
-                )
-                records[key]['master_tells'][k]['owned_by']['photo_preview'] = (
-                    records[key]['master_tells'][k]['owned_by']['photo_preview']
-                    if records[key]['master_tells'][k]['owned_by']['settings']['show_photo'] == 'True' else None
-                )
-                records[key]['master_tells'][k]['owned_by']['last_name'] = (
-                    records[key]['master_tells'][k]['owned_by']['last_name']
-                    if records[key]['master_tells'][k]['owned_by']['settings']['show_last_name'] == 'True' else None
-                )
                 del records[key]['master_tells'][k]['created_by']['settings']
-                del records[key]['master_tells'][k]['owned_by']['settings']
                 records[key]['master_tells'][k]['slave_tells'] = v['slave_tells'].values()
             records[key]['master_tells'] = records[key]['master_tells'].values()
         return Response(data=records.values(), status=HTTP_200_OK)
