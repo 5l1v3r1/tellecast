@@ -3458,8 +3458,6 @@ class Tellzones(ViewSet):
             api_tellzones.phone AS phone,
             api_tellzones.photo AS photo,
             ST_AsGeoJSON(api_tellzones.point) AS point,
-            api_tellzones.status AS status,
-            api_tellzones.type AS type,
             api_tellzones.url AS url,
             api_tellzones.ended_at AS ended_at,
             api_tellzones.inserted_at AS inserted_at,
@@ -3473,6 +3471,16 @@ class Tellzones(ViewSet):
             api_users.photo_preview AS users_photo_preview,
             api_users_settings.key AS users_settings_key,
             api_users_settings.value AS users_settings_value,
+            api_tellzones_types.id AS tellzones_types_id,
+            api_tellzones_types.name AS tellzones_types_name,
+            api_tellzones_types.title AS tellzones_types_title,
+            api_tellzones_types.description AS tellzones_types_description,
+            api_tellzones_types.position AS tellzones_types_position,
+            api_tellzones_statuses.id AS tellzones_statuses_id,
+            api_tellzones_statuses.name AS tellzones_statuses_name,
+            api_tellzones_statuses.title AS tellzones_statuses_title,
+            api_tellzones_statuses.description AS tellzones_statuses_description,
+            api_tellzones_statuses.position AS tellzones_statuses_position,
             api_tellzones_social_profiles.id AS tellzones_social_profiles_id,
             api_tellzones_social_profiles.netloc AS tellzones_social_profiles_netloc,
             api_tellzones_social_profiles.url AS tellzones_social_profiles_url,
@@ -3514,6 +3522,8 @@ class Tellzones(ViewSet):
             api_slave_tells.updated_at AS slave_tells_updated_at
         FROM api_tellzones
         LEFT JOIN api_users ON api_tellzones.user_id = api_users.id
+        LEFT JOIN api_tellzones_types ON api_tellzones.type_id = api_tellzones_types.id
+        LEFT JOIN api_tellzones_statuses ON api_tellzones.status_id = api_tellzones_statuses.id
         LEFT OUTER JOIN api_users_settings AS api_users_settings ON api_users_settings.user_id = api_users.id
         LEFT OUTER JOIN api_tellzones_social_profiles ON api_tellzones_social_profiles.tellzone_id = api_tellzones.id
         LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
@@ -3538,6 +3548,8 @@ class Tellzones(ViewSet):
                 record = dict(zip(columns, record))
                 if record['id'] not in records:
                     records[record['id']] = {
+                        'type': {},
+                        'status': {},
                         'social_profiles': {},
                         'master_tells': {},
                         'is_favorited': False,
@@ -3557,8 +3569,6 @@ class Tellzones(ViewSet):
                     'latitude': str(point['coordinates'][1]),
                     'longitude': str(point['coordinates'][0]),
                 }
-                records[record['id']]['status'] = record['status']
-                records[record['id']]['type'] = record['type']
                 records[record['id']]['url'] = record['url']
                 records[record['id']]['ended_at'] = record['ended_at']
                 records[record['id']]['inserted_at'] = record['inserted_at']
@@ -3581,6 +3591,22 @@ class Tellzones(ViewSet):
                             records[record['id']]['user']['settings'][
                                 record['users_settings_key']
                             ] = record['users_settings_value']
+                if record['tellzones_types_id']:
+                    records[record['id']]['type'] = {
+                        'id': record['tellzones_types_id'],
+                        'name': record['tellzones_types_name'],
+                        'title': record['tellzones_types_title'],
+                        'description': record['tellzones_types_description'],
+                        'position': record['tellzones_types_position'],
+                    }
+                if record['tellzones_statuses_id']:
+                    records[record['id']]['status'] = {
+                        'id': record['tellzones_statuses_id'],
+                        'name': record['tellzones_statuses_name'],
+                        'title': record['tellzones_statuses_title'],
+                        'description': record['tellzones_statuses_description'],
+                        'position': record['tellzones_statuses_position'],
+                    }
                 if record['tellzones_social_profiles_id']:
                     if record['tellzones_social_profiles_id'] not in records[record['id']]['social_profiles']:
                         records[record['id']]['social_profiles'][record['tellzones_social_profiles_id']] = {
@@ -3654,6 +3680,22 @@ class Tellzones(ViewSet):
                                 'updated_at': record['slave_tells_updated_at'],
                             }
         for key, value in records.items():
+            if 'user' not in records[key]:
+                records[key]['user'] = {}
+            if records[key]['user']:
+                records[key]['user']['photo_original'] = (
+                    records[key]['user']['photo_original']
+                    if records[key]['user']['settings']['show_photo'] == 'True' else None
+                )
+                records[key]['user']['photo_preview'] = (
+                    records[key]['user']['photo_preview']
+                    if records[key]['user']['settings']['show_photo'] == 'True' else None
+                )
+                records[key]['user']['last_name'] = (
+                    records[key]['user']['last_name']
+                    if records[key]['user']['settings']['show_last_name'] == 'True' else None
+                )
+                del records[key]['user']['settings']
             records[key]['social_profiles'] = value['social_profiles'].values()
             for k, v in records[key]['master_tells'].items():
                 records[key]['master_tells'][k]['created_by']['photo_original'] = (
@@ -7130,6 +7172,76 @@ def tellzones_master_tells(request, id):
             [(tellzone.id, tellzone.point.x, tellzone.point.y,)],
             models.Tellzone.radius() * 0.3048,
         ),
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def tellzones_types(request):
+    '''
+    SELECT Tellzones :: Types
+
+    <pre>
+    Input
+    =====
+
+    + N/A
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.TellzoneType
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    return Response(
+        data=serializers.TellzoneType(
+            models.TellzoneType.objects.get_queryset(),
+            context={
+                'request': request,
+            },
+            many=True,
+        ).data,
+        status=HTTP_200_OK,
+    )
+
+
+@api_view(('GET',))
+@permission_classes((IsAuthenticated,))
+def tellzones_statuses(request):
+    '''
+    SELECT Tellzones :: Statuses
+
+    <pre>
+    Input
+    =====
+
+    + N/A
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    response_serializer: api.serializers.TellzoneStatus
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    return Response(
+        data=serializers.TellzoneStatus(
+            models.TellzoneStatus.objects.get_queryset(),
+            context={
+                'request': request,
+            },
+            many=True,
+        ).data,
         status=HTTP_200_OK,
     )
 

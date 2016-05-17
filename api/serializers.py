@@ -820,6 +820,34 @@ class TellzoneSocialProfile(ModelSerializer):
         model = models.TellzoneSocialProfile
 
 
+class TellzoneType(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'title',
+            'description',
+            'position',
+        )
+        model = models.TellzoneType
+
+
+class TellzoneStatus(ModelSerializer):
+
+    class Meta:
+
+        fields = (
+            'id',
+            'name',
+            'title',
+            'description',
+            'position',
+        )
+        model = models.TellzoneStatus
+
+
 class TellzoneMasterTellUser(User):
 
     class Meta:
@@ -925,6 +953,10 @@ class TellzoneUser(User):
 class Tellzone(ModelSerializer):
 
     user = TellzoneUser(required=False)
+    type_id = IntegerField()
+    type = TellzoneType(required=False)
+    status_id = IntegerField()
+    status = TellzoneStatus(required=False)
     description = CharField(required=False)
     photo = CharField(required=False)
     location = CharField(required=False)
@@ -955,7 +987,10 @@ class Tellzone(ModelSerializer):
         fields = (
             'id',
             'user',
+            'type_id',
             'type',
+            'status_id',
+            'status',
             'name',
             'description',
             'photo',
@@ -964,7 +999,6 @@ class Tellzone(ModelSerializer):
             'url',
             'hours',
             'point',
-            'status',
             'inserted_at',
             'updated_at',
             'started_at',
@@ -1033,6 +1067,7 @@ class MasterTellTellzone(Tellzone):
             'id',
             'user',
             'type',
+            'status',
             'name',
             'description',
             'photo',
@@ -1041,7 +1076,6 @@ class MasterTellTellzone(Tellzone):
             'url',
             'hours',
             'point',
-            'status',
             'inserted_at',
             'updated_at',
             'social_profiles',
@@ -1062,6 +1096,7 @@ class PostTellzone(Tellzone):
             'id',
             'user',
             'type',
+            'status',
             'name',
             'description',
             'photo',
@@ -1070,7 +1105,6 @@ class PostTellzone(Tellzone):
             'url',
             'hours',
             'point',
-            'status',
             'inserted_at',
             'updated_at',
             'social_profiles',
@@ -1095,6 +1129,7 @@ class TellcardTellzone(Tellzone):
             'id',
             'user',
             'type',
+            'status',
             'name',
             'description',
             'photo',
@@ -1103,7 +1138,6 @@ class TellcardTellzone(Tellzone):
             'url',
             'hours',
             'point',
-            'status',
             'inserted_at',
             'updated_at',
             'social_profiles',
@@ -1535,6 +1569,7 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
             'id',
             'user',
             'type',
+            'status',
             'name',
             'description',
             'photo',
@@ -1543,7 +1578,6 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
             'url',
             'hours',
             'point',
-            'status',
             'inserted_at',
             'updated_at',
             'social_profiles',
@@ -2707,7 +2741,8 @@ class TellzonesRequest(Tellzone):
     class Meta:
 
         fields = (
-            'type',
+            'type_id',
+            'status_id',
             'name',
             'description',
             'photo',
@@ -2716,7 +2751,6 @@ class TellzonesRequest(Tellzone):
             'url',
             'hours',
             'point',
-            'status',
             'started_at',
             'ended_at',
             'social_profiles',
@@ -2905,6 +2939,7 @@ class UsersTellzonesGet(Tellzone):
             'id',
             'user',
             'type',
+            'status',
             'name',
             'description',
             'photo',
@@ -2913,7 +2948,6 @@ class UsersTellzonesGet(Tellzone):
             'url',
             'hours',
             'point',
-            'status',
             'inserted_at',
             'updated_at',
             'social_profiles',

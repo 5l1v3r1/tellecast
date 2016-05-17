@@ -152,8 +152,6 @@ class Categories(TransactionTestCase):
 class Deauthenticate(TransactionTestCase):
 
     def setUp(self):
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
-
         self.user = middleware.mixer.blend('api.User')
 
         self.client = APIClient()
@@ -559,7 +557,7 @@ class Home(TransactionTestCase):
 
         network = middleware.mixer.blend('api.Network')
 
-        tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+        tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
         tellzone.point = get_point()
         tellzone.save()
 
@@ -626,7 +624,7 @@ class Home(TransactionTestCase):
     def test_b(self):
         network = middleware.mixer.blend('api.Network')
 
-        tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+        tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
         tellzone.point = get_point()
         tellzone.save()
 
@@ -701,7 +699,7 @@ class Home(TransactionTestCase):
     def test_c(self):
         count = 5
 
-        for tellzone in middleware.mixer.cycle(count).blend('api.Tellzone', user=None):
+        for tellzone in middleware.mixer.cycle(count).blend('api.Tellzone', user=None, type=None, status=None):
             tellzone.point = get_point()
             tellzone.save()
 
@@ -730,7 +728,8 @@ class MasterTells(TransactionTestCase):
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
         self.category = middleware.mixer.blend('api.Category')
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
+
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
 
     def test_a(self):
         dictionary = {
@@ -1473,7 +1472,7 @@ class Networks(TransactionTestCase):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION=get_header(user.token))
 
-        tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+        tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
 
         response = client.get('/api/networks/', format='json')
         assert len(response.data) == 0
@@ -1493,7 +1492,7 @@ class Networks(TransactionTestCase):
 
         id = response.data['id']
 
-        tellzone = middleware.mixer.blend('api.Tellzone', user=user)
+        tellzone = middleware.mixer.blend('api.Tellzone', user=user, type=None, status=None)
 
         dictionary = {
             'name': '2',
@@ -1547,7 +1546,7 @@ class Networks(TransactionTestCase):
                     master_tell.contents = str(user.id)
                     master_tell.save()
 
-                tellzone = middleware.mixer.blend('api.Tellzone', user=None)
+                tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
                 tellzone.point = fromstr('POINT({index} {index})'.format(index=index + 1))
                 tellzone.save()
 
@@ -1602,7 +1601,7 @@ class Networks(TransactionTestCase):
 
         network = middleware.mixer.blend('api.Network', user=None)
 
-        for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None):
+        for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None, type=None, status=None):
             models.NetworkTellzone.objects.create(network=network, tellzone=tellzone)
 
         with middleware.mixer.ctx(commit=False):
@@ -1646,7 +1645,7 @@ class Networks(TransactionTestCase):
     def test_d(self):
         network = middleware.mixer.blend('api.Network', user=None)
 
-        for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None):
+        for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None, type=None, status=None):
             models.NetworkTellzone.objects.create(network=network, tellzone=tellzone)
 
         user = middleware.mixer.blend('api.User', type='Root')
@@ -1790,7 +1789,8 @@ class Posts(TransactionTestCase):
         self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
 
         self.category = middleware.mixer.blend('api.Category')
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
+
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
 
     def test_a(self):
         response = self.client_1.get('/api/posts/', format='json')
@@ -2051,7 +2051,7 @@ class Radar(TransactionTestCase):
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
 
         with middleware.mixer.ctx(commit=False):
-            for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None):
+            for tellzone in middleware.mixer.cycle(5).blend('api.Tellzone', user=None, type=None, status=None):
                 tellzone.point = get_point()
                 tellzone.save()
             for user in middleware.mixer.cycle(5).blend('api.User'):
@@ -2251,7 +2251,7 @@ class Signals(TransactionTestCase):
 
         self.category = middleware.mixer.blend('api.Category')
 
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
 
         self.reset_celery_tasks()
 
@@ -2796,9 +2796,12 @@ class Tellzones(TransactionTestCase):
         )
         self.post = middleware.mixer.blend('api.Post')
 
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
         self.tellzone.point = get_point()
         self.tellzone.save()
+
+        self.tellzone_type = middleware.mixer.blend('api.TellzoneType')
+        self.tellzone_status = middleware.mixer.blend('api.TellzoneStatus')
 
         for netloc in [
             'facebook.com',
@@ -2868,7 +2871,8 @@ class Tellzones(TransactionTestCase):
         assert response.status_code == 200
 
         dictionary = {
-            'type': '1',
+            'type_id': self.tellzone_type.id,
+            'status_id': self.tellzone_status.id,
             'name': '1',
             'photo': '1',
             'location': '1',
@@ -2887,7 +2891,6 @@ class Tellzones(TransactionTestCase):
                 'latitude': 1.00,
                 'longitude': 1.00,
             },
-            'status': 'Public',
             'started_at': '1111-11-11T11:11:11.111111',
             'ended_at': '1111-11-11T11:11:11.111111',
             'social_profiles': [
@@ -2908,7 +2911,8 @@ class Tellzones(TransactionTestCase):
         }
 
         response = self.client.post('/api/tellzones/', dictionary, format='json')
-        assert response.data['type'] == dictionary['type']
+        assert response.data['type']['id'] == self.tellzone_type.id
+        assert response.data['status']['id'] == self.tellzone_status.id
         assert response.data['name'] == dictionary['name']
         assert response.data['photo'] == dictionary['photo']
         assert response.data['location'] == dictionary['location']
@@ -2917,7 +2921,6 @@ class Tellzones(TransactionTestCase):
         assert response.data['hours'] == dictionary['hours']
         assert float(response.data['point']['latitude']) == dictionary['point']['latitude']
         assert float(response.data['point']['longitude']) == dictionary['point']['longitude']
-        assert response.data['status'] == dictionary['status']
         assert response.data['started_at'] == dictionary['started_at']
         assert response.data['ended_at'] == dictionary['ended_at']
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
@@ -2932,7 +2935,8 @@ class Tellzones(TransactionTestCase):
         id = response.data['id']
 
         dictionary = {
-            'type': '2',
+            'type_id': self.tellzone_type.id,
+            'status_id': self.tellzone_status.id,
             'name': '2',
             'photo': '2',
             'location': '2',
@@ -2951,7 +2955,6 @@ class Tellzones(TransactionTestCase):
                 'latitude': 2.00,
                 'longitude': 2.00,
             },
-            'status': 'Public',
             'started_at': '1111-11-11T11:11:11.111111',
             'ended_at': '1111-11-11T11:11:11.111111',
             'social_profiles': [],
@@ -2961,7 +2964,8 @@ class Tellzones(TransactionTestCase):
         }
 
         response = self.client.put('/api/tellzones/{id:d}/'.format(id=id), dictionary, format='json')
-        assert response.data['type'] == dictionary['type']
+        assert response.data['type']['id'] == self.tellzone_type.id
+        assert response.data['status']['id'] == self.tellzone_status.id
         assert response.data['name'] == dictionary['name']
         assert response.data['photo'] == dictionary['photo']
         assert response.data['location'] == dictionary['location']
@@ -2970,7 +2974,6 @@ class Tellzones(TransactionTestCase):
         assert response.data['hours'] == dictionary['hours']
         assert float(response.data['point']['latitude']) == dictionary['point']['latitude']
         assert float(response.data['point']['longitude']) == dictionary['point']['longitude']
-        assert response.data['status'] == dictionary['status']
         assert response.data['started_at'] == dictionary['started_at']
         assert response.data['ended_at'] == dictionary['ended_at']
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
@@ -2979,7 +2982,8 @@ class Tellzones(TransactionTestCase):
         assert response.status_code == 200
 
         dictionary = {
-            'type': '3',
+            'type_id': self.tellzone_type.id,
+            'status_id': self.tellzone_status.id,
             'name': '3',
             'photo': '3',
             'location': '3',
@@ -2998,7 +3002,6 @@ class Tellzones(TransactionTestCase):
                 'latitude': 3.00,
                 'longitude': 3.00,
             },
-            'status': 'Public',
             'started_at': '1111-11-11T11:11:11.111111',
             'ended_at': '1111-11-11T11:11:11.111111',
             'social_profiles': [
@@ -3019,7 +3022,8 @@ class Tellzones(TransactionTestCase):
         }
 
         response = self.client.patch('/api/tellzones/{id:d}/'.format(id=id), dictionary, format='json')
-        assert response.data['type'] == dictionary['type']
+        assert response.data['type']['id'] == self.tellzone_type.id
+        assert response.data['status']['id'] == self.tellzone_status.id
         assert response.data['name'] == dictionary['name']
         assert response.data['photo'] == dictionary['photo']
         assert response.data['location'] == dictionary['location']
@@ -3028,7 +3032,6 @@ class Tellzones(TransactionTestCase):
         assert response.data['hours'] == dictionary['hours']
         assert float(response.data['point']['latitude']) == dictionary['point']['latitude']
         assert float(response.data['point']['longitude']) == dictionary['point']['longitude']
-        assert response.data['status'] == dictionary['status']
         assert response.data['started_at'] == dictionary['started_at']
         assert response.data['ended_at'] == dictionary['ended_at']
         assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
@@ -3128,14 +3131,48 @@ class Tellzones(TransactionTestCase):
         assert response.data[0]['is_viewed']
 
 
+class TellzonesTypes(TransactionTestCase):
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.count = 10
+        middleware.mixer.cycle(self.count).blend('api.TellzoneType')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/tellzones/types/', format='json')
+        assert len(response.data) == self.count
+        assert response.status_code == 200
+
+
+class TellzonesStatuses(TransactionTestCase):
+
+    def setUp(self):
+        self.user = middleware.mixer.blend('api.User')
+
+        self.count = 10
+        middleware.mixer.cycle(self.count).blend('api.TellzoneStatus')
+
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
+
+    def test_a(self):
+        response = self.client.get('/api/tellzones/statuses/', format='json')
+        assert len(response.data) == self.count
+        assert response.status_code == 200
+
+
 class Users(TransactionTestCase):
 
     def setUp(self):
-        self.tellzone = middleware.mixer.blend('api.Tellzone')
+        self.tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
 
         self.user = middleware.mixer.blend('api.User')
 
-        middleware.mixer.blend('api.Tellzone', user=self.user)
+        middleware.mixer.blend('api.Tellzone', user=self.user, type=None, status=None)
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))

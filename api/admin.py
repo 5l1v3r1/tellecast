@@ -910,6 +910,7 @@ class Tellzone(ModelAdmin):
     fields = (
         'user',
         'type',
+        'status',
         'name',
         'description',
         'photo',
@@ -918,7 +919,6 @@ class Tellzone(ModelAdmin):
         'url',
         'hours',
         'point',
-        'status',
         'started_at',
         'ended_at',
     )
@@ -927,24 +927,24 @@ class Tellzone(ModelAdmin):
         'id',
         'user',
         'type',
+        'status',
         'name_',
         'location',
         'phone',
         'url',
         'point',
-        'status',
         'inserted_at',
         'updated_at',
     )
     list_filter = (
         'user',
-        'status',
         'inserted_at',
         'updated_at',
     )
     list_per_page = 10
     search_fields = (
         'type',
+        'status',
         'name',
         'description',
         'photo',
@@ -992,6 +992,60 @@ class TellzoneSocialProfile(ModelAdmin):
     )
 
 TellzoneSocialProfile.delete_view = delete_view
+
+
+class TellzoneStatus(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'name',
+        'title',
+        'description',
+        'position',
+    )
+    list_display = (
+        'name',
+        'title',
+        'description',
+        'position',
+    )
+    list_filter = ()
+    list_per_page = 10
+    search_fields = (
+        'name',
+        'title',
+        'description',
+        'position',
+    )
+
+TellzoneStatus.delete_view = delete_view
+
+
+class TellzoneType(ModelAdmin):
+
+    actions = [delete_selected]
+    fields = (
+        'name',
+        'title',
+        'description',
+        'position',
+    )
+    list_display = (
+        'name',
+        'title',
+        'description',
+        'position',
+    )
+    list_filter = ()
+    list_per_page = 10
+    search_fields = (
+        'name',
+        'title',
+        'description',
+        'position',
+    )
+
+TellzoneType.delete_view = delete_view
 
 
 class User(ModelAdmin):
@@ -1369,6 +1423,8 @@ site.register(models.SlaveTell, SlaveTell)
 site.register(models.Tellcard, Tellcard)
 site.register(models.Tellzone, Tellzone)
 site.register(models.TellzoneSocialProfile, TellzoneSocialProfile)
+site.register(models.TellzoneStatus, TellzoneStatus)
+site.register(models.TellzoneType, TellzoneType)
 site.register(models.User, User)
 site.register(models.UserLocation, UserLocation)
 site.register(models.UserPhoto, UserPhoto)

@@ -845,10 +845,57 @@ class User(Model):
         return False
 
 
+class TellzoneType(Model):
+
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+    title = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+
+        db_table = 'api_tellzones_types'
+        ordering = (
+            'position',
+        )
+        verbose_name = 'Tellzone :: Type'
+        verbose_name_plural = 'Tellzones :: Types'
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
+class TellzoneStatus(Model):
+
+    name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+    title = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
+    description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
+    position = IntegerField(ugettext_lazy('Position'), db_index=True)
+
+    class Meta:
+
+        db_table = 'api_tellzones_statuses'
+        ordering = (
+            'position',
+        )
+        verbose_name = 'Tellzone :: Status'
+        verbose_name_plural = 'Tellzones :: Statuses'
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
 class Tellzone(Model):
 
     user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
-    type = CharField(ugettext_lazy('Type'), blank=True, db_index=True, max_length=255)
+    type = ForeignKey(TellzoneType, null=True, related_name='tellzones')
+    status = ForeignKey(TellzoneStatus, null=True, related_name='tellzones')
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     photo = CharField(ugettext_lazy('Photo'), blank=True, db_index=True, max_length=255, null=True)
@@ -857,16 +904,6 @@ class Tellzone(Model):
     url = CharField(ugettext_lazy('URL'), blank=True, db_index=True, max_length=255, null=True)
     hours = JSONField(ugettext_lazy('Hours'), blank=True, null=True)
     point = PointField(ugettext_lazy('Point'), db_index=True)
-    status = CharField(
-        ugettext_lazy('Status'),
-        choices=(
-            ('Public', 'Public',),
-            ('Private', 'Private',),
-        ),
-        db_index=True,
-        default='Public',
-        max_length=255,
-    )
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
     started_at = DateTimeField(ugettext_lazy('Started At'), db_index=True, null=True)
@@ -927,7 +964,8 @@ class Tellzone(Model):
     def insert(cls, user_id, data):
         tellzone = Tellzone.objects.create(
             user_id=user_id,
-            type=data['type'] if 'type' in data else None,
+            type_id=data['type_id'] if 'type_id' in data else None,
+            status_id=data['status_id'] if 'status_id' in data else None,
             name=data['name'] if 'name' in data else None,
             description=data['description'] if 'description' in data else None,
             photo=data['photo'] if 'photo' in data else None,
@@ -936,7 +974,6 @@ class Tellzone(Model):
             url=data['url'] if 'url' in data else None,
             hours=data['hours'] if 'hours' in data else None,
             point=data['point'] if 'point' in data else None,
-            status=data['status'] if 'status' in data else None,
             started_at=data['started_at'] if 'started_at' in data else None,
             ended_at=data['ended_at'] if 'ended_at' in data else None,
         )
@@ -980,8 +1017,10 @@ class Tellzone(Model):
         return unicode(self.name)
 
     def update(self, data):
-        if 'type' in data:
-            self.type = data['type']
+        if 'type_id' in data:
+            self.type_id = data['type_id']
+        if 'status_id' in data:
+            self.status_id = data['status_id']
         if 'name' in data:
             self.name = data['name']
         if 'description' in data:
@@ -998,8 +1037,6 @@ class Tellzone(Model):
             self.hours = data['hours']
         if 'point' in data:
             self.point = data['point']
-        if 'status' in data:
-            self.status = data['status']
         if 'started_at' in data:
             self.started_at = data['started_at']
         if 'ended_at' in data:
@@ -2465,6 +2502,20 @@ class MessageAttachment(Model):
 def category_pre_save(instance, **kwargs):
     if not instance.position:
         position = Category.objects.get_queryset().aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
+@receiver(pre_save, sender=TellzoneType)
+def tellzone_type_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = TellzoneType.objects.get_queryset().aggregate(Max('position'))['position__max']
+        instance.position = position + 1 if position else 1
+
+
+@receiver(pre_save, sender=TellzoneStatus)
+def tellzone_status_pre_save(instance, **kwargs):
+    if not instance.position:
+        position = TellzoneStatus.objects.get_queryset().aggregate(Max('position'))['position__max']
         instance.position = position + 1 if position else 1
 
 
