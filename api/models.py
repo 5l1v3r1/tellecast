@@ -849,6 +849,7 @@ class TellzoneType(Model):
 
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255, unique=True)
+    icon = CharField(ugettext_lazy('Icon'), blank=True, db_index=True, max_length=255, null=True)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 
@@ -872,6 +873,7 @@ class TellzoneStatus(Model):
 
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255, unique=True)
     title = CharField(ugettext_lazy('Title'), db_index=True, max_length=255, unique=True)
+    icon = CharField(ugettext_lazy('Icon'), blank=True, db_index=True, max_length=255, null=True)
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     position = IntegerField(ugettext_lazy('Position'), db_index=True)
 

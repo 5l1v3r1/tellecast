@@ -827,6 +827,7 @@ class TellzoneType(ModelSerializer):
         fields = (
             'id',
             'name',
+            'icon',
             'title',
             'description',
             'position',
@@ -841,6 +842,7 @@ class TellzoneStatus(ModelSerializer):
         fields = (
             'id',
             'name',
+            'icon',
             'title',
             'description',
             'position',

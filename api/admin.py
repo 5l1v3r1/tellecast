@@ -1000,12 +1000,14 @@ class TellzoneStatus(ModelAdmin):
     fields = (
         'name',
         'title',
+        'icon',
         'description',
         'position',
     )
     list_display = (
         'name',
         'title',
+        'icon',
         'description',
         'position',
     )
@@ -1014,6 +1016,7 @@ class TellzoneStatus(ModelAdmin):
     search_fields = (
         'name',
         'title',
+        'icon',
         'description',
         'position',
     )
@@ -1027,12 +1030,14 @@ class TellzoneType(ModelAdmin):
     fields = (
         'name',
         'title',
+        'icon',
         'description',
         'position',
     )
     list_display = (
         'name',
         'title',
+        'icon',
         'description',
         'position',
     )
@@ -1041,6 +1046,7 @@ class TellzoneType(ModelAdmin):
     search_fields = (
         'name',
         'title',
+        'icon',
         'description',
         'position',
     )
