@@ -3768,8 +3768,12 @@ class Tellzones(ViewSet):
         Input
         =====
 
-        + type
-            - Type: string
+        + type_id
+            - Type: integer
+            - Status: mandatory
+
+        + status_id
+            - Type: integer
             - Status: mandatory
 
         + name
@@ -3822,13 +3826,6 @@ class Tellzones(ViewSet):
                 'latitude': 0.0000000000,
                 'longitude': 0.0000000000,
             }
-
-        + status
-            - Type: string
-            - Status: mandatory
-            - Choices:
-                - Public
-                - Private
 
         + started_at
             - Type: datetime
@@ -3900,8 +3897,12 @@ class Tellzones(ViewSet):
             - Type: integer
             - Status: mandatory
 
-        + type
-            - Type: string
+        + type_id
+            - Type: integer
+            - Status: mandatory
+
+        + status_id
+            - Type: integer
             - Status: mandatory
 
         + name
@@ -3954,13 +3955,6 @@ class Tellzones(ViewSet):
                 'latitude': 0.0000000000,
                 'longitude': 0.0000000000,
             }
-
-        + status
-            - Type: string
-            - Status: mandatory
-            - Choices:
-                - Public
-                - Private
 
         + started_at
             - Type: datetime
@@ -4041,8 +4035,12 @@ class Tellzones(ViewSet):
             - Type: integer
             - Status: mandatory
 
-        + type
-            - Type: string
+        + type_id
+            - Type: integer
+            - Status: mandatory
+
+        + status_id
+            - Type: integer
             - Status: mandatory
 
         + name
@@ -4095,13 +4093,6 @@ class Tellzones(ViewSet):
                 'latitude': 0.0000000000,
                 'longitude': 0.0000000000,
             }
-
-        + status
-            - Type: string
-            - Status: mandatory
-            - Choices:
-                - Public
-                - Private
 
         + started_at
             - Type: datetime
