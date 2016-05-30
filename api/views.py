@@ -3536,9 +3536,12 @@ class Tellzones(ViewSet):
             ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
         LEFT JOIN api_categories ON api_categories.id = api_master_tells.category_id
         LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
-        WHERE ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
+        WHERE
+            ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
+            AND
+            api_tellzones_statuses.name = %s
         '''
-        parameters = [point, point, serializer.validated_data['radius'] * 0.3048]
+        parameters = [point, point, serializer.validated_data['radius'] * 0.3048, 'open']
         network_ids = tuple(filter(None, map(int, network_ids.split(',') if network_ids else '')))
         if network_ids:
             query = '{query:s} AND api_networks_tellzones.network_id IN %s'.format(query=query)
