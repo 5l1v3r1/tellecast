@@ -938,13 +938,13 @@ class Tellzone(ModelAdmin):
     )
     list_filter = (
         'user',
+        'type',
+        'status',
         'inserted_at',
         'updated_at',
     )
     list_per_page = 10
     search_fields = (
-        'type',
-        'status',
         'name',
         'description',
         'photo',
