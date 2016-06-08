@@ -4963,7 +4963,15 @@ def authenticate_1(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
-    if hashpw(serializer.validated_data['password'].encode('utf-8'), user.password.encode('utf-8')) != user.password:
+    status = False
+    try:
+        if hashpw(
+            serializer.validated_data['password'].encode('utf-8'), user.password.encode('utf-8'),
+        ) == user.password:
+            status = True
+    except Exception:
+        pass
+    if not status:
         return Response(
             data={
                 'error': ugettext_lazy('Invalid `password`'),
