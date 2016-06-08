@@ -17,6 +17,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.http.response import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy
+from faker import Faker
 from geopy.distance import vincenty
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -7255,13 +7256,23 @@ def users(request, platform):
     for user in models.User.objects.all():
         if user.last_name == platform:
             user.delete()
+    fake = Faker()
     with middleware.mixer.ctx(commit=False):
         for user in middleware.mixer.cycle(10).blend('api.User'):
             tellzone = models.Tellzone.objects.get_queryset().order_by('?').first()
+            user.photo_original = fake.image_url()
+            user.photo_preview = fake.image_url()
+            user.first_name = fake.first_name_male()
             user.last_name = platform
+            user.date_of_birth = fake.date(pattern='%Y-%m-%d')
+            user.gender = 'Male'
+            user.location = fake.street_name()
+            user.description = fake.text(max_nb_chars=200)
+            user.phone = fake.phone_number()
             user.point = tellzone.point
-            user.tellzone = tellzone
+            user.is_verified = True
             user.is_signed_in = True
+            user.tellzone = tellzone
             user.save()
             for tellzone in models.Tellzone.objects.get_queryset().exclude(id=user.tellzone.id).order_by('?')[0:3]:
                 models.UserTellzone.objects.create(
