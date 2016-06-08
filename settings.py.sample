@@ -24,6 +24,7 @@ AWS_BUCKET = '...'
 AWS_EMAIL = '...'
 AWS_REGION = '...'
 AWS_SECRET_ACCESS_KEY = '...'
+CORS_ORIGIN_ALLOW_ALL = False
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -42,6 +43,7 @@ en_formats.DATETIME_FORMAT = 'Y-m-d H:i:s'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1099511627776
 INSTALLED_APPS = (
     'api',
+    'corsheaders',
     'debug_toolbar',
     'suit',
     'django.contrib.admin',
@@ -107,6 +109,7 @@ MANAGERS = ADMINS
 MEDIA_ROOT = join(SITE_ROOT, 'media')
 MEDIA_URL = '/media/'
 MIDDLEWARE_CLASSES = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
