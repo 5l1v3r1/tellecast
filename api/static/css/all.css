@@ -110,3 +110,11 @@
     text-align: right !important;
     width: 1px !important;
 }
+
+.tests {
+    margin-bottom: 15px;
+}
+
+.tests a + a {
+    margin-left: 2.5px;
+}

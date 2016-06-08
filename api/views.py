@@ -9,10 +9,13 @@ from arrow import get
 from bcrypt import hashpw
 from celery import current_app
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.gis.measure import D
+from django.core.urlresolvers import reverse
 from django.db import connection
 from django.db.models import Q
 from django.http import JsonResponse
+from django.http.response import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy
 from geopy.distance import vincenty
 from rest_framework.decorators import api_view, permission_classes
@@ -28,7 +31,7 @@ from social.backends.utils import get_backend
 from social.strategies.django_strategy import DjangoStrategy
 from ujson import loads
 
-from api import models, serializers
+from api import middleware, models, serializers
 
 
 def do_auth(self, access_token, *args, **kwargs):
@@ -7242,6 +7245,34 @@ def tellzones_statuses(request):
         ).data,
         status=HTTP_200_OK,
     )
+
+
+def users(request, platform):
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect(reverse('admin:api_user_changelist'))
+    if not platform in ['Android', 'iOS']:
+        return HttpResponseRedirect(reverse('admin:api_user_changelist'))
+    for user in models.User.objects.all():
+        if user.last_name == platform:
+            user.delete()
+    with middleware.mixer.ctx(commit=False):
+        for user in middleware.mixer.cycle(10).blend('api.User'):
+            tellzone = models.Tellzone.objects.get_queryset().order_by('?').first()
+            user.last_name = platform
+            user.point = tellzone.point
+            user.tellzone = tellzone
+            user.is_signed_in = True
+            user.save()
+            for tellzone in models.Tellzone.objects.get_queryset().exclude(id=user.tellzone.id).order_by('?')[0:3]:
+                models.UserTellzone.objects.create(
+                    user=user,
+                    tellzone=tellzone,
+                    favorited_at=datetime.now(),
+                    pinned_at=None,
+                    viewed_at=None,
+                )
+    messages.success(request, '10 {platform:s} Users were added successfully.'.format(platform=platform))
+    return HttpResponseRedirect(reverse('admin:api_user_changelist'))
 
 
 @api_view(('POST',))

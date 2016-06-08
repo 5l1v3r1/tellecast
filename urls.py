@@ -30,6 +30,7 @@ urlpatterns = patterns(
         r'^$',
         RedirectView.as_view(permanent=True, url=reverse_lazy('admin:index'))
     ),
+    url(r'^admin/api/user/(?P<platform>[^/]+)/$', views.users, name='views.users'),
     url(r'^admin/', include(site.urls)),
     url(r'^api/ads/$', views.ads),
     url(r'^api/authenticate/email/$', views.authenticate_1),
