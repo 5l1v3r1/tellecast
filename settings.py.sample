@@ -24,7 +24,7 @@ AWS_BUCKET = '...'
 AWS_EMAIL = '...'
 AWS_REGION = '...'
 AWS_SECRET_ACCESS_KEY = '...'
-CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_ALLOW_ALL = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
