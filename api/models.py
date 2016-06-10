@@ -895,7 +895,7 @@ class TellzoneStatus(Model):
 
 class Tellzone(Model):
 
-    user = ForeignKey(User, on_delete=SET_NULL, null=True, related_name='+')
+    user = ForeignKey(User, blank=True, on_delete=SET_NULL, null=True, related_name='+')
     type = ForeignKey(TellzoneType, null=True, related_name='tellzones')
     status = ForeignKey(TellzoneStatus, null=True, related_name='tellzones')
     name = CharField(ugettext_lazy('Name'), db_index=True, max_length=255)
