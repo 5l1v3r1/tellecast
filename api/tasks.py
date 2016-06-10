@@ -99,7 +99,7 @@ def email_notifications(id, type):
         ).send_email(
             settings.AWS_EMAIL,
             'Reset Password',
-            '''
+            u'''
 Hi {first_name:s},
 
 Please use the following link to reset your password.
@@ -121,7 +121,7 @@ Tellzone
         ).send_email(
             settings.AWS_EMAIL,
             'Verify',
-            '''
+            u'''
 Hi {first_name:s},
 
 Please use the following link to verify.
