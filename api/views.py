@@ -9,7 +9,7 @@ from arrow import get
 from bcrypt import hashpw
 from celery import current_app
 from django.conf import settings
-from django.contrib import messages
+from django.contrib import messages as messages_
 from django.contrib.gis.measure import D
 from django.core.urlresolvers import reverse
 from django.db import connection
@@ -7290,7 +7290,7 @@ def users(request, platform):
                     pinned_at=None,
                     viewed_at=None,
                 )
-    messages.success(request, '10 {platform:s} Users were added successfully.'.format(platform=platform))
+    messages_.success(request, '10 {platform:s} Users were added successfully.'.format(platform=platform))
     return HttpResponseRedirect(reverse('admin:api_user_changelist'))
 
 
