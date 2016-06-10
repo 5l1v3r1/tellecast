@@ -7259,7 +7259,7 @@ def tellzones_statuses(request):
 def users(request, platform):
     if not request.user.is_authenticated():
         return HttpResponseRedirect(reverse('admin:api_user_changelist'))
-    if not platform in ['Android', 'iOS']:
+    if platform not in ['Android', 'iOS']:
         return HttpResponseRedirect(reverse('admin:api_user_changelist'))
     for user in models.User.objects.all():
         if user.last_name == platform:
