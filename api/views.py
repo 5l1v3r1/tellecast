@@ -6971,6 +6971,7 @@ def reset_password(request):
             },
             status=HTTP_400_BAD_REQUEST,
         )
+    request.user = user
     return Response(
         data=serializers.ResetPasswordResponse(
             user,
