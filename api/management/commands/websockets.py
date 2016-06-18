@@ -491,9 +491,7 @@ class RabbitMQ(object):
                         api_messages.status AS message_status,
                         api_messages.inserted_at AS message_inserted_at,
                         api_messages.updated_at AS message_updated_at,
-                        api_messages_attachments.id AS message_attachment_id,
-                        api_messages_attachments.string AS message_attachment_string,
-                        api_messages_attachments.position AS message_attachment_position,
+                        api_messages.attachments AS message_attachments,
                         api_users_source.email AS user_source_email,
                         api_users_source.photo_original AS user_source_photo_original,
                         api_users_source.photo_preview AS user_source_photo_preview,
@@ -504,8 +502,7 @@ class RabbitMQ(object):
                         api_users_source.location AS user_source_location,
                         api_users_source.description AS user_source_description,
                         api_users_source.phone AS user_source_phone,
-                        api_users_settings_source.key AS user_setting_source_key,
-                        api_users_settings_source.value AS user_setting_source_value,
+                        api_users_source.settings AS user_source_settings,
                         api_users_destination.email AS user_destination_email,
                         api_users_destination.photo_original AS user_destination_photo_original,
                         api_users_destination.photo_preview AS user_destination_photo_preview,
@@ -516,8 +513,7 @@ class RabbitMQ(object):
                         api_users_destination.location AS user_destination_location,
                         api_users_destination.description AS user_destination_description,
                         api_users_destination.phone AS user_destination_phone,
-                        api_users_settings_destination.key AS user_setting_destination_key,
-                        api_users_settings_destination.value AS user_setting_destination_value,
+                        api_users_destination.settings AS user_destination_settings,
                         api_users_statuses.id AS user_status_id,
                         api_users_statuses.string AS user_status_string,
                         api_users_statuses.title AS user_status_title,
@@ -538,16 +534,10 @@ class RabbitMQ(object):
                         api_master_tells.inserted_at AS master_tell_inserted_at,
                         api_master_tells.updated_at AS master_tell_updated_at
                     FROM api_messages
-                    LEFT OUTER JOIN api_messages_attachments
-                        ON api_messages_attachments.message_id = api_messages.id
                     INNER JOIN api_users AS api_users_source
                         ON api_users_source.id = api_messages.user_source_id
-                    LEFT OUTER JOIN api_users_settings AS api_users_settings_source
-                        ON api_users_settings_source.user_id = api_messages.user_source_id
                     INNER JOIN api_users AS api_users_destination
                         ON api_users_destination.id = api_messages.user_destination_id
-                    LEFT OUTER JOIN api_users_settings AS api_users_settings_destination
-                        ON api_users_settings_destination.user_id = api_messages.user_destination_id
                     LEFT OUTER JOIN api_users_statuses
                         ON api_users_statuses.id = api_messages.user_status_id
                     LEFT OUTER JOIN api_users_statuses_attachments
@@ -584,14 +574,7 @@ class RabbitMQ(object):
                     if 'updated_at' not in message:
                         message['updated_at'] = record['message_updated_at'].isoformat()
                     if 'attachments' not in message:
-                        message['attachments'] = {}
-                    if record['message_attachment_id']:
-                        if record['message_attachment_id'] not in message['attachments']:
-                            message['attachments'][record['message_attachment_id']] = {
-                                'id': record['message_attachment_id'],
-                                'string': record['message_attachment_string'],
-                                'position': record['message_attachment_position'],
-                            }
+                        message['attachments'] = loads(record['attachments'])
                     if 'user_source' not in message:
                         message['user_source'] = {
                             'id': record['message_user_source_id'],
@@ -606,14 +589,8 @@ class RabbitMQ(object):
                             'location': record['user_source_location'],
                             'description': record['user_source_description'],
                             'phone': record['user_source_phone'],
+                            'settings': loads(record['user_source_settings']),
                         }
-                    if 'settings' not in message['user_source']:
-                        message['user_source']['settings'] = {}
-                    if record['user_setting_source_key']:
-                        if record['user_setting_source_key'] not in message['user_source']['settings']:
-                            message['user_source']['settings'][
-                                record['user_setting_source_key']
-                            ] = record['user_setting_source_value']
                     if 'user_destination' not in message:
                         message['user_destination'] = {
                             'id': record['message_user_destination_id'],
@@ -628,14 +605,8 @@ class RabbitMQ(object):
                             'location': record['user_destination_location'],
                             'description': record['user_destination_description'],
                             'phone': record['user_destination_phone'],
+                            'settings': loads(record['user_destination_settings']),
                         }
-                    if 'settings' not in message['user_destination']:
-                        message['user_destination']['settings'] = {}
-                    if record['user_setting_destination_key']:
-                        if record['user_setting_destination_key'] not in message['user_destination']['settings']:
-                            message['user_destination']['settings'][
-                                record['user_setting_destination_key']
-                            ] = record['user_setting_destination_value']
                     if 'master_tell' not in message:
                         message['master_tell'] = {}
                     if record['master_tell_id']:
@@ -682,8 +653,6 @@ class RabbitMQ(object):
                                 'position': record['user_status_attachment_position'],
                             }
             if message:
-                if 'attachments' in message:
-                    message['attachments'] = sorted(message['attachments'].values(), key=lambda item: item['position'])
                 if 'user_status' in message:
                     if 'attachments' in message['user_status']:
                         message['user_status']['attachments'] = sorted(
@@ -947,8 +916,7 @@ class RabbitMQ(object):
                         api_users.id AS id,
                         api_users.photo_original AS photo_original,
                         api_users.photo_preview AS photo_preview,
-                        api_users_settings.key AS user_setting_key,
-                        api_users_settings.value AS user_setting_value
+                        api_users.settings AS settings
                     FROM api_users_locations
                     INNER JOIN (
                         SELECT MAX(api_users_locations.id) AS id
@@ -957,8 +925,6 @@ class RabbitMQ(object):
                         GROUP BY api_users_locations.user_id
                     ) api_users_locations_ ON api_users_locations_.id = api_users_locations.id
                     INNER JOIN api_users ON api_users.id = api_users_locations.user_id
-                    LEFT OUTER JOIN api_users_settings AS api_users_settings
-                        ON api_users_settings.user_id = api_users.id
                     WHERE
                         (api_users_locations.user_id != %s OR %s = true)
                         AND
@@ -973,8 +939,6 @@ class RabbitMQ(object):
                         api_users_locations.timestamp > NOW() - INTERVAL '1 minute'
                         AND
                         api_users.is_signed_in = TRUE
-                        AND
-                        api_users_settings.key = 'show_photo'
                     ORDER BY api_users_locations.user_id ASC
                     ''',
                     (user_id, status, point, radius,),
@@ -992,10 +956,7 @@ class RabbitMQ(object):
                     if 'photo_preview' not in users[record['id']]:
                         users[record['id']]['photo_preview'] = record['photo_preview']
                     if 'settings' not in users[record['id']]:
-                        users[record['id']]['settings'] = {}
-                    if record['user_setting_key']:
-                        if record['user_setting_key'] not in users[record['id']]['settings']:
-                            users[record['id']]['settings'][record['user_setting_key']] = record['user_setting_value']
+                        users[record['id']]['settings'] = loads(record['settings'])
                     if 'point' not in users[record['id']]:
                         users[record['id']]['point'] = {
                             'latitude': record['point']['coordinates'][1],
@@ -1238,6 +1199,7 @@ class WebSocket(WebSocketHandler):
                         post_id,
                         type,
                         contents,
+                        attachemnts,
                         status,
                         is_suppressed,
                         inserted_at,
@@ -1268,21 +1230,13 @@ class WebSocket(WebSocketHandler):
                         data['post_id'] if 'post_id' in data else None,
                         data['type'] if 'type' in data else None,
                         data['contents'] if 'contents' in data else None,
+                        dumps(data['attachments'] if 'attachments' in data else []),
                         data['status'] if 'status' in data else 'Unread',
                         False,
                     )
                 )
                 connection.commit()
                 message_id = cursor.fetchone()[0]
-                if 'attachments' in data:
-                    for position, _ in enumerate(data['attachments']):
-                        cursor.execute(
-                            '''
-                            INSERT INTO api_messages_attachments (message_id, string, position) VALUES (%s, %s, %s)
-                            ''',
-                            (message_id, data['attachments'][position]['string'], position + 1,)
-                        )
-                        connection.commit()
                 if 'type' in data:
                     if data['type'] == 'Response - Blocked':
                         cursor.execute(
@@ -1343,17 +1297,17 @@ class WebSocket(WebSocketHandler):
                     notify = False
                     if data['type'] in ['Request', 'Response - Accepted']:
                         cursor.execute(
-                            'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
-                            (data['user_destination_id'], 'notifications_invitations', 'True',)
+                            'SELECT settings AS settings FROM api_users WHERE id = %s',
+                            (data['user_destination_id'],)
                         )
-                        if cursor.fetchone()[0]:
+                        if loads(cursor.fetchone()[0])['notifications_invitations'] == 'True':
                             notify = True
                     if data['type'] in ['Ask', 'Message']:
                         cursor.execute(
-                            'SELECT COUNT(id) FROM api_users_settings WHERE user_id = %s AND key = %s AND value = %s',
-                            (data['user_destination_id'], 'notifications_messages', 'True',)
+                            'SELECT settings AS settings FROM api_users WHERE id = %s',
+                            (data['user_destination_id'],)
                         )
-                        if cursor.fetchone()[0]:
+                        if loads(cursor.fetchone()[0])['notifications_messages'] == 'True':
                             notify = True
                     if notify:
                         badge = 0
