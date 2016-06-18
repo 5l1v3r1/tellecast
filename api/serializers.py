@@ -237,33 +237,6 @@ class UserLocation(ModelSerializer):
         return models.UserLocation.insert(get_user_id(self.context), self.validated_data)
 
 
-class UserSetting(Serializer):
-
-    show_last_name = BooleanField()
-    show_photo = BooleanField()
-    show_email = BooleanField()
-    show_phone = BooleanField()
-    show_photos = BooleanField()
-    notifications_invitations = BooleanField()
-    notifications_messages = BooleanField()
-    notifications_saved_you = BooleanField()
-    notifications_shared_profiles = BooleanField()
-
-
-class UserSocialProfile(ModelSerializer):
-
-    url = CharField(allow_blank=True, required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'netloc',
-            'url',
-        )
-        model = models.UserSocialProfile
-
-
 class UserStatusAttachment(ModelSerializer):
 
     string_preview = CharField(allow_blank=True, required=False)
@@ -455,9 +428,9 @@ class User(ModelSerializer):
     description = CharField(allow_blank=True, required=False)
     phone = CharField(allow_blank=True, required=False)
     point = PointField(required=False)
+    settings = DictField(required=False)
+    social_profiles = ListField(help_text='List of Users :: Social Profiles', required=False)
     photos = UserPhoto(help_text='List of Users :: Photos', many=True, required=False)
-    settings = UserSetting(help_text='Users :: Settings', required=False)
-    social_profiles = UserSocialProfile(help_text='List of Users :: Social Profiles', many=True, required=False)
     status = UserStatus(help_text='Users :: Status', required=False)
     urls = UserURL(help_text='List of Users :: URLs', many=True, required=False)
     master_tells = MasterTell(help_text='List of Master Tells', many=True, required=False)
@@ -480,11 +453,11 @@ class User(ModelSerializer):
             'description',
             'phone',
             'point',
+            'settings',
+            'social_profiles',
             'inserted_at',
             'updated_at',
             'photos',
-            'settings',
-            'social_profiles',
             'status',
             'urls',
             'master_tells',
@@ -622,10 +595,10 @@ class UsersProfile(User):
             'location',
             'description',
             'phone',
+            'social_profiles',
             'inserted_at',
             'updated_at',
             'photos',
-            'social_profiles',
             'status',
             'urls',
             'master_tells',
@@ -806,20 +779,6 @@ class ShareUser(ModelSerializer):
         )
 
 
-class TellzoneSocialProfile(ModelSerializer):
-
-    url = CharField(allow_blank=True, required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'netloc',
-            'url',
-        )
-        model = models.TellzoneSocialProfile
-
-
 class TellzoneType(ModelSerializer):
 
     class Meta:
@@ -966,6 +925,7 @@ class Tellzone(ModelSerializer):
     url = CharField(required=False)
     hours = DictField(required=False)
     point = PointField()
+    social_profiles = ListField(help_text='List of Tellzones :: Social Profiles', required=False)
     started_at = DateTimeField(required=False)
     ended_at = DateTimeField(required=False)
     favorites = IntegerField()
@@ -977,9 +937,6 @@ class Tellzone(ModelSerializer):
     is_favorited = BooleanField()
     is_pinned = BooleanField()
     is_viewed = BooleanField()
-    social_profiles = TellzoneSocialProfile(
-        help_text='List of Tellzones :: Social Profiles', many=True, required=False,
-    )
     master_tells = TellzoneMasterTell(many=True, required=False)
     networks = TellzoneNetwork(help_text='List of Networks', many=True, required=False)
     posts = TellzonePost(many=True, required=False)
@@ -1001,11 +958,11 @@ class Tellzone(ModelSerializer):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'inserted_at',
             'updated_at',
             'started_at',
             'ended_at',
-            'social_profiles',
             'master_tells',
             'networks',
             'distance',
@@ -1078,9 +1035,9 @@ class MasterTellTellzone(Tellzone):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'inserted_at',
             'updated_at',
-            'social_profiles',
             'networks',
             'distance',
             'is_favorited',
@@ -1107,9 +1064,9 @@ class PostTellzone(Tellzone):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'inserted_at',
             'updated_at',
-            'social_profiles',
             'networks',
             'distance',
             'is_favorited',
@@ -1140,9 +1097,9 @@ class TellcardTellzone(Tellzone):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'inserted_at',
             'updated_at',
-            'social_profiles',
             'networks',
         )
         model = models.Tellzone
@@ -1336,20 +1293,6 @@ class MessageMasterTell(MasterTell):
         model = models.MasterTell
 
 
-class MessageAttachment(ModelSerializer):
-
-    position = IntegerField(required=False)
-
-    class Meta:
-
-        fields = (
-            'id',
-            'string',
-            'position',
-        )
-        model = models.MessageAttachment
-
-
 class Message(ModelSerializer):
 
     user_source_id = IntegerField()
@@ -1363,7 +1306,7 @@ class Message(ModelSerializer):
     master_tell_id = IntegerField(allow_null=True, required=False)
     master_tell = MessageMasterTell(required=False)
     post_id = IntegerField(allow_null=True, required=False)
-    attachments = MessageAttachment(help_text='List of Messages :: Attachments', many=True, required=False)
+    attachments = ListField(help_text='List of Messages :: Attachments', required=False)
 
     class Meta:
 
@@ -1380,10 +1323,10 @@ class Message(ModelSerializer):
             'post_id',
             'type',
             'contents',
+            'attachments',
             'status',
             'inserted_at',
             'updated_at',
-            'attachments',
         )
         model = models.Message
 
@@ -1580,9 +1523,9 @@ class HomeConnectionsResponseItemsTellzone(Tellzone):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'inserted_at',
             'updated_at',
-            'social_profiles',
             'networks',
         )
         model = models.Tellzone
@@ -1993,20 +1936,9 @@ class MessagesGetResponse(Message):
     pass
 
 
-class MessagesPostRequestAttachment(MessageAttachment):
-
-    class Meta:
-
-        fields = (
-            'string',
-            'position',
-        )
-        model = models.MessageAttachment
-
-
 class MessagesPostRequest(Message):
 
-    attachments = MessagesPostRequestAttachment(help_text='List of Messages :: Attachments', many=True, required=False)
+    attachments = ListField(help_text='List of Messages :: Attachments', required=False)
 
     class Meta:
 
@@ -2019,8 +1951,8 @@ class MessagesPostRequest(Message):
             'post_id',
             'type',
             'contents',
-            'status',
             'attachments',
+            'status',
         )
         model = models.Message
 
@@ -2467,13 +2399,9 @@ class RegisterRequest(User):
     phone = CharField(allow_blank=True, required=False)
     point = PointField(required=False)
     access_code = CharField(allow_blank=True, required=False)
-    settings = UserSetting(help_text='Users :: Settings')
+    settings = DictField(help_text='Users :: Settings')
+    social_profiles = ListField(help_text='List of Users :: Social Profiles', required=False)
     photos = RegisterRequestUserPhoto(help_text='List of Users :: Photos', many=True, required=False)
-    social_profiles = RegisterRequestUserSocialProfile(
-        help_text='List of Users :: Social Profiles',
-        many=True,
-        required=False,
-    )
     status = RegisterRequestUserStatus(help_text='Users :: Status', required=False)
     urls = RegisterRequestUserURL(help_text='List of Users :: URLs', many=True, required=False)
     master_tells = RegisterRequestMasterTell(help_text='List of Master Tells', many=True, required=False)
@@ -2493,10 +2421,10 @@ class RegisterRequest(User):
             'description',
             'phone',
             'point',
-            'access_code',
             'settings',
-            'photos',
             'social_profiles',
+            'access_code',
+            'photos',
             'status',
             'urls',
             'master_tells',
@@ -2583,11 +2511,11 @@ class RegisterResponse(User):
             'description',
             'phone',
             'point',
+            'settings',
+            'social_profiles',
             'inserted_at',
             'updated_at',
-            'settings',
             'photos',
-            'social_profiles',
             'status',
             'urls',
             'master_tells',
@@ -2753,9 +2681,9 @@ class TellzonesRequest(Tellzone):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'started_at',
             'ended_at',
-            'social_profiles',
             'master_tells',
             'networks',
         )
@@ -2881,9 +2809,9 @@ class UsersRequest(User):
             'description',
             'phone',
             'point',
-            'photos',
             'settings',
             'social_profiles',
+            'photos',
             'status',
             'urls',
         )
@@ -2907,11 +2835,11 @@ class UsersResponse(User):
             'description',
             'phone',
             'point',
+            'settings',
+            'social_profiles',
             'inserted_at',
             'updated_at',
             'photos',
-            'settings',
-            'social_profiles',
             'status',
             'urls',
             'posts',
@@ -2950,9 +2878,9 @@ class UsersTellzonesGet(Tellzone):
             'url',
             'hours',
             'point',
+            'social_profiles',
             'inserted_at',
             'updated_at',
-            'social_profiles',
             'networks',
             'distance',
             'is_favorited',
@@ -3093,9 +3021,9 @@ class VerifyResponse(User):
             'description',
             'phone',
             'point',
+            'settings',
             'inserted_at',
             'updated_at',
             'token',
-            'settings',
         )
         model = models.User
