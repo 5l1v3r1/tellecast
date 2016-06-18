@@ -510,6 +510,7 @@ class Message(ModelAdmin):
         'post',
         'type',
         'contents',
+        'attachments',
         'status',
         'is_suppressed',
     )
@@ -548,31 +549,6 @@ class Message(ModelAdmin):
     )
 
 Message.delete_view = delete_view
-
-
-class MessageAttachment(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'message',
-        'string',
-        'position',
-    )
-    list_display = (
-        'id',
-        'message',
-        'string',
-        'position',
-    )
-    list_filter = (
-        'message',
-    )
-    list_per_page = 10
-    search_fields = (
-        'string',
-    )
-
-MessageAttachment.delete_view = delete_view
 
 
 class Network(ModelAdmin):
@@ -919,6 +895,7 @@ class Tellzone(ModelAdmin):
         'url',
         'hours',
         'point',
+        'social_profiles',
         'started_at',
         'ended_at',
     )
@@ -966,32 +943,6 @@ class Tellzone(ModelAdmin):
 
 
 Tellzone.delete_view = delete_view
-
-
-class TellzoneSocialProfile(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'tellzone',
-        'netloc',
-        'url',
-    )
-    list_display = (
-        'id',
-        'tellzone',
-        'netloc',
-        'url',
-    )
-    list_filter = (
-        'tellzone',
-        'netloc',
-    )
-    list_per_page = 10
-    search_fields = (
-        'url',
-    )
-
-TellzoneSocialProfile.delete_view = delete_view
 
 
 class TellzoneStatus(ModelAdmin):
@@ -1072,6 +1023,8 @@ class User(ModelAdmin):
         'description',
         'phone',
         'point',
+        'settings',
+        'social_profiles',
         'is_verified',
         'is_signed_in',
     )
@@ -1200,62 +1153,6 @@ class UserPhoto(ModelAdmin):
     )
 
 UserPhoto.delete_view = delete_view
-
-
-class UserSetting(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'user',
-        'key',
-        'value',
-    )
-    list_display = (
-        'id',
-        'user',
-        'key',
-        'value',
-        'inserted_at',
-        'updated_at',
-    )
-    list_filter = (
-        'user',
-        'key',
-        'inserted_at',
-        'updated_at',
-    )
-    list_per_page = 10
-    search_fields = (
-        'value',
-    )
-
-UserSetting.delete_view = delete_view
-
-
-class UserSocialProfile(ModelAdmin):
-
-    actions = [delete_selected]
-    fields = (
-        'user',
-        'netloc',
-        'url',
-    )
-    list_display = (
-        'id',
-        'user',
-        'netloc',
-        'url',
-    )
-    list_filter = (
-        'user',
-        'netloc',
-    )
-    list_per_page = 10
-    search_fields = (
-        'url',
-    )
-
-UserSocialProfile.delete_view = delete_view
 
 
 class UserStatus(ModelAdmin):
@@ -1415,7 +1312,6 @@ site.register(models.DeviceGCM, DeviceGCM)
 site.register(models.MasterTell, MasterTell)
 site.register(models.MasterTellTellzone, MasterTellTellzone)
 site.register(models.Message, Message)
-site.register(models.MessageAttachment, MessageAttachment)
 site.register(models.Network, Network)
 site.register(models.NetworkTellzone, NetworkTellzone)
 site.register(models.Notification, Notification)
@@ -1428,14 +1324,11 @@ site.register(models.ShareUser, ShareUser)
 site.register(models.SlaveTell, SlaveTell)
 site.register(models.Tellcard, Tellcard)
 site.register(models.Tellzone, Tellzone)
-site.register(models.TellzoneSocialProfile, TellzoneSocialProfile)
 site.register(models.TellzoneStatus, TellzoneStatus)
 site.register(models.TellzoneType, TellzoneType)
 site.register(models.User, User)
 site.register(models.UserLocation, UserLocation)
 site.register(models.UserPhoto, UserPhoto)
-site.register(models.UserSetting, UserSetting)
-site.register(models.UserSocialProfile, UserSocialProfile)
 site.register(models.UserStatus, UserStatus)
 site.register(models.UserStatusAttachment, UserStatusAttachment)
 site.register(models.UserTellzone, UserTellzone)
