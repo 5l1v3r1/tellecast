@@ -317,6 +317,8 @@ class User(Model):
     description = TextField(ugettext_lazy('Description'), blank=True, db_index=True, null=True)
     phone = CharField(ugettext_lazy('Phone'), blank=True, db_index=True, max_length=255, null=True)
     point = PointField(ugettext_lazy('Point'), blank=True, db_index=True, null=True)
+    settings = JSONField(ugettext_lazy('Settings'), blank=True, null=True)
+    social_profiles = JSONField(ugettext_lazy('Social Profiles'), blank=True, null=True)
     is_verified = BooleanField(ugettext_lazy('Is Verified?'), db_index=True, default=True)
     is_signed_in = BooleanField(ugettext_lazy('Is Signed In?'), db_index=True, default=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
@@ -356,6 +358,23 @@ class User(Model):
 
     @classmethod
     def insert(cls, data):
+        settings = {}
+        if 'settings' in data:
+            for key, value in data['settings'].items():
+                settings[key] = 'True' if value else 'False'
+        social_profiles = []
+        if 'social_profiles' in data:
+            for social_profile in data['social_profiles']:
+                if (
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
+                    social_profile['url']
+                ):
+                    social_profiles.append({
+                        'netloc': social_profile['netloc'],
+                        'url': social_profile['url'],
+                    })
         user = User.objects.create(
             email=data['email'],
             photo_original=data['photo_original'] if 'photo_original' in data else None,
@@ -370,25 +389,19 @@ class User(Model):
             point=data['point'] if 'point' in data else None,
             is_verified=False,
             access_code=data['access_code'] if 'access_code' in data else None,
+            settings=settings,
+            social_profiles=social_profiles,
         )
         if 'password' in data:
             user.password = hashpw(data['password'].encode('utf-8'), gensalt(10))
             user.save()
-        if 'settings' in data:
-            for key, value in data['settings'].items():
-                value = 'True' if value else 'False'
-                user_setting = user.settings.get_queryset().filter(key=key).first()
-                if user_setting:
-                    user_setting.value = value
-                    user_setting.save()
-                else:
-                    UserSetting.objects.create(user_id=user.id, key=key, value=value)
         if 'photos' in data:
             for photo in data['photos']:
                 UserPhoto.insert(user.id, photo)
+            user.settings = data['settings']
+            user.save()
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
-                UserSocialProfile.insert(user.id, social_profile)
                 if 'access_token' in social_profile:
                     if social_profile['netloc'] == 'facebook.com':
                         response = None
@@ -476,10 +489,9 @@ class User(Model):
 
     @property
     def settings_(self):
-        dictionary = UserSetting.dictionary
-        for setting in self.settings.get_queryset():
-            if setting.key in dictionary:
-                dictionary[setting.key] = True if setting.value == 'True' else False
+        dictionary = {}
+        for key, value in self.settings.items():
+            dictionary[key] = True if value == 'True' else False
         return dictionary
 
     def __str__(self):
@@ -630,35 +642,27 @@ class User(Model):
     def update_settings(self, data):
         if 'settings' in data:
             for key, value in data['settings'].items():
-                value = 'True' if value else 'False'
-                user_setting = self.settings.get_queryset().filter(key=key).first()
-                if user_setting:
-                    user_setting.value = value
-                    user_setting.save()
-                else:
-                    UserSetting.objects.create(user_id=self.id, key=key, value=value)
+                data['settings'][key] = 'True' if value else 'False'
+            self.settings = data['settings']
+            self.save()
         return self
 
     def update_social_profiles(self, data):
-        ids = []
         if 'social_profiles' in data:
+            social_profiles = []
             for social_profile in data['social_profiles']:
-                if 'url' not in social_profile or not social_profile['url']:
-                    continue
-                user_social_profile = self.social_profiles.get_queryset().filter(
-                    Q(id=social_profile['id'] if 'id' in social_profile else 0) |
-                    Q(netloc=social_profile['netloc'] if 'netloc' in social_profile else ''),
-                ).first()
-                if user_social_profile:
-                    if 'netloc' in social_profile:
-                        user_social_profile.netloc = social_profile['netloc']
-                    if 'url' in social_profile:
-                        user_social_profile.url = social_profile['url']
-                    user_social_profile.save()
-                else:
-                    user_social_profile = UserSocialProfile.insert(self.id, social_profile)
-                ids.append(user_social_profile.id)
-        self.social_profiles.get_queryset().exclude(id__in=ids).delete()
+                if (
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
+                    social_profile['url']
+                ):
+                    social_profiles.append({
+                        'netloc': social_profile['netloc'],
+                        'url': social_profile['url'],
+                    })
+            self.social_profiles = social_profiles
+            self.save()
         return self
 
     def update_status(self, data):
@@ -782,10 +786,6 @@ class User(Model):
             return instance.user_id == self.id
         if isinstance(instance, UserPhoto):
             return instance.user_id == self.id
-        if isinstance(instance, UserSetting):
-            return instance.user_id == self.id
-        if isinstance(instance, UserSocialProfile):
-            return instance.user_id == self.id
         if isinstance(instance, UserStatus):
             return instance.user_id == self.id
         if isinstance(instance, UserStatusAttachment):
@@ -806,15 +806,12 @@ class User(Model):
             return self.has_permission(self, instance=instance.master_tell)
         if isinstance(instance, Message):
             return instance.user_source_id == self.id
-        if isinstance(instance, MessageAttachment):
-            return self.has_permission(self, instance=instance.message)
         if isinstance(instance, Notification):
             return instance.user_id == self.id
         if isinstance(instance, Post):
             return instance.user_id == self.id
         if isinstance(instance, PostAttachment):
             return self.has_permission(self, instance=instance.post)
-            return instance.post.user_id == self.id
         if isinstance(instance, PostTellzone):
             return self.has_permission(self, instance=instance.post)
         if isinstance(instance, Report):
@@ -906,6 +903,7 @@ class Tellzone(Model):
     url = CharField(ugettext_lazy('URL'), blank=True, db_index=True, max_length=255, null=True)
     hours = JSONField(ugettext_lazy('Hours'), blank=True, null=True)
     point = PointField(ugettext_lazy('Point'), db_index=True)
+    social_profiles = JSONField(ugettext_lazy('Social Profiles'), blank=True, null=True)
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
     started_at = DateTimeField(ugettext_lazy('Started At'), db_index=True, null=True)
@@ -964,6 +962,19 @@ class Tellzone(Model):
 
     @classmethod
     def insert(cls, user_id, data):
+        social_profiles = []
+        if 'social_profiles' in data:
+            for social_profile in data['social_profiles']:
+                if (
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
+                    social_profile['url']
+                ):
+                    social_profiles.append({
+                        'netloc': social_profile['netloc'],
+                        'url': social_profile['url'],
+                    })
         tellzone = Tellzone.objects.create(
             user_id=user_id,
             type_id=data['type_id'] if 'type_id' in data else None,
@@ -976,14 +987,10 @@ class Tellzone(Model):
             url=data['url'] if 'url' in data else None,
             hours=data['hours'] if 'hours' in data else None,
             point=data['point'] if 'point' in data else None,
+            social_profiles=social_profiles,
             started_at=data['started_at'] if 'started_at' in data else None,
             ended_at=data['ended_at'] if 'ended_at' in data else None,
         )
-        if 'social_profiles' in data:
-            for social_profile in data['social_profiles']:
-                TellzoneSocialProfile.objects.create(
-                    tellzone_id=tellzone.id, netloc=social_profile['netloc'], url=social_profile['url'],
-                )
         if 'networks' in data:
             for network in data['networks']:
                 network = Network.objects.get_queryset().filter(id=network).first()
@@ -1045,21 +1052,20 @@ class Tellzone(Model):
             self.ended_at = data['ended_at']
         self.save()
         if 'social_profiles' in data:
-            ids = []
+            social_profiles = []
             for social_profile in data['social_profiles']:
-                instance = TellzoneSocialProfile.objects.get_queryset().filter(
-                    tellzone_id=self.id,
-                    netloc=social_profile['netloc'] if 'netloc' in social_profile else None,
-                ).first()
-                if instance:
-                    instance.url = social_profile['url']
-                    instance.save()
-                else:
-                    instance = TellzoneSocialProfile.objects.create(
-                        tellzone_id=self.id, netloc=social_profile['netloc'], url=social_profile['url'],
-                    )
-                ids.append(instance.id)
-            TellzoneSocialProfile.objects.get_queryset().filter(~Q(id__in=ids), tellzone_id=self.id).delete()
+                if (
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
+                    social_profile['url']
+                ):
+                    social_profiles.append({
+                        'netloc': social_profile['netloc'],
+                        'url': social_profile['url']
+                    })
+            self.social_profiles = social_profiles
+            self.save()
         if 'networks' in data:
             for network in data['networks']:
                 network = Network.objects.get_queryset().filter(id=network).first()
@@ -1145,44 +1151,6 @@ class Tellzone(Model):
 
     def is_viewed(self, user_id):
         return self.users.get_queryset().filter(user_id=user_id, viewed_at__isnull=False).count() > 0
-
-
-class TellzoneSocialProfile(Model):
-
-    tellzone = ForeignKey(Tellzone, related_name='social_profiles')
-    netloc = CharField(
-        ugettext_lazy('Network Location'),
-        choices=(
-            ('facebook.com', 'facebook.com',),
-            ('google.com', 'google.com',),
-            ('instagram.com', 'instagram.com',),
-            ('linkedin.com', 'linkedin.com',),
-            ('twitter.com', 'twitter.com',),
-            ('yelp.com', 'yelp.com',),
-        ),
-        db_index=True,
-        max_length=255,
-    )
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-
-    class Meta:
-
-        db_table = 'api_tellzones_social_profiles'
-        ordering = (
-            '-id',
-        )
-        unique_together = (
-            'tellzone',
-            'netloc',
-        )
-        verbose_name = 'Tellzones :: Social Profile'
-        verbose_name_plural = 'Tellzones :: Social Profiles'
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
 
 
 class Campaign(Model):
@@ -1376,91 +1344,6 @@ class UserPhoto(Model):
             description=data['description'] if 'description' in data else None,
             position=data['position'] if 'position' in data else None,
         )
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
-
-
-class UserSetting(Model):
-
-    dictionary = {
-        'notifications_invitations': True,
-        'notifications_messages': True,
-        'notifications_saved_you': True,
-        'notifications_shared_profiles': True,
-        'show_email': False,
-        'show_last_name': False,
-        'show_phone': False,
-        'show_photo': True,
-        'show_photos': True,
-    }
-
-    user = ForeignKey(User, related_name='settings')
-    key = CharField(ugettext_lazy('Key'), db_index=True, max_length=255)
-    value = CharField(ugettext_lazy('Value'), db_index=True, max_length=255)
-    inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
-    updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
-
-    class Meta:
-        db_table = 'api_users_settings'
-        ordering = (
-            '-id',
-        )
-        unique_together = (
-            'user',
-            'key',
-        )
-        verbose_name = ugettext_lazy('Users :: Setting')
-        verbose_name_plural = ugettext_lazy('Users :: Settings')
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
-
-
-class UserSocialProfile(Model):
-
-    user = ForeignKey(User, related_name='social_profiles')
-    netloc = CharField(
-        ugettext_lazy('Network Location'),
-        choices=(
-            ('facebook.com', 'facebook.com',),
-            ('google.com', 'google.com',),
-            ('instagram.com', 'instagram.com',),
-            ('linkedin.com', 'linkedin.com',),
-            ('twitter.com', 'twitter.com',),
-        ),
-        db_index=True,
-        max_length=255,
-    )
-    url = CharField(ugettext_lazy('URL'), db_index=True, max_length=255)
-
-    class Meta:
-
-        db_table = 'api_users_social_profiles'
-        ordering = (
-            '-id',
-        )
-        unique_together = (
-            'user',
-            'netloc',
-        )
-        verbose_name = 'Users :: Social Profile'
-        verbose_name_plural = 'Users :: Social Profiles'
-
-    @classmethod
-    def insert(cls, user_id, data):
-        if 'url' in data and data['url']:
-            return UserSocialProfile.objects.create(
-                user_id=user_id,
-                netloc=data['netloc'] if 'netloc' in data else None,
-                url=data['url'] if 'url' in data else None,
-            )
 
     def __str__(self):
         return str(self.id)
@@ -1920,7 +1803,7 @@ class Notification(Model):
         db_index=True,
         max_length=255,
     )
-    contents = JSONField(ugettext_lazy('Contents'))
+    contents = JSONField(ugettext_lazy('Contents'), blank=True, null=True)
     status = CharField(
         ugettext_lazy('Status'),
         choices=(
@@ -2396,6 +2279,7 @@ class Message(Model):
         max_length=255,
     )
     contents = TextField(ugettext_lazy('Contents'), blank=True, db_index=True)
+    attachments = JSONField(ugettext_lazy('Attachments'), blank=True, null=True)
     status = CharField(
         ugettext_lazy('Status'),
         choices=(
@@ -2421,6 +2305,13 @@ class Message(Model):
 
     @classmethod
     def insert(cls, user_source_id, data):
+        attachments = []
+        if 'attachments' in data:
+            for attachment in data['attachments']:
+                attachments.append({
+                    'position': attachment['position'] if 'position' in attachment else '',
+                    'string': attachment['string'] if 'string' in attachment else '',
+                })
         message = Message.objects.create(
             user_source_id=user_source_id,
             user_source_is_hidden=data['user_source_is_hidden'] if 'user_source_is_hidden' in data else None,
@@ -2433,10 +2324,8 @@ class Message(Model):
             type=data['type'] if 'type' in data else None,
             contents=data['contents'] if 'contents' in data else None,
             status=data['status'] if 'status' in data else 'Unread',
+            attachments=attachments,
         )
-        if 'attachments' in data:
-            for attachment in data['attachments']:
-                MessageAttachment.insert(message.id, attachment)
         if message.type in ['Request']:
             Message.objects.create(
                 user_source_id=message.user_destination_id,
@@ -2467,37 +2356,6 @@ class Message(Model):
             self.status = data['status']
         self.save()
         return self
-
-
-class MessageAttachment(Model):
-
-    message = ForeignKey(Message, related_name='attachments')
-    string = CharField(ugettext_lazy('String'), db_index=True, max_length=255)
-    position = IntegerField(ugettext_lazy('Position'), db_index=True)
-
-    class Meta:
-
-        db_table = 'api_messages_attachments'
-        ordering = (
-            '-message_id',
-            'position',
-        )
-        verbose_name = 'Messages :: Attachment'
-        verbose_name_plural = 'Messages :: Attachments'
-
-    @classmethod
-    def insert(cls, message_id, data):
-        return MessageAttachment.objects.create(
-            message_id=message_id,
-            string=data['string'] if 'string' in data else None,
-            position=data['position'] if 'position' in data else None,
-        )
-
-    def __str__(self):
-        return str(self.id)
-
-    def __unicode__(self):
-        return unicode(self.id)
 
 
 @receiver(pre_save, sender=Category)
@@ -2553,8 +2411,20 @@ def user_pre_save(instance, **kwargs):
 @receiver(post_save, sender=User)
 def user_post_save(instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
-        for key, value in UserSetting.dictionary.items():
-            UserSetting.objects.create(user_id=instance.id, key=key, value='True' if value else 'False')
+        settings = {}
+        for key, value in {
+            'notifications_invitations': True,
+            'notifications_messages': True,
+            'notifications_saved_you': True,
+            'notifications_shared_profiles': True,
+            'show_email': False,
+            'show_last_name': False,
+            'show_phone': True,
+            'show_photo': False
+        }.items():
+            settings[key] = 'True' if value else 'False'
+        instance.settings = settings
+        instance.save()
     current_app.send_task(
         'api.tasks.thumbnails_1',
         ('User', instance.id,),
@@ -3062,17 +2932,6 @@ def message_post_delete(instance, **kwargs):
     )
 
 
-@receiver(pre_save, sender=MessageAttachment)
-def message_attachment_pre_save(instance, **kwargs):
-    if not instance.position:
-        position = MessageAttachment.objects.get_queryset().filter(
-            message=instance.message,
-        ).aggregate(
-            Max('position'),
-        )['position__max']
-        instance.position = position + 1 if position else 1
-
-
 @receiver(post_save, sender=Notification)
 def notification_post_save(instance, **kwargs):
     current_app.send_task(
@@ -3299,16 +3158,14 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     api_users_created_by.first_name AS created_by_first_name,
                     api_users_created_by.last_name AS created_by_last_name,
                     api_users_created_by.description AS created_by_description,
-                    api_users_settings_created_by.key AS created_by_setting_key,
-                    api_users_settings_created_by.value AS created_by_setting_value,
+                    api_users_created_by.settings AS created_by_settings,
                     api_users_owned_by.id AS owned_by_id,
                     api_users_owned_by.photo_original AS owned_by_photo_original,
                     api_users_owned_by.photo_preview AS owned_by_photo_preview,
                     api_users_owned_by.first_name AS owned_by_first_name,
                     api_users_owned_by.last_name AS owned_by_last_name,
                     api_users_owned_by.description AS owned_by_description,
-                    api_users_settings_owned_by.key AS owned_by_setting_key,
-                    api_users_settings_owned_by.value AS owned_by_setting_value,
+                    api_users_owned_by.settings AS owned_by_settings,
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
                     api_categories.photo AS category_photo,
@@ -3323,12 +3180,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                 LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
                 INNER JOIN api_users AS api_users_created_by
                     ON api_users_created_by.id = api_master_tells.created_by_id
-                LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
-                    ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
                 INNER JOIN api_users AS api_users_owned_by
                     ON api_users_owned_by.id = api_master_tells.owned_by_id
-                LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
-                    ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
                 INNER JOIN api_categories ON api_categories.id = api_master_tells.category_id
                 LEFT OUTER JOIN api_blocks ON
                     (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_master_tells.owned_by_id)
@@ -3387,16 +3240,14 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     api_users_created_by.first_name AS created_by_first_name,
                     api_users_created_by.last_name AS created_by_last_name,
                     api_users_created_by.description AS created_by_description,
-                    api_users_settings_created_by.key AS created_by_setting_key,
-                    api_users_settings_created_by.value AS created_by_setting_value,
+                    api_users_created_by.settings AS created_by_settings,
                     api_users_owned_by.id AS owned_by_id,
                     api_users_owned_by.photo_original AS owned_by_photo_original,
                     api_users_owned_by.photo_preview AS owned_by_photo_preview,
                     api_users_owned_by.first_name AS owned_by_first_name,
                     api_users_owned_by.last_name AS owned_by_last_name,
                     api_users_owned_by.description AS owned_by_description,
-                    api_users_settings_owned_by.key AS owned_by_setting_key,
-                    api_users_settings_owned_by.value AS owned_by_setting_value,
+                    api_users_owned_by.settings AS owned_by_settings,
                     api_categories.id AS category_id,
                     api_categories.name AS category_name,
                     api_categories.photo AS category_photo,
@@ -3409,12 +3260,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                 LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
                 INNER JOIN api_users AS api_users_created_by
                     ON api_users_created_by.id = api_master_tells.created_by_id
-                LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
-                    ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
                 INNER JOIN api_users AS api_users_owned_by
                     ON api_users_owned_by.id = api_master_tells.owned_by_id
-                LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
-                    ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
                 INNER JOIN api_categories ON api_categories.id = api_master_tells.category_id
                 LEFT OUTER JOIN api_blocks ON
                     (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_users_locations.user_id)
@@ -3511,14 +3358,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                 'first_name': record['created_by_first_name'],
                 'last_name': record['created_by_last_name'],
                 'description': record['created_by_description'],
+                'settings': loads(record['created_by_settings']),
             }
-        if 'settings' not in master_tells[record['id']]['created_by']:
-            master_tells[record['id']]['created_by']['settings'] = {}
-        if record['created_by_setting_key']:
-            if record['created_by_setting_key'] not in master_tells[record['id']]['created_by']['settings']:
-                master_tells[record['id']]['created_by']['settings'][
-                    record['created_by_setting_key']
-                ] = record['created_by_setting_value']
         if 'owned_by' not in master_tells[record['id']]:
             master_tells[record['id']]['owned_by'] = {
                 'id': record['owned_by_id'],
@@ -3527,14 +3368,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                 'first_name': record['owned_by_first_name'],
                 'last_name': record['owned_by_last_name'],
                 'description': record['owned_by_description'],
+                'settings': loads(record['owned_by_settings']),
             }
-        if 'settings' not in master_tells[record['id']]['owned_by']:
-            master_tells[record['id']]['owned_by']['settings'] = {}
-        if record['owned_by_setting_key']:
-            if record['owned_by_setting_key'] not in master_tells[record['id']]['owned_by']['settings']:
-                master_tells[record['id']]['owned_by']['settings'][
-                    record['owned_by_setting_key']
-                ] = record['owned_by_setting_value']
         if 'category' not in master_tells[record['id']]:
             master_tells[record['id']]['category'] = {
                 'id': record['category_id'],
