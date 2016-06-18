@@ -2447,7 +2447,7 @@ class Signals(TransactionTestCase):
         assert response.data['urls'][0]['position'] == 1
         assert response.status_code == 200
 
-        assert self.get_celery_tasks() == 3
+        assert self.get_celery_tasks() == 2
         self.reset_celery_tasks()
 
     def test_h(self):
