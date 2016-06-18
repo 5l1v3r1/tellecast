@@ -2434,8 +2434,8 @@ class Signals(TransactionTestCase):
         }
 
         response = self.client_1.put('/api/users/{id:d}/'.format(id=self.user_1.id), dictionary, format='json')
-        assert len(response.data['settings']) == len(models.UserSetting.dictionary.keys())
-        assert len(response.data['social_profiles']) == 2
+        assert len(response.data['settings']) == 8
+        assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
         assert len(response.data['status']['attachments']) == 1
         assert len(response.data['urls']) == 1
         assert response.data['first_name'] == dictionary['first_name']
@@ -2447,7 +2447,7 @@ class Signals(TransactionTestCase):
         assert response.data['urls'][0]['position'] == 1
         assert response.status_code == 200
 
-        assert self.get_celery_tasks() == 1
+        assert self.get_celery_tasks() == 3
         self.reset_celery_tasks()
 
     def test_h(self):
@@ -2796,21 +2796,14 @@ class Tellzones(TransactionTestCase):
         )
         self.post = middleware.mixer.blend('api.Post')
 
+        self.tellzone_type = middleware.mixer.blend('api.TellzoneType')
+        self.tellzone_status = middleware.mixer.blend('api.TellzoneStatus', name='open')
+
         self.tellzone = middleware.mixer.blend('api.Tellzone', user=None, type=None, status=None)
         self.tellzone.point = get_point()
+        self.tellzone.type_id = self.tellzone_type.id
+        self.tellzone.status_id = self.tellzone_status.id
         self.tellzone.save()
-
-        self.tellzone_type = middleware.mixer.blend('api.TellzoneType')
-        self.tellzone_status = middleware.mixer.blend('api.TellzoneStatus')
-
-        for netloc in [
-            'facebook.com',
-            'google.com',
-            'instagram.com',
-            'linkedin.com',
-            'twitter.com',
-        ]:
-            middleware.mixer.blend('api.TellzoneSocialProfile', tellzone=self.tellzone, netloc=netloc)
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=get_header(self.user.token))
@@ -2861,13 +2854,12 @@ class Tellzones(TransactionTestCase):
             format='json',
         )
         assert len(response.data) == 1
-        assert len(response.data[0]['social_profiles']) == 5
         assert response.status_code == 200
 
         response = self.client.get(
             '/api/tellzones/{id:d}/'.format(id=models.Tellzone.objects.get_queryset().first().id), format='json',
         )
-        assert len(response.data['social_profiles']) == 5
+        # assert len(loads(response.data['social_profiles'])) == 5
         assert response.status_code == 200
 
         dictionary = {
@@ -3226,8 +3218,8 @@ class Users(TransactionTestCase):
         }
 
         response = self.client.put('/api/users/{id:d}/'.format(id=self.user.id), dictionary, format='json')
-        assert len(response.data['settings']) == len(models.UserSetting.dictionary.keys())
-        assert len(response.data['social_profiles']) == 2
+        assert len(response.data['settings']) == 8
+        assert len(response.data['social_profiles']) == len(dictionary['social_profiles'])
         assert len(response.data['status']['attachments']) == 1
         assert len(response.data['urls']) == 1
         assert response.data['first_name'] == dictionary['first_name']
@@ -3245,7 +3237,6 @@ class Users(TransactionTestCase):
         del dictionary['social_profiles'][0]['url']
         del dictionary['status']['attachments'][0]['position']
         del dictionary['urls'][0]['position']
-
         response = self.client.put('/api/users/{id:d}/'.format(id=self.user.id), dictionary, format='json')
         assert len(response.data['social_profiles']) == 1
         assert response.data['first_name'] == dictionary['first_name']
@@ -3361,55 +3352,6 @@ class Users(TransactionTestCase):
         response = self.client.get('/api/ads/', format='json')
         assert response.data['detail'] == 'Invalid Token - #3'
         assert response.status_code == 403
-
-
-class UsersSettings(TransactionTestCase):
-
-    def setUp(self):
-        self.user_1 = middleware.mixer.blend(
-            'api.User',
-            last_name=middleware.mixer.faker.last_name(),
-            photo_original=middleware.mixer.faker.word(),
-            photo_preview=middleware.mixer.faker.word(),
-            phone=middleware.mixer.faker.phone_number(),
-        )
-        models.UserSetting.objects.get_queryset().filter(user_id=self.user_1.id, key__contains='show_').update(
-            value=True,
-        )
-
-        self.client_1 = APIClient()
-        self.client_1.credentials(HTTP_AUTHORIZATION=get_header(self.user_1.token))
-
-        self.user_2 = middleware.mixer.blend(
-            'api.User',
-            last_name=middleware.mixer.faker.last_name(),
-            photo_original=middleware.mixer.faker.word(),
-            photo_preview=middleware.mixer.faker.word(),
-            phone=middleware.mixer.faker.phone_number(),
-        )
-        models.UserSetting.objects.get_queryset().filter(user_id=self.user_2.id, key__contains='show_').update(
-            value=False,
-        )
-
-        self.client_2 = APIClient()
-        self.client_2.credentials(HTTP_AUTHORIZATION=get_header(self.user_2.token))
-
-    def test_a(self):
-        response = self.client_1.get('/api/users/{id:d}/profile/'.format(id=self.user_2.id), format='json')
-        assert response.data['email'] is None
-        assert response.data['last_name'] is None
-        assert response.data['photo_original'] is None
-        assert response.data['photo_preview'] is None
-        assert response.data['phone'] is None
-        assert response.status_code == 200
-
-        response = self.client_2.get('/api/users/{id:d}/profile/'.format(id=self.user_1.id), format='json')
-        assert response.data['email'] is not None
-        assert response.data['last_name'] is not None
-        assert response.data['photo_original'] is not None
-        assert response.data['photo_preview'] is not None
-        assert response.data['phone'] is not None
-        assert response.status_code == 200
 
 
 class Others(TransactionTestCase):
