@@ -2355,7 +2355,6 @@ class Posts(ViewSet):
         ).prefetch_related(
             'posts_tellzones',
             'attachments',
-            'user__settings',
         )
         if user_id:
             queryset = queryset.filter(user_id=user_id)
@@ -2563,7 +2562,6 @@ class Radar(ViewSet):
                 models.Tellzone.objects.get_queryset().filter(
                     point__distance_lte=(user_location.point, D(ft=models.Tellzone.radius())),
                 ).prefetch_related(
-                    'social_profiles',
                     'networks_tellzones',
                     'networks_tellzones__network',
                 ).distance(
@@ -2599,7 +2597,6 @@ class Radar(ViewSet):
                         status='Public',
                         networks_tellzones__network_id__in=network_ids,
                     ).prefetch_related(
-                        'social_profiles',
                         'networks_tellzones',
                         'networks_tellzones__network',
                     ).distance(
@@ -3467,14 +3464,14 @@ class Tellzones(ViewSet):
             api_tellzones.inserted_at AS inserted_at,
             api_tellzones.started_at AS started_at,
             api_tellzones.updated_at AS updated_at,
+            api_tellzones.social_profiles AS tellzones_social_profiles,
             api_users.id AS users_id,
             api_users.first_name AS users_first_name,
             api_users.last_name AS users_last_name,
             api_users.location AS users_location,
             api_users.photo_original AS users_photo_original,
             api_users.photo_preview AS users_photo_preview,
-            api_users_settings.key AS users_settings_key,
-            api_users_settings.value AS users_settings_value,
+            api_users.settings AS users_settings,
             api_tellzones_types.id AS tellzones_types_id,
             api_tellzones_types.name AS tellzones_types_name,
             api_tellzones_types.title AS tellzones_types_title,
@@ -3487,9 +3484,6 @@ class Tellzones(ViewSet):
             api_tellzones_statuses.icon AS tellzones_statuses_icon,
             api_tellzones_statuses.description AS tellzones_statuses_description,
             api_tellzones_statuses.position AS tellzones_statuses_position,
-            api_tellzones_social_profiles.id AS tellzones_social_profiles_id,
-            api_tellzones_social_profiles.netloc AS tellzones_social_profiles_netloc,
-            api_tellzones_social_profiles.url AS tellzones_social_profiles_url,
             api_master_tells.id AS master_tells_id,
             api_master_tells.contents AS master_tells_contents,
             api_master_tells.description AS master_tells_description,
@@ -3510,8 +3504,7 @@ class Tellzones(ViewSet):
             api_users_created_by.last_name AS master_tells_created_by_last_name,
             api_users_created_by.description AS master_tells_created_by_description,
             api_users_created_by.location AS master_tells_created_by_location,
-            api_users_settings_created_by.key AS master_tells_created_by_settings_key,
-            api_users_settings_created_by.value AS master_tells_created_by_settings_value,
+            api_users_created_by.settings AS master_tells_created_by_settings,
             api_slave_tells.id AS slave_tells_id,
             api_slave_tells.created_by_id AS slave_tells_created_by_id,
             api_slave_tells.owned_by_id AS slave_tells_owned_by_id,
@@ -3530,14 +3523,10 @@ class Tellzones(ViewSet):
         LEFT JOIN api_users ON api_tellzones.user_id = api_users.id
         LEFT JOIN api_tellzones_types ON api_tellzones.type_id = api_tellzones_types.id
         LEFT JOIN api_tellzones_statuses ON api_tellzones.status_id = api_tellzones_statuses.id
-        LEFT OUTER JOIN api_users_settings AS api_users_settings ON api_users_settings.user_id = api_users.id
-        LEFT OUTER JOIN api_tellzones_social_profiles ON api_tellzones_social_profiles.tellzone_id = api_tellzones.id
         LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
         LEFT OUTER JOIN api_master_tells_tellzones ON api_master_tells_tellzones.tellzone_id = api_tellzones.id
         LEFT JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
         LEFT JOIN api_users AS api_users_created_by ON api_users_created_by.id = api_master_tells.created_by_id
-        LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
-            ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
         LEFT JOIN api_categories ON api_categories.id = api_master_tells.category_id
         LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
         WHERE
@@ -3559,7 +3548,6 @@ class Tellzones(ViewSet):
                     records[record['id']] = {
                         'type': {},
                         'status': {},
-                        'social_profiles': {},
                         'master_tells': {},
                         'is_favorited': False,
                         'is_pinned': False,
@@ -3573,6 +3561,7 @@ class Tellzones(ViewSet):
                 records[record['id']]['name'] = record['name']
                 records[record['id']]['phone'] = record['phone']
                 records[record['id']]['photo'] = record['photo']
+                records[record['id']]['social_profiles'] = {}
                 point = loads(record['point'])
                 records[record['id']]['point'] = {
                     'latitude': str(point['coordinates'][1]),
@@ -3592,14 +3581,8 @@ class Tellzones(ViewSet):
                             'location': record['users_location'],
                             'photo_original': record['users_photo_original'],
                             'photo_preview': record['users_photo_preview'],
+                            'settings': loads(record['users_settings']),
                         }
-                    if record['users_settings_key']:
-                        if 'settings' not in records[record['id']]['user']:
-                            records[record['id']]['user']['settings'] = {}
-                        if record['users_settings_key'] not in records[record['id']]['user']['settings']:
-                            records[record['id']]['user']['settings'][
-                                record['users_settings_key']
-                            ] = record['users_settings_value']
                 if record['tellzones_types_id']:
                     records[record['id']]['type'] = {
                         'id': record['tellzones_types_id'],
@@ -3618,13 +3601,6 @@ class Tellzones(ViewSet):
                         'description': record['tellzones_statuses_description'],
                         'position': record['tellzones_statuses_position'],
                     }
-                if record['tellzones_social_profiles_id']:
-                    if record['tellzones_social_profiles_id'] not in records[record['id']]['social_profiles']:
-                        records[record['id']]['social_profiles'][record['tellzones_social_profiles_id']] = {
-                            'id': record['tellzones_social_profiles_id'],
-                            'netloc': record['tellzones_social_profiles_netloc'],
-                            'url': record['tellzones_social_profiles_url'],
-                        }
                 if record['master_tells_id']:
                     if record['master_tells_id'] not in records[record['id']]['master_tells']:
                         records[record['id']]['master_tells'][record['master_tells_id']] = {
@@ -3655,18 +3631,8 @@ class Tellzones(ViewSet):
                                 'location': record['master_tells_created_by_location'],
                                 'photo_original': record['master_tells_created_by_photo_original'],
                                 'photo_preview': record['master_tells_created_by_photo_preview'],
+                                'settings': loads(record['master_tells_created_by_settings'])
                             }
-                    if record['master_tells_created_by_settings_key']:
-                        if (
-                            'settings' not in
-                            records[record['id']]['master_tells'][record['master_tells_id']]['created_by']
-                        ):
-                            records[
-                                record['id']
-                            ]['master_tells'][record['master_tells_id']]['created_by']['settings'] = {}
-                        records[record['id']]['master_tells'][record['master_tells_id']]['created_by']['settings'][
-                            record['master_tells_created_by_settings_key']
-                        ] = record['master_tells_created_by_settings_value']
                     if record['slave_tells_id']:
                         if (
                             record['slave_tells_id'] not in
@@ -3707,7 +3673,6 @@ class Tellzones(ViewSet):
                     if records[key]['user']['settings']['show_last_name'] == 'True' else None
                 )
                 del records[key]['user']['settings']
-            records[key]['social_profiles'] = value['social_profiles'].values()
             for k, v in records[key]['master_tells'].items():
                 records[key]['master_tells'][k]['created_by']['photo_original'] = (
                     records[key]['master_tells'][k]['created_by']['photo_original']
@@ -3749,7 +3714,7 @@ class Tellzones(ViewSet):
             - code: 400
               message: Invalid Input
         '''
-        instance = models.Tellzone.objects.get_queryset().prefetch_related('social_profiles').filter(id=id).first()
+        instance = models.Tellzone.objects.get_queryset().filter(id=id).first()
         if not instance:
             return Response(
                 data={
@@ -4692,9 +4657,7 @@ class UsersTellzones(ViewSet):
                 sorted(
                     [
                         user_tellzone.tellzone
-                        for user_tellzone in models.UserTellzone.objects.get_queryset().prefetch_related(
-                            'tellzone__social_profiles',
-                        ).filter(
+                        for user_tellzone in models.UserTellzone.objects.get_queryset().filter(
                             user_id=request.user.id,
                             favorited_at__isnull=False,
                         )
@@ -5323,9 +5286,7 @@ def home_connections(request):
         data['users'] = [
             {
                 'user': user,
-                'tellzone': models.Tellzone.objects.get_queryset().prefetch_related(
-                    'social_profiles',
-                ).order_by('?').first(),
+                'tellzone': models.Tellzone.objects.get_queryset().order_by('?').first(),
                 'location': None,
                 'point': user.point,
                 'timestamp': datetime.now() - timedelta(days=randint(1, 7)),
@@ -5399,9 +5360,7 @@ def home_connections(request):
                 p = loads(record[3])
                 data['users'][record[0]] = {
                     'user': models.User.objects.get_queryset().filter(id=record[0]).first(),
-                    'tellzone': models.Tellzone.objects.get_queryset().prefetch_related(
-                        'social_profiles',
-                    ).filter(
+                    'tellzone': models.Tellzone.objects.get_queryset().filter(
                         id=record[1],
                     ).first(),
                     'location': record[2],
@@ -5892,13 +5851,9 @@ def home_tellzones(request):
     serializer.is_valid(raise_exception=True)
     point = models.get_point(serializer.validated_data['latitude'], serializer.validated_data['longitude'])
     if serializer.validated_data['dummy'] == 'Yes':
-        tellzones = models.Tellzone.objects.get_queryset().prefetch_related(
-            'social_profiles',
-        ).distance(point).order_by('?')[0:5]
+        tellzones = models.Tellzone.objects.get_queryset().distance(point).order_by('?')[0:5]
     else:
-        tellzones = models.Tellzone.objects.get_queryset().prefetch_related(
-            'social_profiles',
-        ).filter(
+        tellzones = models.Tellzone.objects.get_queryset().filter(
             point__distance_lte=(point, D(mi=10)),
         ).distance(
             point,
@@ -6007,16 +5962,14 @@ def master_tells_all(request, *args, **kwargs):
                 api_users_created_by.first_name AS created_by_first_name,
                 api_users_created_by.last_name AS created_by_last_name,
                 api_users_created_by.description AS created_by_description,
-                api_users_settings_created_by.key AS created_by_setting_key,
-                api_users_settings_created_by.value AS created_by_setting_value,
+                api_users_created_by.settings AS created_by_settings,
                 api_users_owned_by.id AS owned_by_id,
                 api_users_owned_by.photo_original AS owned_by_photo_original,
                 api_users_owned_by.photo_preview AS owned_by_photo_preview,
                 api_users_owned_by.first_name AS owned_by_first_name,
                 api_users_owned_by.last_name AS owned_by_last_name,
                 api_users_owned_by.description AS owned_by_description,
-                api_users_settings_owned_by.key AS owned_by_setting_key,
-                api_users_settings_owned_by.value AS owned_by_setting_value,
+                api_users_owned_by.settings AS owned_by_settings,
                 api_categories.id AS category_id,
                 api_categories.name AS category_name,
                 api_categories.photo AS category_photo,
@@ -6031,12 +5984,8 @@ def master_tells_all(request, *args, **kwargs):
             LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
             INNER JOIN api_users AS api_users_created_by
                 ON api_users_created_by.id = api_master_tells.created_by_id
-            LEFT OUTER JOIN api_users_settings AS api_users_settings_created_by
-                ON api_users_settings_created_by.user_id = api_master_tells.created_by_id
             INNER JOIN api_users AS api_users_owned_by
                 ON api_users_owned_by.id = api_master_tells.owned_by_id
-            LEFT OUTER JOIN api_users_settings AS api_users_settings_owned_by
-                ON api_users_settings_owned_by.user_id = api_master_tells.owned_by_id
             INNER JOIN api_categories ON api_categories.id = api_master_tells.category_id
             LEFT OUTER JOIN api_blocks ON
                 (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_master_tells.owned_by_id)
@@ -6126,14 +6075,8 @@ def master_tells_all(request, *args, **kwargs):
                     'first_name': record['created_by_first_name'],
                     'last_name': record['created_by_last_name'],
                     'description': record['created_by_description'],
+                    'settings': loads(record['created_by_settings']),
                 }
-            if 'settings' not in master_tells[record['id']]['created_by']:
-                master_tells[record['id']]['created_by']['settings'] = {}
-            if record['created_by_setting_key']:
-                if record['created_by_setting_key'] not in master_tells[record['id']]['created_by']['settings']:
-                    master_tells[record['id']]['created_by']['settings'][
-                        record['created_by_setting_key']
-                    ] = record['created_by_setting_value']
             if 'owned_by' not in master_tells[record['id']]:
                 master_tells[record['id']]['owned_by'] = {
                     'id': record['owned_by_id'],
@@ -6142,14 +6085,8 @@ def master_tells_all(request, *args, **kwargs):
                     'first_name': record['owned_by_first_name'],
                     'last_name': record['owned_by_last_name'],
                     'description': record['owned_by_description'],
+                    'settings': loads(record['owned_by_settings']),
                 }
-            if 'settings' not in master_tells[record['id']]['owned_by']:
-                master_tells[record['id']]['owned_by']['settings'] = {}
-            if record['owned_by_setting_key']:
-                if record['owned_by_setting_key'] not in master_tells[record['id']]['owned_by']['settings']:
-                    master_tells[record['id']]['owned_by']['settings'][
-                        record['owned_by_setting_key']
-                    ] = record['owned_by_setting_value']
             if 'category' not in master_tells[record['id']]:
                 master_tells[record['id']]['category'] = {
                     'id': record['category_id'],
@@ -7126,9 +7063,7 @@ def tellzones_ids(request):
             sorted(
                 [
                     tellzone
-                    for tellzone in models.Tellzone.objects.get_queryset().prefetch_related(
-                        'social_profiles',
-                    ).filter(
+                    for tellzone in models.Tellzone.objects.get_queryset().filter(
                         id__in=serializer.validated_data['ids'],
                     )
                 ],
