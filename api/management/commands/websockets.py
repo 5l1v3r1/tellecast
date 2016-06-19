@@ -1231,7 +1231,7 @@ class WebSocket(WebSocketHandler):
                         data['post_id'] if 'post_id' in data else None,
                         data['type'] if 'type' in data else None,
                         data['contents'] if 'contents' in data else None,
-                        dumps(data['attachments'] if 'attachments' in data else []),
+                        dumps(data['attachments'] if 'attachments' in data and data['attachments'] else []),
                         data['status'] if 'status' in data else 'Unread',
                         False,
                     )
