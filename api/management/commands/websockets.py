@@ -1216,6 +1216,7 @@ class WebSocket(WebSocketHandler):
                         %s,
                         %s,
                         %s,
+                        %s,
                         NOW(),
                         NOW()
                     ) RETURNING id
