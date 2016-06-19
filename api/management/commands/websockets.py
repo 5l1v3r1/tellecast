@@ -1199,7 +1199,7 @@ class WebSocket(WebSocketHandler):
                         post_id,
                         type,
                         contents,
-                        attachemnts,
+                        attachments,
                         status,
                         is_suppressed,
                         inserted_at,
