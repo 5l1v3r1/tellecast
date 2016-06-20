@@ -3464,7 +3464,7 @@ class Tellzones(ViewSet):
             api_tellzones.inserted_at AS inserted_at,
             api_tellzones.started_at AS started_at,
             api_tellzones.updated_at AS updated_at,
-            api_tellzones.social_profiles AS tellzones_social_profiles,
+            api_tellzones.social_profiles AS social_profiles,
             api_users.id AS users_id,
             api_users.first_name AS users_first_name,
             api_users.last_name AS users_last_name,
@@ -3561,7 +3561,10 @@ class Tellzones(ViewSet):
                 records[record['id']]['name'] = record['name']
                 records[record['id']]['phone'] = record['phone']
                 records[record['id']]['photo'] = record['photo']
-                records[record['id']]['social_profiles'] = []
+                if record['social_profiles']:
+                    records[record['id']]['social_profiles'] = loads(record['social_profiles'])
+                else:
+                    records[record['id']]['social_profiles'] = []
                 point = loads(record['point'])
                 records[record['id']]['point'] = {
                     'latitude': str(point['coordinates'][1]),
