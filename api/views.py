@@ -3561,7 +3561,7 @@ class Tellzones(ViewSet):
                 records[record['id']]['name'] = record['name']
                 records[record['id']]['phone'] = record['phone']
                 records[record['id']]['photo'] = record['photo']
-                records[record['id']]['social_profiles'] = {}
+                records[record['id']]['social_profiles'] = []
                 point = loads(record['point'])
                 records[record['id']]['point'] = {
                     'latitude': str(point['coordinates'][1]),
