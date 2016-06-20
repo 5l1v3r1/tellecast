@@ -358,22 +358,17 @@ class User(Model):
 
     @classmethod
     def insert(cls, data):
-        settings = {}
+        settings_ = {}
         if 'settings' in data:
             for key, value in data['settings'].items():
-                settings[key] = 'True' if value else 'False'
+                settings_[key] = 'True' if value else 'False'
         social_profiles = []
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
-                if (
-                    'netloc' in social_profile and
-                    social_profile['netloc'] and
-                    'url' in social_profile and
-                    social_profile['url']
-                ):
+                if 'netloc' in social_profile and social_profile['netloc']:
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
-                        'url': social_profile['url'],
+                        'url': social_profile['url'] if 'url' in social_profile else '',
                     })
         user = User.objects.create(
             email=data['email'],
@@ -389,7 +384,7 @@ class User(Model):
             point=data['point'] if 'point' in data else None,
             is_verified=False,
             access_code=data['access_code'] if 'access_code' in data else None,
-            settings=settings,
+            settings=settings_,
             social_profiles=social_profiles,
         )
         if 'password' in data:
@@ -398,7 +393,6 @@ class User(Model):
         if 'photos' in data:
             for photo in data['photos']:
                 UserPhoto.insert(user.id, photo)
-            user.settings = data['settings']
             user.save()
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
@@ -651,15 +645,10 @@ class User(Model):
         if 'social_profiles' in data:
             social_profiles = []
             for social_profile in data['social_profiles']:
-                if (
-                    'netloc' in social_profile and
-                    social_profile['netloc'] and
-                    'url' in social_profile and
-                    social_profile['url']
-                ):
+                if 'netloc' in social_profile and social_profile['netloc']:
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
-                        'url': social_profile['url'],
+                        'url': social_profile['url'] if 'url' in social_profile else '',
                     })
             self.social_profiles = social_profiles
             self.save()
@@ -965,15 +954,10 @@ class Tellzone(Model):
         social_profiles = []
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
-                if (
-                    'netloc' in social_profile and
-                    social_profile['netloc'] and
-                    'url' in social_profile and
-                    social_profile['url']
-                ):
+                if 'netloc' in social_profile and social_profile['netloc']:
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
-                        'url': social_profile['url'],
+                        'url': social_profile['url'] if 'url' in social_profile else '',
                     })
         tellzone = Tellzone.objects.create(
             user_id=user_id,
@@ -1054,15 +1038,10 @@ class Tellzone(Model):
         if 'social_profiles' in data:
             social_profiles = []
             for social_profile in data['social_profiles']:
-                if (
-                    'netloc' in social_profile and
-                    social_profile['netloc'] and
-                    'url' in social_profile and
-                    social_profile['url']
-                ):
+                if 'netloc' in social_profile and social_profile['netloc']:
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
-                        'url': social_profile['url']
+                        'url': social_profile['url'] if 'url' in social_profile else '',
                     })
             self.social_profiles = social_profiles
             self.save()
