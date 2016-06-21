@@ -366,12 +366,9 @@ class User(Model):
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
                 if (
-                    'netloc' in social_profile
-                    and
-                    social_profile['netloc']
-                    and
-                    'url' in social_profile
-                    and
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
                     social_profile['url']
                 ):
                     social_profiles.append({
@@ -654,12 +651,9 @@ class User(Model):
             social_profiles = []
             for social_profile in data['social_profiles']:
                 if (
-                    'netloc' in social_profile
-                    and
-                    social_profile['netloc']
-                    and
-                    'url' in social_profile
-                    and
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
                     social_profile['url']
                 ):
                     social_profiles.append({
@@ -971,12 +965,9 @@ class Tellzone(Model):
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
                 if (
-                    'netloc' in social_profile
-                    and
-                    social_profile['netloc']
-                    and
-                    'url' in social_profile
-                    and
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
                     social_profile['url']
                 ):
                     social_profiles.append({
@@ -1063,12 +1054,9 @@ class Tellzone(Model):
             social_profiles = []
             for social_profile in data['social_profiles']:
                 if (
-                    'netloc' in social_profile
-                    and
-                    social_profile['netloc']
-                    and
-                    'url' in social_profile
-                    and
+                    'netloc' in social_profile and
+                    social_profile['netloc'] and
+                    'url' in social_profile and
                     social_profile['url']
                 ):
                     social_profiles.append({
