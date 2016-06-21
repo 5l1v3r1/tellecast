@@ -365,7 +365,15 @@ class User(Model):
         social_profiles = []
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
-                if 'netloc' in social_profile and social_profile['netloc']:
+                if (
+                    'netloc' in social_profile
+                    and
+                    social_profile['netloc']
+                    and
+                    'url' in social_profile
+                    and
+                    social_profile['url']
+                ):
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
                         'url': social_profile['url'] if 'url' in social_profile else '',
@@ -645,7 +653,15 @@ class User(Model):
         if 'social_profiles' in data:
             social_profiles = []
             for social_profile in data['social_profiles']:
-                if 'netloc' in social_profile and social_profile['netloc']:
+                if (
+                    'netloc' in social_profile
+                    and
+                    social_profile['netloc']
+                    and
+                    'url' in social_profile
+                    and
+                    social_profile['url']
+                ):
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
                         'url': social_profile['url'] if 'url' in social_profile else '',
@@ -954,7 +970,15 @@ class Tellzone(Model):
         social_profiles = []
         if 'social_profiles' in data:
             for social_profile in data['social_profiles']:
-                if 'netloc' in social_profile and social_profile['netloc']:
+                if (
+                    'netloc' in social_profile
+                    and
+                    social_profile['netloc']
+                    and
+                    'url' in social_profile
+                    and
+                    social_profile['url']
+                ):
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
                         'url': social_profile['url'] if 'url' in social_profile else '',
@@ -1038,7 +1062,15 @@ class Tellzone(Model):
         if 'social_profiles' in data:
             social_profiles = []
             for social_profile in data['social_profiles']:
-                if 'netloc' in social_profile and social_profile['netloc']:
+                if (
+                    'netloc' in social_profile
+                    and
+                    social_profile['netloc']
+                    and
+                    'url' in social_profile
+                    and
+                    social_profile['url']
+                ):
                     social_profiles.append({
                         'netloc': social_profile['netloc'],
                         'url': social_profile['url'] if 'url' in social_profile else '',
