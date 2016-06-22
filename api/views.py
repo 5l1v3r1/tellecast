@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 from arrow import get
-from bcrypt import hashpw
+from bcrypt import gensalt, hashpw
 from celery import current_app
 from django.conf import settings
 from django.contrib import messages as messages_
@@ -7302,6 +7302,76 @@ def users_messages(request, id):
                 'messages': request.user.get_messages(user_id),
             })
     return Response(data=items, status=HTTP_200_OK)
+
+
+@api_view(('PUT',))
+@permission_classes((IsAuthenticated,))
+def users_password(request, id):
+    '''
+    UPDATE (Password) Users
+
+    <pre>
+    Input
+    =====
+
+    + old_password
+        - Type: string
+        - Status: mandatory
+
+    + new_password
+        - Type: string
+        - Status: mandatory
+
+    Output
+    ======
+
+    (see below; "Response Class" -> "Model Schema")
+    </pre>
+    ---
+    omit_parameters:
+        - form
+    parameters:
+        - name: body
+          paramType: body
+          pytype: api.serializers.UsersPasswordRequest
+    response_serializer: api.serializers.UsersPasswordResponse
+    responseMessages:
+        - code: 400
+          message: Invalid Input
+    '''
+    serializer = serializers.UsersPasswordRequest(
+        context={
+            'request': request,
+        },
+        data=request.DATA,
+    )
+    serializer.is_valid(raise_exception=True)
+    status = False
+    try:
+        if hashpw(
+            serializer.validated_data['old_password'].encode('utf-8'), request.user.password.encode('utf-8'),
+        ) == request.user.password:
+            status = True
+    except Exception:
+        pass
+    if not status:
+        return Response(
+            data={
+                'error': ugettext_lazy('Invalid `password`'),
+            },
+            status=HTTP_400_BAD_REQUEST,
+        )
+    request.user.password = hashpw(serializer.validated_data['new_password'].encode('utf-8'), gensalt(10))
+    request.user.save()
+    return Response(
+        data=serializers.UsersPasswordResponse(
+            request.user,
+            context={
+                'request': request,
+            },
+        ).data,
+        status=HTTP_200_OK,
+    )
 
 
 @api_view(('GET',))

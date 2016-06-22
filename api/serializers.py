@@ -2847,6 +2847,16 @@ class UsersResponse(User):
         model = models.User
 
 
+class UsersPasswordRequest(Serializer):
+
+    old_password = CharField()
+    new_password = CharField()
+
+
+class UsersPasswordResponse(Null):
+    pass
+
+
 class UsersTellzonesAll(Tellzone):
 
     source = IntegerField()
