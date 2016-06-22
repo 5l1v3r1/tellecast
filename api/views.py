@@ -6740,6 +6740,14 @@ def register(request):
         - Type: string
         - Status: optional
 
+    + source
+        - Type: string
+        - Status: optional
+        - Choices:
+            - email
+            - facebook.com
+            - google.com
+
     + settings
         - Type: dictionary
         - Status: mandatory

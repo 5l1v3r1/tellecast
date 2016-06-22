@@ -1041,6 +1041,7 @@ class User(ModelAdmin):
         'updated_at',
         'token',
         'access_code',
+        'source',
     )
     list_filter = (
         'tellzone',
@@ -1050,6 +1051,7 @@ class User(ModelAdmin):
         'inserted_at',
         'updated_at',
         'access_code',
+        'source',
     )
     list_per_page = 10
     search_fields = (
@@ -1064,6 +1066,7 @@ class User(ModelAdmin):
         'description',
         'phone',
         'access_code',
+        'source',
     )
 
     def save_model(self, request, user, form, change):

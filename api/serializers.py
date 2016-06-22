@@ -2399,6 +2399,7 @@ class RegisterRequest(User):
     phone = CharField(allow_blank=True, required=False)
     point = PointField(required=False)
     access_code = CharField(allow_blank=True, required=False)
+    source = CharField(allow_blank=True, required=False)
     settings = DictField(help_text='Users :: Settings')
     social_profiles = ListField(help_text='List of Users :: Social Profiles', required=False)
     photos = RegisterRequestUserPhoto(help_text='List of Users :: Photos', many=True, required=False)
@@ -2424,6 +2425,7 @@ class RegisterRequest(User):
             'settings',
             'social_profiles',
             'access_code',
+            'source',
             'photos',
             'status',
             'urls',

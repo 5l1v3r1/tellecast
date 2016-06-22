@@ -324,6 +324,7 @@ class User(Model):
     inserted_at = DateTimeField(ugettext_lazy('Inserted At'), auto_now_add=True, db_index=True)
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
     access_code = CharField(ugettext_lazy('Access Code'), blank=True, db_index=True, max_length=255, null=True)
+    source = CharField(ugettext_lazy('Source'), blank=True, db_index=True, max_length=255, null=True)
 
     tellzone = ForeignKey('Tellzone', blank=True, default=None, null=True, related_name='+')
 
@@ -389,6 +390,7 @@ class User(Model):
             point=data['point'] if 'point' in data else None,
             is_verified=False,
             access_code=data['access_code'] if 'access_code' in data else None,
+            source=data['source'] if 'source' in data else None,
             settings=settings_,
             social_profiles=social_profiles,
         )
