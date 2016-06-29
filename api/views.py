@@ -3521,20 +3521,59 @@ class Tellzones(ViewSet):
             api_slave_tells.updated_at AS slave_tells_updated_at
         FROM api_tellzones
         LEFT JOIN api_users ON api_tellzones.user_id = api_users.id
+        LEFT OUTER JOIN api_blocks AS api_blocks_tellzones
+            ON
+                (
+                    api_blocks_tellzones.user_source_id = %s
+                    AND
+                    api_blocks_tellzones.user_destination_id = api_tellzones.user_id
+                )
+                OR
+                (
+                    api_blocks_tellzones.user_source_id = api_tellzones.user_id
+                    AND
+                    api_blocks_tellzones.user_destination_id = %s
+                )
         LEFT JOIN api_tellzones_types ON api_tellzones.type_id = api_tellzones_types.id
         LEFT JOIN api_tellzones_statuses ON api_tellzones.status_id = api_tellzones_statuses.id
         LEFT OUTER JOIN api_networks_tellzones ON api_networks_tellzones.tellzone_id = api_tellzones.id
         LEFT OUTER JOIN api_master_tells_tellzones ON api_master_tells_tellzones.tellzone_id = api_tellzones.id
         LEFT JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
         LEFT JOIN api_users AS api_users_created_by ON api_users_created_by.id = api_master_tells.created_by_id
+        LEFT OUTER JOIN api_blocks as api_blocks_master_tells
+            ON
+                (
+                    api_blocks_master_tells.user_source_id = %s
+                    AND
+                    api_blocks_master_tells.user_destination_id = api_master_tells.created_by_id
+                )
+                OR
+                (
+                    api_blocks_master_tells.user_source_id = api_master_tells.created_by_id
+                    AND
+                    api_blocks_master_tells.user_destination_id = %s
+                )
         LEFT JOIN api_categories ON api_categories.id = api_master_tells.category_id
         LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
         WHERE
             ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
             AND
             api_tellzones_statuses.name = %s
+            AND
+            api_blocks_tellzones.id IS NULL
+            AND
+            api_blocks_master_tells.id IS NULL
         '''
-        parameters = [point, point, serializer.validated_data['radius'] * 0.3048, 'open']
+        parameters = [
+            point,
+            self.request.user.id,
+            self.request.user.id,
+            self.request.user.id,
+            self.request.user.id,
+            point,
+            serializer.validated_data['radius'] * 0.3048,
+            'open'
+        ]
         network_ids = tuple(filter(None, map(int, network_ids.split(',') if network_ids else '')))
         if network_ids:
             query = '{query:s} AND api_networks_tellzones.network_id IN %s'.format(query=query)
