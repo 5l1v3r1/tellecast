@@ -7108,6 +7108,18 @@ def tellzones_ids(request):
         data=request.data,
     )
     serializer.is_valid(raise_exception=True)
+    ids = []
+    for block in models.Block.objects.filter(
+        Q(user_source_id=request.user.id) | Q(user_destination_id=request.user.id),
+    ).order_by(
+        '-timestamp',
+    ).all():
+        if block.user_source.id == request.user.id:
+            if block.user_destination.id not in ids:
+                ids.append(block.user_destination.id)
+        if block.user_destination.id == request.user.id:
+            if block.user_source.id not in ids:
+                ids.append(block.user_source.id)
     return Response(
         data=serializers.TellzonesIDsResponse(
             sorted(
@@ -7116,6 +7128,7 @@ def tellzones_ids(request):
                     for tellzone in models.Tellzone.objects.get_queryset().filter(
                         id__in=serializer.validated_data['ids'],
                     )
+                    if tellzone.user_id not in ids
                 ],
                 key=lambda tellzone: (-tellzone.tellecasters, -tellzone.id),
             ),
