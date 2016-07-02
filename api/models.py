@@ -3284,6 +3284,8 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                         api_users_locations.tellzone_id != %s
                     )
                     AND
+                    api_users_locations.tellzone_id = %s
+                    AND
                     ST_DWithin(
                         ST_Transform(ST_GeomFromText(%s, 4326), 2163),
                         ST_Transform(api_users_locations.point, 2163),
@@ -3305,6 +3307,7 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     user_id,
                     tellzone_id,
                     tellzone_id,
+                    tellzone[0],
                     'POINT({longitude:.14f} {latitude:.14f})'.format(longitude=tellzone[1], latitude=tellzone[2]),
                     radius,
                 )
