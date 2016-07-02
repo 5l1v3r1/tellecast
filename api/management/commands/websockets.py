@@ -574,7 +574,11 @@ class RabbitMQ(object):
                     if 'updated_at' not in message:
                         message['updated_at'] = record['message_updated_at'].isoformat()
                     if 'attachments' not in message:
-                        message['attachments'] = loads(record['message_attachments'])
+                        message['attachments'] = []
+                        try:
+                            message['attachments'] = loads(record['message_attachments'])
+                        except Exception:
+                            pass
                     if 'user_source' not in message:
                         message['user_source'] = {
                             'id': record['message_user_source_id'],
