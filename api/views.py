@@ -3764,6 +3764,14 @@ class Tellzones(ViewSet):
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
+        if instance.user_id:
+            if models.is_blocked(request.user.id, instance.user_id):
+                return Response(
+                    data={
+                        'error': ugettext_lazy('Invalid `id`'),
+                    },
+                    status=HTTP_400_BAD_REQUEST,
+                )
         return Response(
             data=serializers.TellzonesResponse(
                 instance,

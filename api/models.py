@@ -1133,9 +1133,25 @@ class Tellzone(Model):
         return connections
 
     def get_master_tells(self, user_id):
+        ids = []
+        for block in Block.objects.filter(
+            Q(user_source_id=user_id) | Q(user_destination_id=user_id),
+        ).order_by(
+            '-timestamp',
+        ).all():
+            if block.user_source.id == user_id:
+                if block.user_destination.id not in ids:
+                    ids.append(block.user_destination.id)
+            if block.user_destination.id == user_id:
+                if block.user_source.id not in ids:
+                    ids.append(block.user_source.id)
         return [
             master_tell_tellzone.master_tell
             for master_tell_tellzone in MasterTellTellzone.objects.get_queryset().filter(tellzone_id=self.id)
+            if (
+                master_tell_tellzone.master_tell.created_by_id not in ids and
+                master_tell_tellzone.master_tell.owned_by_id not in ids
+            )
         ]
 
     def get_posts(self, user_id):
