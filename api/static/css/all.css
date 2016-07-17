@@ -63,6 +63,7 @@
 
 #result_list .action-checkbox,
 #result_list .action-checkbox-column,
+#result_list .column-are_pinned_tells_queued,
 #result_list .column-expired_at,
 #result_list .column-favorited_at,
 #result_list .column-inserted_at,
@@ -73,6 +74,7 @@
 #result_list .column-timestamp,
 #result_list .column-updated_at,
 #result_list .column-viewed_at,
+#result_list .field-are_pinned_tells_queued,
 #result_list .field-expired_at,
 #result_list .field-favorited_at,
 #result_list .field-inserted_at,
