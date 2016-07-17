@@ -909,6 +909,7 @@ class Tellzone(Model):
     updated_at = DateTimeField(ugettext_lazy('Updated At'), auto_now=True, db_index=True)
     started_at = DateTimeField(ugettext_lazy('Started At'), db_index=True, null=True)
     ended_at = DateTimeField(ugettext_lazy('Ended At'), db_index=True, null=True)
+    are_pinned_tells_queued = BooleanField(ugettext_lazy('Queue Pinned Tells?'), db_index=True, default=False)
 
     objects = GeoManager()
 
@@ -1148,10 +1149,7 @@ class Tellzone(Model):
         return [
             master_tell_tellzone.master_tell
             for master_tell_tellzone in MasterTellTellzone.objects.get_queryset().filter(tellzone_id=self.id)
-            if (
-                master_tell_tellzone.master_tell.created_by_id not in ids and
-                master_tell_tellzone.master_tell.owned_by_id not in ids
-            )
+            if master_tell_tellzone.master_tell.owned_by_id not in ids
         ]
 
     def get_posts(self, user_id):
@@ -1768,6 +1766,16 @@ class MasterTellTellzone(Model):
 
     master_tell = ForeignKey(MasterTell, related_name='master_tells_tellzones')
     tellzone = ForeignKey(Tellzone, related_name='master_tells_tellzones')
+    status = CharField(
+        ugettext_lazy('Status'),
+        choices=(
+            ('Published', 'Published',),
+            ('In Review', 'In Review',),
+        ),
+        default='Published',
+        db_index=True,
+        max_length=255,
+    )
 
     class Meta:
 
@@ -2805,13 +2813,19 @@ def master_tells_websockets_1(instance):
         )
 
 
-@receiver(post_delete, sender=MasterTellTellzone)
-def master_tell_tellzone_post_delete(instance, **kwargs):
-    master_tells_websockets_2(instance)
+@receiver(pre_save, sender=MasterTellTellzone)
+def master_tell_tellzone_pre_save(instance, **kwargs):
+    if instance.tellzone.are_pinned_tells_queued:
+        instance.status = 'In Review'
 
 
 @receiver(post_save, sender=MasterTellTellzone)
 def master_tell_tellzone_post_save(instance, **kwargs):
+    master_tells_websockets_2(instance)
+
+
+@receiver(post_delete, sender=MasterTellTellzone)
+def master_tell_tellzone_post_delete(instance, **kwargs):
     master_tells_websockets_2(instance)
 
 
@@ -3215,11 +3229,13 @@ def get_master_tells(user_id, tellzone_id, tellzones, radius):
                     AND
                     api_master_tells_tellzones.tellzone_id = %s
                     AND
+                    api_master_tells_tellzones.status = %s
+                    AND
                     api_blocks.id IS NULL
                 ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
                 ''',
                 (
-                    user_id, user_id, user_id, tellzone_id, tellzone[0],
+                    user_id, user_id, user_id, tellzone_id, tellzone[0], 'Published',
                 ),
             )
             columns = [column.name for column in cursor.description]

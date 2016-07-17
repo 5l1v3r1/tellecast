@@ -463,6 +463,7 @@ class MasterTellTellzone(ModelAdmin):
     fields = (
         'master_tell',
         'tellzone',
+        'status',
     )
     list_display = (
         'id',
@@ -471,10 +472,12 @@ class MasterTellTellzone(ModelAdmin):
         'master_tell_contents',
         'tellzone',
         'tellzone_user',
+        'status',
     )
     list_filter = (
         'master_tell',
         'tellzone',
+        'status',
     )
     list_per_page = 10
     search_fields = ()
@@ -898,6 +901,7 @@ class Tellzone(ModelAdmin):
         'social_profiles',
         'started_at',
         'ended_at',
+        'are_pinned_tells_queued',
     )
     form = Form
     list_display = (
@@ -909,9 +913,7 @@ class Tellzone(ModelAdmin):
         'location',
         'phone',
         'url',
-        'point',
-        'inserted_at',
-        'updated_at',
+        'are_pinned_tells_queued',
     )
     list_filter = (
         'user',
@@ -919,6 +921,7 @@ class Tellzone(ModelAdmin):
         'status',
         'inserted_at',
         'updated_at',
+        'are_pinned_tells_queued',
     )
     list_per_page = 10
     search_fields = (

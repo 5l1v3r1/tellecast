@@ -606,7 +606,7 @@ class Home(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 25
+        assert len(response.data) == 0
         assert response.status_code == 200
 
         response = self.client.get(
@@ -2853,13 +2853,12 @@ class Tellzones(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 1
+        assert len(response.data) == 0
         assert response.status_code == 200
 
         response = self.client.get(
             '/api/tellzones/{id:d}/'.format(id=models.Tellzone.objects.get_queryset().first().id), format='json',
         )
-        # assert len(loads(response.data['social_profiles'])) == 5
         assert response.status_code == 200
 
         dictionary = {

@@ -3545,11 +3545,11 @@ class Tellzones(ViewSet):
                 (
                     api_blocks_master_tells.user_source_id = %s
                     AND
-                    api_blocks_master_tells.user_destination_id = api_master_tells.created_by_id
+                    api_blocks_master_tells.user_destination_id = api_master_tells.owned_by_id
                 )
                 OR
                 (
-                    api_blocks_master_tells.user_source_id = api_master_tells.created_by_id
+                    api_blocks_master_tells.user_source_id = api_master_tells.owned_by_id
                     AND
                     api_blocks_master_tells.user_destination_id = %s
                 )
@@ -3559,6 +3559,12 @@ class Tellzones(ViewSet):
             ST_Distance_Sphere(api_tellzones.point, ST_GeomFromText(%s)) <= %s
             AND
             api_tellzones_statuses.name = %s
+            AND
+            (
+                api_master_tells_tellzones.status = %s
+                OR
+                api_master_tells.owned_by_id = %s
+            )
             AND
             api_blocks_tellzones.id IS NULL
             AND
@@ -3572,7 +3578,9 @@ class Tellzones(ViewSet):
             self.request.user.id,
             point,
             serializer.validated_data['radius'] * 0.3048,
-            'open'
+            'open',
+            'published',
+            self.request.user.id,
         ]
         network_ids = tuple(filter(None, map(int, network_ids.split(',') if network_ids else '')))
         if network_ids:
@@ -6032,10 +6040,8 @@ def master_tells_all(request, *args, **kwargs):
             INNER JOIN api_master_tells ON api_master_tells.id = api_master_tells_tellzones.master_tell_id
             INNER JOIN api_tellzones ON api_tellzones.id = api_master_tells_tellzones.tellzone_id
             LEFT OUTER JOIN api_slave_tells ON api_slave_tells.master_tell_id = api_master_tells.id
-            INNER JOIN api_users AS api_users_created_by
-                ON api_users_created_by.id = api_master_tells.created_by_id
-            INNER JOIN api_users AS api_users_owned_by
-                ON api_users_owned_by.id = api_master_tells.owned_by_id
+            INNER JOIN api_users AS api_users_created_by ON api_users_created_by.id = api_master_tells.created_by_id
+            INNER JOIN api_users AS api_users_owned_by ON api_users_owned_by.id = api_master_tells.owned_by_id
             INNER JOIN api_categories ON api_categories.id = api_master_tells.category_id
             LEFT OUTER JOIN api_blocks ON
                 (api_blocks.user_source_id = %s AND api_blocks.user_destination_id = api_master_tells.owned_by_id)
@@ -6063,6 +6069,8 @@ def master_tells_all(request, *args, **kwargs):
                         api_master_tells.owned_by_id = %s
                 )
                 AND
+                api_master_tells_tellzones.status = %s
+                AND
                 api_blocks.id IS NULL
             ORDER BY api_master_tells.id ASC, api_slave_tells.position ASC
             ''',
@@ -6074,6 +6082,7 @@ def master_tells_all(request, *args, **kwargs):
                 serializer.validated_data['tellzone_id'],
                 serializer.validated_data['tellzone_id'],
                 serializer.validated_data['user_id'],
+                'Published',
             )
         )
         columns = [column.name for column in cursor.description]

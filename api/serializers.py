@@ -395,12 +395,17 @@ class MasterTell(ModelSerializer):
         return self.instance.update(self.validated_data)
 
     def to_representation(self, instance):
+        id = get_user_id(self.context)
         dictionary = OrderedDict()
         for field in [field for field in self.fields.values() if not field.write_only]:
             if field.field_name == 'tellzones':
                 dictionary[field.field_name] = [
                     MasterTellTellzone(master_tell_tellzone.tellzone, context=self.context).data
                     for master_tell_tellzone in instance.master_tells_tellzones.get_queryset().filter()
+                    if (
+                        master_tell_tellzone.status == 'Published' or
+                        master_tell_tellzone.master_tell.owned_by_id == id
+                    )
                 ]
                 continue
             attribute = None
