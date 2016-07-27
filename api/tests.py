@@ -1581,7 +1581,7 @@ class Networks(TransactionTestCase):
             '/api/networks/{id:d}/master-tells/'.format(id=network.id),
             format='json',
         )
-        assert len(response.data) == 25
+        assert len(response.data) == 0
         assert response.status_code == 200
 
         client = APIClient()
@@ -1593,7 +1593,7 @@ class Networks(TransactionTestCase):
             },
             format='json',
         )
-        assert len(response.data) == 20
+        assert len(response.data) == 0
         assert response.status_code == 200
 
     def test_c(self):
