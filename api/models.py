@@ -2703,6 +2703,13 @@ def block_post_save(instance, **kwargs):
         routing_key='api.management.commands.websockets',
         serializer='json',
     )
+    current_app.send_task(
+        'api.tasks.reports',
+        (instance.id,),
+        queue='api.tasks.reports',
+        routing_key='api.tasks.reports',
+        serializer='json',
+    )
 
 
 @receiver(pre_save, sender=MasterTell)
