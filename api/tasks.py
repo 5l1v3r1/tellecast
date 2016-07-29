@@ -6,6 +6,7 @@ from copy import deepcopy
 from os import environ, remove
 from os.path import getsize
 from tempfile import mkstemp
+from uuid import uuid4
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -18,6 +19,7 @@ from kombu import Exchange, Queue
 from PIL import Image
 from pilkit.processors import ProcessorPipeline, ResizeToFit, Transpose
 from raven import Client
+from requests import request
 
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
@@ -42,9 +44,9 @@ celery.conf.update(
             routing_key='api.tasks.push_notifications',
         ),
         Queue(
-            'api.tasks.thumbnails',
-            Exchange('api.tasks.thumbnails'),
-            routing_key='api.tasks.thumbnails',
+            'api.tasks.reports',
+            Exchange('api.tasks.reports'),
+            routing_key='api.tasks.reports',
         ),
         Queue(
             'api.tasks.thumbnails',
@@ -60,6 +62,9 @@ celery.conf.update(
         },
         'api.tasks.push_notifications': {
             'queue': 'api.tasks.push_notifications',
+        },
+        'api.tasks.reports': {
+            'queue': 'api.tasks.reports',
         },
         'api.tasks.thumbnails_1': {
             'queue': 'api.tasks.thumbnails',
@@ -143,6 +148,64 @@ def push_notifications(user_id, json):
         device.send_message(deepcopy(json))
     for device in models.DeviceGCM.objects.get_queryset().filter(user_id=user_id):
         device.send_message(deepcopy(json))
+
+
+@celery.task
+def reports(id):
+    instance = models.Block.objects.get_queryset().filter(id=id).first()
+    if not instance:
+        return
+    body = '''
+    {source_name:s} ({source_email:s}) has reported {destination_name:s} ({destination_email:s}) in {domain:s}
+    '''.strip().format(
+        source_name=get_name(instance.user_source.first_name, instance.user_source.last_name),
+        source_email=instance.user_source.email,
+        destination_name=get_name(instance.user_destination.first_name, instance.user_destination.last_name),
+        destination_email=instance.user_destination.email,
+        domain=settings.DESK_COM['domain'],
+    )
+    json = {
+        'id': uuid4().__str__(),
+        'priority': 10,
+        'status': 'new',
+        'type': 'email',
+        'custom_fields': {
+            'domain': settings.DESK_COM['domain'],
+            'user_destination': {
+                'id': instance.user_destination.id,
+                'email': instance.user_destination.email,
+                'first_name': instance.user_destination.first_name,
+                'last_name': instance.user_destination.last_name,
+            },
+            'user_source': {
+                'id': instance.user_source.id,
+                'email': instance.user_source.email,
+                'first_name': instance.user_source.first_name,
+                'last_name': instance.user_source.last_name,
+            },
+            'timestamp': instance.timestamp.isoformat(),
+        },
+        'message': {
+            'body': body,
+            'direction': 'in',
+            'from': instance.user_source.email,
+            'name': get_name(instance.user_source.first_name, instance.user_source.last_name),
+            'subject': 'Report',
+            'to': settings.DESK_COM['username'],
+        },
+        '_links': {
+            'assigned_group': {
+                'class': 'group',
+                'href': '/api/v2/groups/616498',
+            },
+        },
+    }
+    request(
+        'POST',
+        'https://{subdomain:s}.desk.com/api/v2/cases'.format(subdomain=settings.DESK_COM['subdomain']),
+        auth=(settings.DESK_COM['username'], settings.DESK_COM['password']),
+        json=json,
+    )
 
 
 @celery.task
@@ -409,3 +472,7 @@ def get_destination(source, name, type, width, bytes):
             break
         quality = quality - 5
     return destination
+
+
+def get_name(first_name, last_name):
+    return ' '.join(filter(None, [first_name, last_name]))

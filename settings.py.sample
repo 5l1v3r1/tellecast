@@ -38,6 +38,12 @@ DATABASES = {
 BROKER = '...'
 DEBUG = True
 DEFAULT_FROM_EMAIL = '...'
+DESK_COM = {
+    'domain': '...',
+    'subdomain': '...',
+    'username': '...',
+    'password': '...',
+}
 EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 en_formats.DATETIME_FORMAT = 'Y-m-d H:i:s'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1099511627776
